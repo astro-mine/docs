@@ -34,6 +34,26 @@ exploration and in-situ resource utilization (ISRU).
 [Core](core.md) is the "narrow waist" — the single most important package; if only one thing is
 designed superbly, it must be Core.
 
+## Proposed extensions — multi-regime missions (RFC-0001)
+
+> **Status: Proposed**, pending [RFC-0001: Multi-regime missions](../rfc/0001-multi-regime-missions.md).
+> These documents describe a proposed extension to support end-to-end interplanetary resource
+> missions (asteroid mining, NEO sample-return, cislunar logistics) by generalizing "a campaign
+> on a world" into a **Mission** of **Phases** across **Regimes**. They are not yet accepted
+> baseline.
+
+- **[mission-model.md](mission-model.md)** — the Mission/Phase/Regime model and the additive
+  Core schema sketch (SADF, Environment API, message schemas). Start here for the extension.
+
+| New layer / additions | Components |
+|---|---|
+| **Mission architecture & logistics** (new) | [Trajectory](trajectory.md) · [Sizing](sizing.md) · [Ledger](ledger.md) |
+| **World & environment** (added) | [Transit](transit.md) |
+
+The existing components above are also *extended* (not replaced) for small bodies, microgravity,
+deep-space comms, propulsion, and multi-phase operations — see RFC-0001 §4 for the per-component
+list.
+
 ## Conventions for these docs
 
 - Each component doc carries an H1 title and a blockquote (layer · phase · one-line role · link
