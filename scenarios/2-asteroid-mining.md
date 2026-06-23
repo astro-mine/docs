@@ -235,7 +235,7 @@ sequenceDiagram
   participant Gd as Guard
   participant Br as Bridge
   participant Vw as View
-  Op->>Op: load MissionSpec; bind phase environment; run phase
+  Op->>Op: load MissionSpec, bind phase environment, run phase
   Op->>Md: anomaly / next-decision (per regime autonomy posture)
   Md->>Al: (re)allocate under power/window/terrain constraints
   Al-->>Md: assignment + binding-constraint explanation

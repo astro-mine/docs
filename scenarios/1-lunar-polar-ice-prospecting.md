@@ -193,7 +193,7 @@ sequenceDiagram
   participant Gd as Guard
   participant Bn as Bench
   D->>St: goal ("produce N kg water/lunar day from this PSR")
-  St->>St: ObjectiveSpec (Core-validated; optional Claude intent capture, human-reviewed)
+  St->>St: ObjectiveSpec (Core-validated, optional Claude intent capture, human-reviewed)
   St->>Sm: simulate candidate swarm (multi-fidelity)
   Sm->>Sg: accelerate excavation/granular physics (bounded error)
   St->>Ln: train comms-limited cooperative prospecting policy
@@ -222,7 +222,7 @@ sequenceDiagram
   participant Gd as Guard
   participant Br as Bridge
   participant Vw as View
-  Op->>Op: load Campaign; estimate fleet state (factor-graph SLAM)
+  Op->>Op: load Campaign, estimate fleet state (factor-graph SLAM)
   Op->>Mn: anomaly / new goal → propose replan
   Mn->>Al: (re)allocate under power/window/terrain
   Al-->>Mn: assignment + binding-constraint explanation
