@@ -71,8 +71,10 @@ electrolysis to LOX/LH₂ propellant and a propellant-depot value chain (§15).
 
 ### 3.1 How these objectives are defined, tracked & optimized
 
-- **Defined** as a machine-readable, Core-validated **`ObjectiveSpec`** authored in
-  [Studio](../architecture/studio.md) (optionally via human-reviewed LLM intent capture). Each
+- **Defined** as an **`ObjectiveSpec`** — a first-class **[Core](../architecture/core.md) schema**
+  (the objective plus its **binding** to [Bench](../architecture/bench.md) metrics and the
+  [Ledger](../architecture/ledger.md) value model) — authored in [Studio](../architecture/studio.md)
+  (optionally via human-reviewed LLM intent capture) and consumed by Bench/Ledger/Ops/View. Each
   success criterion above is **bound to a quantitative [Bench](../architecture/bench.md) metric**
   (§13) with an explicit target and tolerance — objectives are measurable, not aspirational, and
   carry uncertainty (conventions.md §1.6). A scalar economic valuation of produced water MAY use the
@@ -399,9 +401,10 @@ Authoritative, traceable requirements. IDs are stable and append-only:
   account (conventions.md §7 tier 1) — "clone, run, score in an afternoon."
 - **LUNAR-TR-005** — Granular physics MUST validate against analytic/lab terramechanics references
   with explicit error budgets (conventions.md §11).
-- **LUNAR-FR-008** — The platform MUST represent each mission objective as a machine-readable
-  `ObjectiveSpec` ([Studio](../architecture/studio.md)) with explicit quantitative targets and
-  tolerances, each success criterion **bound to a [Bench](../architecture/bench.md) metric** (§13).
+- **LUNAR-FR-008** — [Core](../architecture/core.md) MUST define the **`ObjectiveSpec`** schema and
+  the **objective→metric binding** as a narrow-waist contract; [Studio](../architecture/studio.md)
+  authors instances with explicit quantitative targets and tolerances, each success criterion
+  **bound to a [Bench](../architecture/bench.md) metric** (§13), consumed by Bench/Ledger/Ops/View.
 - **LUNAR-FR-009** — The platform MUST quantitatively track progress toward each objective in
   **both simulation** ([Bench](../architecture/bench.md) over [Sim](../architecture/sim.md)) **and
   operations** ([Ops](../architecture/ops.md), surfaced via [View](../architecture/view.md)), using
@@ -524,11 +527,11 @@ is **not** exercised here. Still:
   survival check, and how it scores in Bench.
 - **Sim-to-real terramechanics** — honestly bounding low-gravity granular uncertainty without
   on-world data (charter §9).
-- **Objective contract location** — should the `ObjectiveSpec` + objective→metric **binding** be a
-  shared [Core](../architecture/core.md) schema (narrow waist), so [Studio](../architecture/studio.md),
-  [Bench](../architecture/bench.md), [Ledger](../architecture/ledger.md), [Ops](../architecture/ops.md),
-  and [View](../architecture/view.md) all agree on what an objective *is* and how it is measured? If
-  so it is an additive Core change and would go through the RFC process.
+- **Objective contract** *(resolved — Phase-0 direct decision, no RFC)* — the `ObjectiveSpec` and
+  the objective→metric **binding** are a **first-class additive [Core](../architecture/core.md)
+  schema**; [Studio](../architecture/studio.md) authors instances, and
+  [Bench](../architecture/bench.md)/[Ledger](../architecture/ledger.md)/[Ops](../architecture/ops.md)/[View](../architecture/view.md)
+  consume them (see [core.md](../architecture/core.md)).
 
 ## 17. References
 

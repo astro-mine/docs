@@ -79,9 +79,10 @@ return** (using mined volatiles for return Δv) — see §15.
 
 ### 3.1 How these objectives are defined, tracked & optimized
 
-- **Defined** as a machine-readable, Core-validated **`ObjectiveSpec`** in
-  [Studio](../architecture/studio.md)'s Mission Architect, rolled up into the Mission's
-  **`objective` value/score model in [Ledger](../architecture/ledger.md)** (mission-model.md §1).
+- **Defined** as an **`ObjectiveSpec`** — a first-class **[Core](../architecture/core.md) schema**
+  (the objective plus its **binding** to [Bench](../architecture/bench.md) metrics and the value
+  model) — authored in [Studio](../architecture/studio.md)'s Mission Architect and rolled up into
+  the Mission's **`objective` value/score model in [Ledger](../architecture/ledger.md)** (mission-model.md §1).
   Each success criterion above is **bound to a quantitative [Bench](../architecture/bench.md) metric**
   (§13) with explicit target and tolerance; cost/value/risk are distributions, not point estimates
   (conventions.md §1.6).
@@ -409,10 +410,11 @@ Authoritative, traceable requirements. IDs are stable and append-only:
   forward; observation masks MUST gate what policies can see/exchange.
 - **AST-TR-005** — Trade studies MUST fan out on [Cloud](../architecture/cloud.md) (Ray/Argo) as
   reproducible batch jobs.
-- **AST-FR-008** — The platform MUST represent each mission objective as a machine-readable
-  `ObjectiveSpec` rolled up into the Mission's `objective` value model in
-  [Ledger](../architecture/ledger.md), with each success criterion bound to a
-  [Bench](../architecture/bench.md) metric (§13) and explicit targets/tolerances.
+- **AST-FR-008** — [Core](../architecture/core.md) MUST define the **`ObjectiveSpec`** schema and
+  the **objective→metric binding** as a narrow-waist contract; the Mission's `objective` rolls up
+  into the [Ledger](../architecture/ledger.md) value model, each success criterion bound to a
+  [Bench](../architecture/bench.md) metric (§13) with explicit targets/tolerances.
+  ([Studio](../architecture/studio.md) authors; Bench/Ledger/Ops/View consume.)
 - **AST-FR-009** — The platform MUST quantitatively track progress toward each objective in **both
   simulation** ([Bench](../architecture/bench.md) over [Sim](../architecture/sim.md)) **and
   operations** ([Ops](../architecture/ops.md) per phase, via [View](../architecture/view.md)), using
@@ -535,11 +537,11 @@ The track is **opt-in and must not gate the lunar MVP** ([Scenario 1](1-lunar-po
   trajectory⇄fleet⇄swarm⇄economics vs. keeping `MissionSpec` declarative (RFC-0001 R4).
 - **Target selection** — pin a specific representative accessible C-type NEO for the Bench scenario,
   or keep it parametric over a target set.
-- **Objective contract location** — should the `ObjectiveSpec` + objective→metric binding be a
-  shared [Core](../architecture/core.md) schema so [Studio](../architecture/studio.md),
-  [Bench](../architecture/bench.md), [Ledger](../architecture/ledger.md), [Ops](../architecture/ops.md),
-  and [View](../architecture/view.md) agree on what an objective *is* and how it is measured? An
-  additive Core change → RFC process.
+- **Objective contract** *(resolved — Phase-0 direct decision, no RFC)* — the `ObjectiveSpec` and
+  the objective→metric **binding** are a **first-class additive [Core](../architecture/core.md)
+  schema**; [Studio](../architecture/studio.md) authors instances, and
+  [Bench](../architecture/bench.md)/[Ledger](../architecture/ledger.md)/[Ops](../architecture/ops.md)/[View](../architecture/view.md)
+  consume them (see [core.md](../architecture/core.md)).
 
 ## 17. References
 

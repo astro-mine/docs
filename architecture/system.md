@@ -85,7 +85,10 @@ nothing else:
    [Mind](mind.md), [Allocate](allocate.md), and learned policies from [Learn](learn.md);
    wrapped by [Guard](guard.md).
 4. **Message schemas** — the typed vocabulary every plane exchanges (Protobuf default;
-   FlatBuffers/Cap'n Proto for per-tick hot paths — see conventions.md §3).
+   FlatBuffers/Cap'n Proto for per-tick hot paths — see conventions.md §3). Includes the
+   **`ObjectiveSpec`** and the objective→metric **binding** — the shared objective contract
+   authored by [Studio](studio.md), measured/valued by [Bench](bench.md)/[Ledger](ledger.md), and
+   tracked by [Ops](ops.md)/[View](view.md).
 5. **Plugin manifest & registry** — how content is discovered, version-negotiated, signed, and
    loaded. Indexed by [Hub](hub.md); capability tags here are the substrate for export-control
    gating.
