@@ -310,6 +310,9 @@ Higher tiers are accelerators and operational surfaces, never hard dependencies.
 
 ## 10. End-to-end walkthrough — lunar polar water-ice prospecting (the anchor scenario)
 
+> Integration-view summary. The full scenario specification — objective, fleet, ConOps, derived
+> requirements, and metrics — is [scenarios/1-lunar-polar-ice-prospecting.md](../scenarios/1-lunar-polar-ice-prospecting.md).
+
 1. **Author the world.** A planetary scientist configures [Worlds](worlds.md) for the
    Shackleton crater rim (LOLA DEM → COG/Zarr, SPICE-driven illumination with PSR detection)
    and lays a [Prospect](prospect.md) ice-probability field (a GP posterior with explicit
@@ -422,6 +425,8 @@ through the existing Sim/Mind/Guard loop. Sizing and Ledger share one OpenMDAO g
 vehicle⇄economics inner loop; the result is a declarative `MissionSpec` handed to [Ops](ops.md).
 
 ### 13.4 End-to-end — asteroid mining
+> Integration-view summary. The full scenario specification is [scenarios/2-asteroid-mining.md](../scenarios/2-asteroid-mining.md).
+
 1. **Targets & environment.** [Transit](transit.md) supplies NEO ephemerides and the deep-space
    environment; [Worlds](worlds.md) provides small-body shape/gravity; [Prospect](prospect.md)
    the (volumetric, uncertain) ore field; [Link](link.md) DSN windows and light-time.
