@@ -69,6 +69,19 @@ end-to-end loop that a researcher can clone, run, and score, used to bootstrap t
 the extraction assets are modeled. **Stretch / future extension** (documented, not baseline):
 electrolysis to LOX/LH₂ propellant and a propellant-depot value chain (§15).
 
+### 3.1 How these objectives are defined, tracked & optimized
+
+- **Defined** as a machine-readable, Core-validated **`ObjectiveSpec`** authored in
+  [Studio](../architecture/studio.md) (optionally via human-reviewed LLM intent capture). Each
+  success criterion above is **bound to a quantitative [Bench](../architecture/bench.md) metric**
+  (§13) with an explicit target and tolerance — objectives are measurable, not aspirational, and
+  carry uncertainty (conventions.md §1.6). A scalar economic valuation of produced water MAY use the
+  [Ledger](../architecture/ledger.md) framework, but the baseline objective is the metric set itself.
+- **Tracked & optimized** as described in §8.3: the same metric definitions are scored in
+  simulation ([Bench](../architecture/bench.md)) and tracked live in operations
+  ([Ops](../architecture/ops.md)/[View](../architecture/view.md)), and maximized by
+  [Studio](../architecture/studio.md)'s trade-study engine with Pareto support.
+
 ## 4. Mission / Phase / Regime breakdown
 
 The mission is a [`MissionSpec`](../architecture/mission-model.md) with **one `surface` Phase**
@@ -228,6 +241,29 @@ supervises through [View](../architecture/view.md) via **intent-envelope approva
 latency (delay-tolerant adjustable autonomy), with pre-approved contingency branches for
 comms-denied PSR intervals.
 
+### 8.3 Objective tracking & multi-objective optimization
+
+**Where maximization lives.** Optimizing the mission to maximize the §3 objectives is
+[Studio](../architecture/studio.md)'s **trade-study engine** (design mode). Because the campaign is
+inherently multi-objective (water produced vs. energy/kg vs. night-survival robustness vs. comms
+robustness), it returns a **Pareto front** of non-dominated designs rather than a single "best."
+Backends (studio.md §11): **Bayesian multi-objective optimization** (Ax/BoTorch — sample-efficient,
+recommended for expensive [Sim](../architecture/sim.md) evaluations) and **evolutionary** (pymoo
+NSGA-II/III); **scalarization** (weighted/utility functions) is available where a single ranking is
+wanted. Sub-objectives are optimized by the components that own them —
+[Allocate](../architecture/allocate.md) maximizes water-under-constraints (anytime, with optimality
+bounds) and [Learn](../architecture/learn.md) optimizes policy reward — against objectives derived
+from the ObjectiveSpec/metrics.
+
+**Tracking in both modes — one definition, two evaluations.** The *same* metric definitions are
+evaluated in design and operations: [Bench](../architecture/bench.md) scores them over
+[Sim](../architecture/sim.md) rollouts (deterministic, reproducible) during design, and
+[Ops](../architecture/ops.md) tracks live progress against the same targets during operations —
+produced-water burn-down, energy/kg, projected attainment, and margins — surfaced through
+[View](../architecture/view.md). Defining a metric once and evaluating it in both loops is the reuse
+property (system.md §6) that makes a design-time score and an operational reading directly
+comparable.
+
 ## 9. Hard problems exercised
 
 | Problem (charter §7 research / §8 engineering) | How this scenario stresses it |
@@ -363,6 +399,20 @@ Authoritative, traceable requirements. IDs are stable and append-only:
   account (conventions.md §7 tier 1) — "clone, run, score in an afternoon."
 - **LUNAR-TR-005** — Granular physics MUST validate against analytic/lab terramechanics references
   with explicit error budgets (conventions.md §11).
+- **LUNAR-FR-008** — The platform MUST represent each mission objective as a machine-readable
+  `ObjectiveSpec` ([Studio](../architecture/studio.md)) with explicit quantitative targets and
+  tolerances, each success criterion **bound to a [Bench](../architecture/bench.md) metric** (§13).
+- **LUNAR-FR-009** — The platform MUST quantitatively track progress toward each objective in
+  **both simulation** ([Bench](../architecture/bench.md) over [Sim](../architecture/sim.md)) **and
+  operations** ([Ops](../architecture/ops.md), surfaced via [View](../architecture/view.md)), using
+  the **same metric definitions** so the two are comparable.
+- **LUNAR-FR-010** — The platform MUST support **multi-objective optimization** over the objectives,
+  producing a **Pareto front** in [Studio](../architecture/studio.md)'s trade-study engine, with
+  scalarization as an option; sub-objectives are optimized by [Allocate](../architecture/allocate.md)
+  and [Learn](../architecture/learn.md).
+- **LUNAR-TR-006** — Objective metrics MUST be deterministic and content-addressed
+  (conventions.md §5, §11) so a design-time score and an operational reading of the same objective
+  reproduce and are comparable.
 
 ### 12.2 User-experience / high-level workflows
 - **LUNAR-UX-001** — A designer MUST be able to go goal-in → scored-design-out via
@@ -375,6 +425,9 @@ Authoritative, traceable requirements. IDs are stable and append-only:
   explanations (which power floor / comms window / slope limit bound the result).
 - **LUNAR-UX-005** — A researcher MUST be able to submit a policy/planner from
   [Hub](../architecture/hub.md) to the Bench leaderboard and get a reproducible score.
+- **LUNAR-UX-006** — Designers/operators MUST see **quantitative objective progress** (per-metric
+  attainment, burn-down, margins, projected completion) and the **multi-objective trade-offs**
+  (Pareto front) in [Studio](../architecture/studio.md)/[View](../architecture/view.md).
 
 ### 12.3 Data requirements
 - **LUNAR-DR-001** — Inputs: LOLA DEM, SPICE kernels, public water-ice/hydrogen priors
@@ -471,6 +524,11 @@ is **not** exercised here. Still:
   survival check, and how it scores in Bench.
 - **Sim-to-real terramechanics** — honestly bounding low-gravity granular uncertainty without
   on-world data (charter §9).
+- **Objective contract location** — should the `ObjectiveSpec` + objective→metric **binding** be a
+  shared [Core](../architecture/core.md) schema (narrow waist), so [Studio](../architecture/studio.md),
+  [Bench](../architecture/bench.md), [Ledger](../architecture/ledger.md), [Ops](../architecture/ops.md),
+  and [View](../architecture/view.md) all agree on what an objective *is* and how it is measured? If
+  so it is an additive Core change and would go through the RFC process.
 
 ## 17. References
 

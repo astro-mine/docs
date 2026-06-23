@@ -77,6 +77,18 @@ demonstrating the complete launch-to-return mining precursor loop."*
 (measure water yield from a few kg), sustained excavation to tonne scale, and **in-situ-propellant
 return** (using mined volatiles for return Δv) — see §15.
 
+### 3.1 How these objectives are defined, tracked & optimized
+
+- **Defined** as a machine-readable, Core-validated **`ObjectiveSpec`** in
+  [Studio](../architecture/studio.md)'s Mission Architect, rolled up into the Mission's
+  **`objective` value/score model in [Ledger](../architecture/ledger.md)** (mission-model.md §1).
+  Each success criterion above is **bound to a quantitative [Bench](../architecture/bench.md) metric**
+  (§13) with explicit target and tolerance; cost/value/risk are distributions, not point estimates
+  (conventions.md §1.6).
+- **Tracked & optimized** as in §8.3: the same metrics are scored in simulation and tracked live in
+  operations, and maximized by the Mission Architect's trajectory⇄fleet⇄swarm⇄economics
+  co-optimization with Pareto support.
+
 ## 4. Mission / Phase / Regime breakdown
 
 The mission is a [`MissionSpec`](../architecture/mission-model.md#2-core-schema-extensions-additive):
@@ -243,6 +255,28 @@ operational maneuver targeting stays partitioned** (§14). The operator supervis
 [View](../architecture/view.md) via **phase-gated adjustable autonomy**: tight envelopes and
 pre-approved contingency branches for the high-light-time cruise/proximity phases.
 
+### 8.3 Objective tracking & multi-objective optimization
+
+**Where maximization lives.** Maximizing the §3 objectives is [Studio](../architecture/studio.md)'s
+**Mission Architect** trade-study engine, which wraps the design loop in the outer
+**trajectory ⇄ fleet ⇄ swarm ⇄ economics** co-optimization (RFC-0001 §5; system.md §13.3) with the
+**value/score function in [Ledger](../architecture/ledger.md)**. Because a mission is inherently
+multi-objective (delivered sample mass vs. cost/ROI vs. Δv efficiency vs. schedule vs. risk), it
+returns a **Pareto front** of non-dominated mission architectures rather than a single optimum.
+Backends (studio.md §11): Bayesian multi-objective (Ax/BoTorch, recommended for expensive
+evaluations) and evolutionary (pymoo NSGA-II/III); **scalarization** (e.g. risk-adjusted ROI) where
+a single ranking is wanted. [Sizing](../architecture/sizing.md) and [Ledger](../architecture/ledger.md)
+share one OpenMDAO graph for the tight vehicle⇄economics inner loop (RFC-0001 R4); the discrete
+asset↔target↔window↔trajectory choice is [Allocate](../architecture/allocate.md)'s and policy reward
+is [Learn](../architecture/learn.md)'s.
+
+**Tracking in both modes — one definition, two evaluations.** The same metric definitions are scored
+by [Bench](../architecture/bench.md) over [Sim](../architecture/sim.md) rollouts in design and
+tracked live per phase by [Ops](../architecture/ops.md) in operations (delivered-mass progress,
+Δv/propellant margins, schedule vs. window feasibility, projected ROI), surfaced through
+[View](../architecture/view.md). Defining a metric once and evaluating it in both loops makes design
+scores and operational readings comparable (the reuse property, system.md §6).
+
 ## 9. Hard problems exercised
 
 | Problem (charter §7 research / §8 engineering) | How this scenario stresses it |
@@ -375,6 +409,22 @@ Authoritative, traceable requirements. IDs are stable and append-only:
   forward; observation masks MUST gate what policies can see/exchange.
 - **AST-TR-005** — Trade studies MUST fan out on [Cloud](../architecture/cloud.md) (Ray/Argo) as
   reproducible batch jobs.
+- **AST-FR-008** — The platform MUST represent each mission objective as a machine-readable
+  `ObjectiveSpec` rolled up into the Mission's `objective` value model in
+  [Ledger](../architecture/ledger.md), with each success criterion bound to a
+  [Bench](../architecture/bench.md) metric (§13) and explicit targets/tolerances.
+- **AST-FR-009** — The platform MUST quantitatively track progress toward each objective in **both
+  simulation** ([Bench](../architecture/bench.md) over [Sim](../architecture/sim.md)) **and
+  operations** ([Ops](../architecture/ops.md) per phase, via [View](../architecture/view.md)), using
+  the same metric definitions.
+- **AST-FR-010** — The platform MUST support **multi-objective optimization** producing a **Pareto
+  front** in [Studio](../architecture/studio.md)'s Mission Architect (value function in
+  [Ledger](../architecture/ledger.md); Sizing+Ledger share an OpenMDAO graph), with scalarization as
+  an option; the discrete assignment is [Allocate](../architecture/allocate.md)'s and policy reward
+  is [Learn](../architecture/learn.md)'s.
+- **AST-TR-006** — Objective metrics and the mission value model MUST be deterministic/seeded and
+  content-addressed (conventions.md §5, §11) so design scores and operational readings reproduce and
+  are comparable.
 
 ### 12.2 User-experience / high-level workflows
 - **AST-UX-001** — A mission architect MUST be able to go goal-in → `MissionSpec`-out through the
@@ -387,6 +437,10 @@ Authoritative, traceable requirements. IDs are stable and append-only:
   approval; pre-approved contingency branches) appropriate to each phase's light-time.
 - **AST-UX-005** — Allocate decisions surfaced to the operator MUST carry binding-constraint
   explanations (which window/Δv/power floor bound the result).
+- **AST-UX-006** — Designers/operators MUST see **quantitative objective progress** (per-metric
+  attainment, Δv/cost/schedule margins, projected ROI) and the **Pareto frontier** of mission
+  architectures in [Studio](../architecture/studio.md)/[View](../architecture/view.md) (extends
+  AST-UX-002/AST-UX-003).
 
 ### 12.3 Data requirements
 - **AST-DR-001** — Inputs: NEO ephemerides & shape/gravity models (SPICE + small-body packs),
@@ -481,6 +535,11 @@ The track is **opt-in and must not gate the lunar MVP** ([Scenario 1](1-lunar-po
   trajectory⇄fleet⇄swarm⇄economics vs. keeping `MissionSpec` declarative (RFC-0001 R4).
 - **Target selection** — pin a specific representative accessible C-type NEO for the Bench scenario,
   or keep it parametric over a target set.
+- **Objective contract location** — should the `ObjectiveSpec` + objective→metric binding be a
+  shared [Core](../architecture/core.md) schema so [Studio](../architecture/studio.md),
+  [Bench](../architecture/bench.md), [Ledger](../architecture/ledger.md), [Ops](../architecture/ops.md),
+  and [View](../architecture/view.md) agree on what an objective *is* and how it is measured? An
+  additive Core change → RFC process.
 
 ## 17. References
 
