@@ -31,6 +31,13 @@ full sketch is in [mission-model.md](mission-model.md). They obey the same rule 
 in Core — **schema only**: the phase-sequencing *mechanism* lives in the [Sim](sim.md)/[Ops](ops.md)
 runtime and the *policy* in [Studio](studio.md)/Ops, never in Core.
 
+**Mission objectives (Phase 1).** Core additively owns the **`ObjectiveSpec`** schema and the
+**objective→metric binding** — the shared contract by which [Studio](studio.md) states a goal,
+[Bench](bench.md) measures it, [Ledger](ledger.md) values it, and [Ops](ops.md)/[View](view.md)
+track progress against it in both design and operations. Like everything in Core it is **schema
+only**: the optimization (Studio's trade-study engine) and the evaluation (Bench/Ops) live above
+Core. Append-only; reserved in **Phase 1**.
+
 **Primary users:** all developers and every other component. Core is a dependency of everything
 and depends on (almost) nothing.
 
@@ -73,6 +80,7 @@ astro_mine.core
 ├── env/            # Environment API: abstract observation/action/step contracts
 ├── policy/         # Policy & Planner API: decision interfaces, composition contracts
 ├── messages/       # Canonical message schemas (proto + generated types)
+├── objective/      # ObjectiveSpec + objective→metric binding (the shared objective contract)
 ├── registry/       # Plugin manifest schema, discovery, resolution, version negotiation
 ├── units/          # SI units, frames, time (SPICE-backed) helpers and types
 └── compat/         # Interface version negotiation & contract-test utilities
@@ -91,6 +99,10 @@ astro_mine.core
   allocators, and controllers, so layers compose (charter §5.4).
 - **Plugin manifest** — declares a plugin's kind, the Core interface versions it implements,
   its inputs/outputs, resource needs, capability tags, and provenance/signature.
+- **Objective contract** — `ObjectiveSpec` (objective + success criteria + their **binding** to
+  [Bench](bench.md) metrics and the [Ledger](ledger.md) value model); authored by
+  [Studio](studio.md), consumed by Bench/Ledger/[Ops](ops.md)/[View](view.md). Schema only — the
+  optimization and evaluation live above Core.
 
 ### Extension points
 

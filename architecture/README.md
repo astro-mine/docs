@@ -10,6 +10,10 @@ exploration and in-situ resource utilization (ISRU).
 
 ## How these documents fit together
 
+- **[Scenarios](../scenarios/README.md)** — the **flagship use scenarios** (lunar polar ice;
+  asteroid mining) the platform must satisfy. They are the authoritative requirements source
+  these architecture docs are derived from: scenarios say *what* the platform must accomplish,
+  this directory says *how*.
 - **[system.md](system.md)** — the **integration view**: every component, where it runs, who
   uses it, what data it touches, and exactly how the pieces communicate. **Start here.**
 - **[conventions.md](conventions.md)** — the **cross-cutting technology standards** (languages,
