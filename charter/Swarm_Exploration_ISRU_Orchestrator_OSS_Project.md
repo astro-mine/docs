@@ -67,7 +67,7 @@ Astro-Mine is organized as a layered stack. Environment and asset models describ
 
 ![Figure 1. Astro-Mine layered architecture](figure-1-architecture.png)
 
-*Figure 1. Astro-Mine layered architecture. Two modes (design / operate) over a shared simulation and autonomy core, bound by the Astro-Mine-Core interfaces and fed by an open benchmark-and-hub backbone. (Cairn is the old brand name replaced by Astro-Mine)*
+*Figure 1. Astro-Mine layered architecture. Two modes (design / operate) over a shared simulation and autonomy core, bound by the Astro-Mine-Core narrow-waist interfaces and fed by an open benchmark-and-hub backbone. Amber marks the multi-regime mission-architecture extension ([RFC-0001](../rfc/0001-multi-regime-missions.md)): the Mission architecture & logistics layer (Trajectory · Sizing · Ledger), Astro-Mine-Transit, and the Mission/Phase/Regime addition to Core.*
 
 The architectural principle is a thin, stable core with thick, swappable edges. Astro-Mine-Core is small and changes slowly; everything valuable — worlds, robots, planners, policies, ISRU processes — is a plugin that can be contributed, versioned, and replaced without touching the core. That is what converts a toolkit into a platform.
 
