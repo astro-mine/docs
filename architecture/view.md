@@ -1,6 +1,6 @@
 # Astro-Mine-View — Technology Architecture
 
-> Layer: **Design & operations (operations runtime, online mode)** · Phase: **2**
+> Layer: **Design & operations (operations runtime, online mode)** · Phase: **2** · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
 > (reused for design, demos, and teaching across all phases)
 > The eyes of the swarm: see *what* it is doing — and a first-class account of *why*.
 > Cross-cutting standards: see [conventions.md](conventions.md).
@@ -30,10 +30,18 @@ It does, and only does:
   of decisions, alternatives, and the constraints that bound them.
 - **An embeddable component library** — the same widgets host standalone, embed in
   [Studio](studio.md) for design-time visualization, and are reused by [Ops](ops.md).
+- **Trajectory & mission-timeline views (RFC-0001).** For multi-regime missions, View also renders
+  **multi-body / heliocentric trajectories** (transfer arcs, rendezvous geometry, porkchop /
+  launch-window plots), a **mission timeline across regimes and phases**, and **cross-phase plan
+  explanation**. It renders [Trajectory](trajectory.md)'s descriptive `TrajectoryRef` reference arcs
+  and the multi-body geometry from [Transit](transit.md); it stays read-mostly and synthesizes no
+  guidance, consistent with the dual-use boundary (RFC-0001 §6, [mission-model](mission-model.md) §4).
 
 **Explicitly out of scope.** View is **read-mostly**: it computes no plans, runs no physics, owns
 no fleet state, and commands no hardware. It does not *generate* explanations — it *renders* the
 decision traces produced by the autonomy stack (View is a faithful viewer, not a second opinion).
+This holds for trajectories too: View renders descriptive `TrajectoryRef` reference arcs but never
+synthesizes guidance or operational maneuver targeting (RFC-0001 §6).
 Command authority, supervisory override, and the human-in-the-loop control surface live in
 [Ops](ops.md); View provides the picture Ops acts on. It is not a GIS/terrain authoring tool
 (that is [Worlds](worlds.md)) nor a benchmark report generator (that is [Bench](bench.md)).
@@ -108,12 +116,20 @@ astro_mine.view
   [Worlds](worlds.md)), an **imagery/overlay stack** (COG resource fields and uncertainty from
   [Prospect](prospect.md); illumination/PSR masks), and an **entity layer** (assets, trajectories,
   comms links, keep-out volumes) driven by the telemetry channel model.
+- **Scene view modes (RFC-0001).** The Cesium globe handles **body-proximity / surface** rendering
+  (terrain, assets, overlays); a complementary **heliocentric / multi-body view mode** handles the
+  `interplanetary_transit` and `proximity_orbit` regimes — heliocentric transfer arcs, rendezvous
+  geometry, and porkchop / launch-window plots from [Trajectory](trajectory.md) / [Transit](transit.md).
+  The active view mode follows the phase's `regime` so the picture matches what the swarm is doing.
 - **Channel model** — the uniform, time-indexed abstraction every widget reads from. A channel is
   `(id, schema, samples[t])`; it is fed identically by a live stream or an MCAP replay. Schemas are
   the [Core](core.md) message types (Protobuf / FlatBuffers, conventions.md §3).
 - **Clock** — the single timeline. Modes: *live-follow* (track wall/mission time), *fixed-rate
   replay*, and *scrub*. All globe, dashboard, and explanation views subscribe to it, so the whole
-  UI is time-coherent.
+  UI is time-coherent. For multi-regime missions (RFC-0001) the timeline also carries the
+  **phase/regime banding** of the [MissionSpec](mission-model.md) — phases, `PhaseTransition`
+  handoffs, and per-leg trajectory windows — so one scrub spans launch → transit → proximity →
+  surface → return.
 - **Explanation model** — a structured rendering of an upstream decision trace: the chosen plan,
   the assignment and its alternatives/scores, the active constraints (power floors, comms windows,
   keep-out), the trigger that caused a replan, and any [Guard](guard.md) intervention — laid out as
@@ -358,6 +374,7 @@ option for cinematic demos — explicitly not the default (see §11). Measure be
 | **Explanation representation** | Free-text from an LLM; **structured decision-trace rendering**; hybrid | **Render structured upstream decision traces** (MCAP from [Mind](mind.md)/[Allocate](allocate.md)/[Guard](guard.md)) as a timeline + "why this, not that" panel. **Optional LLM layer only to *narrate* the structured trace** ([Studio](studio.md)'s intent-LLM, charter §5.5) — never to invent rationale (principle §3). |
 | **State transport: tiles** | Direct from [Worlds](worlds.md); gateway proxy/cache | **Gateway caching proxy** (CDN-backed) so the browser hits one origin and caches are shared. |
 | **Front-end framework** | React + TS; Vue; Svelte | **React + TypeScript** (conventions.md §2 — non-negotiable platform standard). |
+| **Multi-body / heliocentric view (RFC-0001)** | Extend the Cesium scene with a heliocentric mode; a separate astrodynamics plot widget; both | **Cesium for body-proximity / surface + a complementary heliocentric / multi-body mode** for transit and rendezvous, with a 2D **porkchop / launch-window** plot widget alongside; render [Trajectory](trajectory.md) `TrajectoryRef` arcs and [Transit](transit.md) geometry only — no guidance synthesis (dual-use boundary, RFC-0001 §6). |
 
 **Open questions / research dependencies:**
 
@@ -390,3 +407,8 @@ option for cinematic demos — explicitly not the default (see §11). Measure be
 - **Phase 3+ (later).** Cinematic server-side pixel-streaming (Omniverse/Unreal) for stakeholder
   demos; richer LLM-narrated explanations; thin/mobile and AR/VR clients; flight-adjacent operations
   views as missions mature. All additive — the read-mostly, command-free core stays stable.
+- **Multi-regime mission visualization (RFC-0001, Phase 3).** The heliocentric / multi-body view
+  mode, mission timeline across regimes, and cross-phase plan explanation land in Phase 3 with
+  [Trajectory](trajectory.md) / [Transit](transit.md); they consume the additive
+  [MissionSpec](mission-model.md) / `TrajectoryRef` schemas whose Core hooks are reserved in Phase 1.
+  Read-mostly and additive — no change to the command-free core.

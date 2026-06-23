@@ -8,7 +8,7 @@
 
 ## 1. Executive summary
 
-Astro-Mine is a proposed open-source platform for designing, simulating, and ultimately operating large heterogeneous robotic swarms — orbiters, landers, rovers, hoppers, excavators, haulers, and ISRU plants — for exploration and in-situ resource utilization on the Moon, Mars, and small bodies. The ambition is not a single application but a commons: the shared simulation, benchmark, and orchestration substrate that planetary-swarm robotics is built on, the way ROS and Gazebo became the substrate for terrestrial robotics and Gymnasium became the substrate for reinforcement learning.
+Astro-Mine is a proposed open-source platform for designing, simulating, and ultimately operating large heterogeneous robotic swarms — orbiters, landers, rovers, hoppers, excavators, haulers, and ISRU plants — for exploration and in-situ resource utilization on the Moon, Mars, and small bodies. The ambition is not a single application but a commons: the shared simulation, benchmark, and orchestration substrate that planetary-swarm robotics is built on, the way ROS and Gazebo became the substrate for terrestrial robotics and Gymnasium became the substrate for reinforcement learning. While the anchor use case is surface ISRU on a single body, the platform's scope spans complete multi-regime *missions* — launch, interplanetary transit, body-proximity, surface, ascent, and return — unified by a Mission/Phase model ([RFC-0001](../rfc/0001-multi-regime-missions.md)), so the same commons that designs a lunar prospecting swarm can architect an asteroid-mining or sample-return campaign end to end.
 
 The strategic bet is deliberate. As a venture to fund, this concept ranked last of five precisely because its market does not exist yet. As an open-source project, that same property is its greatest strength: open source is the right vehicle for pre-commercial infrastructure, because it lets a whole field share the cost of building the tools before any one company can justify the investment — and whoever hosts the commons sets the standard the eventual industry inherits.
 
@@ -40,18 +40,19 @@ Under that inversion, P4's fatal flaw becomes its qualification. Nobody funds a 
 
 By contrast, the funding winner — the space-weather/drag/debris digital twin — would be a poor open-source choice: its value lives in aggregated proprietary operator data and an insurance-economics layer, so open-sourcing it gives away the easy physics while the valuable part stays locked. The best thing to fund and the best thing to open-source are nearly opposite. The honest runner-up for open-sourcing was P1 (the Generative Mission Architect), which has a live user base today and a mature open astrodynamics ecosystem to borrow from; the trade is momentum-now (P1) versus a larger, more defensible standard-setting role later (P4). This document pursues P4 on the judgment that planting the commons for an emerging field is worth the slower start.
 
-*One capability is intentionally excluded from the open core: anything resembling a certification-grade flight-code generator (the P3 concept) carries genuine dual-use concern and is kept out of scope. Astro-Mine open-sources the science, simulation, and coordination commons — not turnkey operational targeting.*
+*One capability is intentionally excluded from the open core: anything resembling a certification-grade flight-code generator (the P3 concept) carries genuine dual-use concern and is kept out of scope. Astro-Mine open-sources the science, simulation, and coordination commons — not turnkey operational targeting. Trajectory and mission design enter the commons only as design-time exploration (reference trajectories, Δv budgets, trade studies); converting them into executable maneuver guidance for real flight hardware — operational targeting — and guided atmospheric entry remain out of scope (see [RFC-0001](../rfc/0001-multi-regime-missions.md) and `EXPORT_CONTROL.md`).*
 
 ## 3. Product strategy & positioning
 
 #### What it is
 
-A modular, plugin-based platform spanning two modes over one shared core. The design mode lets a user specify a goal — “produce 10 tonnes of water per month from this crater” — and explore swarm compositions, orbital infrastructure, and cooperative policies in high-fidelity simulation. The operate mode runs a validated campaign, first as a digital-twin shadow of reality and eventually commanding real assets through a hardware abstraction layer. A benchmark-and-hub backbone makes results reproducible and shareable.
+A modular, plugin-based platform spanning two modes over one shared core. The design mode lets a user specify a goal — “produce 10 tonnes of water per month from this crater” — and explore swarm compositions, orbital infrastructure, and cooperative policies in high-fidelity simulation. The operate mode runs a validated campaign, first as a digital-twin shadow of reality and eventually commanding real assets through a hardware abstraction layer. A benchmark-and-hub backbone makes results reproducible and shareable. Beyond a single surface campaign, the design mode also performs *mission architecture* — sequencing a mission across regimes and co-exploring launch vehicles and reusable in-orbit assets, interplanetary trajectories, spacecraft and payload sizing, and mission economics ([RFC-0001](../rfc/0001-multi-regime-missions.md)).
 
 #### Who it is for
 
 - **Researchers** in multi-agent autonomy, planetary robotics, terramechanics, and planetary science — the earliest and largest contributor base, drawn by benchmarks and shared environments.
 - **Mission designers** at agencies and primes running Phase-0/A concept studies for lunar and Martian surface campaigns.
+- **Mission & systems engineers, astrodynamicists, and resource economists** architecting multi-regime missions — transfers, fleet sizing, and mission economics — a contributor base added with the mission-architecture extension ([RFC-0001](../rfc/0001-multi-regime-missions.md)).
 - **NewSpace and ISRU startups** that cannot afford to build a full simulation and autonomy stack from scratch.
 - **Educators and students** who need an accessible, runnable platform for space-robotics coursework and competitions.
 - **Operators (later)** of real surface fleets, once missions reach the scale where manual scripting no longer suffices.
@@ -70,6 +71,8 @@ Astro-Mine is organized as a layered stack. Environment and asset models describ
 
 The architectural principle is a thin, stable core with thick, swappable edges. Astro-Mine-Core is small and changes slowly; everything valuable — worlds, robots, planners, policies, ISRU processes — is a plugin that can be contributed, versioned, and replaced without touching the core. That is what converts a toolkit into a platform.
 
+The stack is unified by one further abstraction: a **Mission** — an ordered set of **Phases**, each in a **Regime** (launch, interplanetary transit, body-proximity, surface, ascent/return, Earth-interface). A single-body surface campaign is simply the one-phase case, so this generalization is additive: it lets the same components design and operate complete multi-regime missions without disturbing existing scenarios. It introduces one new component layer — **mission architecture & logistics** — and a deep-space environment component, detailed in [RFC-0001](../rfc/0001-multi-regime-missions.md) and the [architecture documentation](../architecture/system.md).
+
 ## 5. Component catalog
 
 The packages below are grouped by layer. Names are illustrative but chosen to read as a real ecosystem. Each is independently useful, which matters: contributors adopt one package for their own problem long before anyone runs the whole stack.
@@ -83,6 +86,7 @@ The substrate: where the swarm operates and what is in the ground. These package
 | **Astro-Mine-Worlds** | Parameterized celestial-body environments: gravity, terrain from real DEMs, regolith mechanics, surface thermal, lighting and shadowing (including permanently shadowed regions), and dust. | Planetary scientists, simulation builders | Select and configure a world (e.g., the Shackleton crater rim) as the physical substrate for any scenario. |
 | **Astro-Mine-Prospect** | Probabilistic resource-field models — water ice, mineral concentration — expressed as geostatistical distributions with explicit uncertainty rather than single guesses. | ISRU planners, planetary scientists | Defines what resources exist and how uncertain they are, which drives prospecting, sampling, and active-perception tasks. |
 | **Astro-Mine-Link** | Communications environment: line-of-sight, relay geometry, latency, bandwidth, and Earth-link windows via relay orbiters or deep-space ground stations. | Comms and operations engineers | Models when and where agents can talk to each other and to Earth — the constraint that makes coordination hard. |
+| **Astro-Mine-Transit** *(RFC-0001)* | Interplanetary / free-space dynamical and hazard environment between bodies: n-body ephemerides and gravity, radiation, thermal/eclipse, and micrometeoroid models for cruise and station-keeping. | Astrodynamicists, mission & systems engineers | Provides the physical substrate for the transit and proximity regimes — what Worlds is to a body, Transit is to the space between them. |
 
 ### 5.2 Asset & agent models
 
@@ -139,6 +143,18 @@ The machinery that makes Astro-Mine a shared standard rather than a pile of code
 | **Astro-Mine-Hub** | Registry for sharing and discovering trained policies, worlds, assets, and plugins, in the spirit of a model hub. | Everyone | Distribute and reuse community contributions; the network that compounds the project's value. |
 | **Astro-Mine-Cloud** | Distributed simulation orchestration on Kubernetes and Ray for large-scale parameter sweeps and training. | Power users, organizations | Run thousands of simulations in parallel for design optimization and policy training. |
 
+### 5.8 Mission architecture & logistics *(RFC-0001)*
+
+Design-time engines for complete multi-regime missions: how to get there, what to fly, and whether it pays. They run upstream of the swarm-design loop and are orchestrated by Astro-Mine-Studio's Mission Architect mode.
+
+| **Package** | **What it does** | **Primary users** | **How it's used** |
+|---|---|---|---|
+| **Astro-Mine-Trajectory** | Design-time trajectory & maneuver optimization across regimes — launch injection, transfers, rendezvous, proximity, and return; launch/return window scans; Δv/time-of-flight trades. Produces descriptive reference trajectories, not executable guidance. | Astrodynamicists, mission designers | Find feasible transfers and budgets that constrain fleet sizing and task allocation. |
+| **Astro-Mine-Sizing** | Spacecraft & payload systems-engineering sizing: mass/power/propellant/staging budgets, payload packing, launch manifesting, and reusable-in-orbit-asset accounting. | Mission & systems engineers | Answer "what spacecraft, what payload, and what can I reuse in orbit" given a mission's Δv and throughput needs. |
+| **Astro-Mine-Ledger** | Open techno-economic & logistics modeling — cost, value, and risk under explicit uncertainty — the mission-level objective/value function. Proprietary cost data stays a commercial plugin. | Mission economists, designers | Provide the value function that mission trade studies optimize against. |
+
+These engines depend only on additive Astro-Mine-Core schema hooks (the Mission/Phase/Regime model); existing components are *extended, not replaced* — for small bodies, microgravity, deep-space comms, propulsion, and multi-phase operations. See [RFC-0001](../rfc/0001-multi-regime-missions.md) §4 for the per-component extensions.
+
 ## 6. How the pieces connect into one ecosystem
 
 The components form two loops — a design/training loop and an operations loop — that share the same simulation core and the same Astro-Mine-Core interfaces, with the benchmark-and-hub backbone capturing and redistributing everything produced.
@@ -177,6 +193,12 @@ Astro-Mine should integrate aggressively and reinvent as little as possible. The
 - Operations and visualization: OpenMCT for mission control, Cesium and 3D Tiles for geospatial rendering.
 - Scale and packaging: Kubernetes, Ray, and containerization for distributed simulation and training; ONNX for portable policies.
 
+#### Mission architecture & small bodies *(RFC-0001)*
+
+- Trajectory design: ESA's **pykep / pygmo** (global and low-thrust trajectory optimization), **poliastro**, with **Orekit**, **Basilisk**, and **GMAT / STK** as propagators and verification oracles.
+- Spacecraft sizing & economics: **OpenMDAO** (NASA multidisciplinary design analysis & optimization) for coupled mass/power/propellant budgets and the techno-economic objective.
+- Small bodies: polyhedral / mascon gravity models and shape-model tooling; **Project Chrono** (and similar DEM engines) for microgravity granular contact and anchoring.
+
 ## 8. Research that must be performed
 
 Astro-Mine is not only an engineering build; several of its load-bearing capabilities are open research problems. Framing them as community benchmarks (Section 10) is how the project turns hard science into shared progress.
@@ -191,6 +213,10 @@ Astro-Mine is not only an engineering build; several of its load-bearing capabil
 - **Swarm state estimation and SLAM in feature-poor, GNSS-denied environments.** Collaborative localization where landmarks are scarce and absolute positioning is unavailable.
 - **Energy- and thermal-aware ultra-long-horizon planning.** Surviving the ~14-day lunar night reframes planning around survival, not just productivity.
 - **Evaluation science for swarm campaigns.** Defining what “good” even means for a multi-week, multi-robot ISRU campaign is itself a research contribution.
+- **Joint multi-regime mission optimization.** *(RFC-0001)* Co-optimizing discrete assignment, continuous interplanetary trajectories, fleet sizing, and economics under uncertainty — across launch, transit, proximity, surface, and return — resists decomposition.
+- **Microgravity proximity operations and anchoring.** *(RFC-0001)* Contact, regolith interaction, and anchoring on irregular, low-gravity, possibly tumbling small bodies, with sim-to-real credibility despite almost no ground-truth data.
+- **Autonomous navigation around uncharacterized irregular bodies.** *(RFC-0001)* Relative navigation and shape/gravity estimation where the body's model is uncertain on arrival, GNSS-denied and feature-poor.
+- **Window-gated, no-recovery decision-making under deep-space latency.** *(RFC-0001)* One-shot, orbital-mechanics-deadlined operations supervised across minutes-to-tens-of-minutes light-time.
 
 ## 9. The hardest engineering problems
 
@@ -203,6 +229,9 @@ Distinct from the open research questions, these are the build problems most lik
 - **Verifiable safety of learned policies under latency.** Guaranteeing learned controllers cannot violate hard constraints, in a domain with no recovery and seconds-to-minutes of delay, without neutering their performance.
 - **A durable abstraction across orbital, surface, manipulation, and ISRU.** Designing Astro-Mine-Core so one interface set spans regimes from orbital relays to excavation without becoming a leaky, ever-growing god-interface — the platform-design problem on which the whole ecosystem rests.
 - **Heterogeneity without abstraction collapse.** Representing orbiters, hoppers, and excavators in one framework while keeping each well enough modeled to be useful.
+- **One abstraction from launch to return.** *(RFC-0001)* Spanning launch, interplanetary transit, body-proximity, surface, and return in a single Core without the narrow waist becoming a leaky god-interface — the multi-regime form of the durable-abstraction problem above.
+- **Trajectory ⇄ fleet ⇄ swarm ⇄ economics co-optimization.** *(RFC-0001)* A tightly-coupled, mixed discrete/continuous search across regimes that resists both pure optimization and pure learning.
+- **Microgravity contact and anchoring at interactive speed.** *(RFC-0001)* Bounded-error simulation of low-gravity granular interaction and anchoring — even harder, and even more data-starved, than surface excavation.
 
 ## 10. Building a platform, not a tool
 
@@ -226,7 +255,7 @@ To be trusted as neutral infrastructure, Astro-Mine should live under an open fo
 
 #### 10.5 Interop-first, and honest about dual use
 
-Astro-Mine bridges to ROS 2, cFS, F´, SPICE, OpenMCT, and STK/GMAT rather than competing with them, lowering adoption cost and avoiding fragmentation. And because this is space and robotics technology, the project must take export control (ITAR/EAR) and dual-use seriously from day one: keep the scientific, simulation, and coordination core open and broadly available, partition genuinely sensitive operational capabilities, and document a clear compliance posture. Open does not mean naive.
+Astro-Mine bridges to ROS 2, cFS, F´, SPICE, OpenMCT, and STK/GMAT rather than competing with them, lowering adoption cost and avoiding fragmentation. And because this is space and robotics technology, the project must take export control (ITAR/EAR) and dual-use seriously from day one: keep the scientific, simulation, and coordination core open and broadly available, partition genuinely sensitive operational capabilities, and document a clear compliance posture. Open does not mean naive. The mission-architecture extension makes this line explicit: trajectory and mission design are open only as *design-time exploration* (reference trajectories, Δv budgets, trade studies), while operational maneuver targeting and guided atmospheric entry stay partitioned and out of scope — gated by an `operational_targeting` capability tag — and mission economics ships as an open *framework* with proprietary cost data kept in the commercial layer ([RFC-0001](../rfc/0001-multi-regime-missions.md)).
 
 ## 11. Phased roadmap
 
@@ -237,15 +266,17 @@ The sequencing principle is to land where users exist now and expand toward oper
 | **0 · ~0–12 mo** | Commons seed | Astro-Mine-Core (interfaces v0.1), Astro-Mine-Sim, Astro-Mine-Worlds, Astro-Mine-Fleet, Astro-Mine-Bench — with one or two reference scenarios (e.g., lunar polar water prospecting). | A runnable benchmark that attracts the first researchers. |
 | **1 · ~12–30 mo** | Autonomy & studio | Astro-Mine-Mind, Astro-Mine-Learn, Astro-Mine-Allocate, Astro-Mine-Guard, Astro-Mine-Studio, Astro-Mine-Hub; first public leaderboards and community plugins. | Become the MARL and planning commons for planetary swarms. |
 | **2 · ~30–54 mo** | Operations bridge | Astro-Mine-Ops, Astro-Mine-Bridge, Astro-Mine-View; digital-twin shadow mode; validation against terrestrial analog rover-swarm field tests. | Cross the simulation-to-operations threshold on Earth analogs. |
-| **3 · 54 mo +** | Flight & ecosystem | Flight-software integration, mission partnerships, new environments (asteroids, icy moons) as plugins, third-party commercial layers. | Become the default stack as the cislunar economy matures. |
+| **3 · 54 mo +** | Flight, mission architecture & ecosystem | Flight-software integration, mission partnerships, and the **multi-regime mission-architecture track** (Astro-Mine-Transit, -Trajectory, -Sizing, -Ledger; small-body and microgravity extensions) with **NEO rendezvous + sample-return** and **asteroid-mining** reference scenarios; new environments (asteroids, icy moons) as plugins; third-party commercial layers. | Become the default stack — for surface ISRU and full interplanetary resource missions — as the cislunar economy matures. |
+
+The mission-architecture track *(RFC-0001)* is an **opt-in workstream that must not gate the lunar MVP**; its only early obligation is reserving the additive Mission/Phase/Regime Core schema hooks during Phase 1, while Core is already being extended for autonomy. Implementations land in Phase 3, with the NEO sample-return scenario as the stepping stone before full asteroid mining.
 
 ## 12. Key risks & mitigations
 
 - **Market timing (the core risk).** The operational market is years away. Mitigation: anchor in research and education, where users and value exist today, so the project thrives regardless of when flight demand arrives.
-- **Scope explosion.** The vision spans orbital mechanics to excavation. Mitigation: ruthless narrow-waist discipline and a small number of reference scenarios that define “done” for each phase.
+- **Scope explosion.** The vision spans orbital mechanics to excavation. Mitigation: ruthless narrow-waist discipline and a small number of reference scenarios that define “done” for each phase. The multi-regime mission-architecture extension *(RFC-0001)* widens scope further; it is contained by keeping the generalization additive (a Mission is a sequence of existing-style phases), integrating external astrodynamics/MDO tools rather than rebuilding them, gating the track behind the lunar MVP, and keeping it an opt-in workstream.
 - **Sim-to-real credibility.** Results no one trusts are worthless. Mitigation: uncertainty-honest claims and early terrestrial analog validation.
 - **Fragmentation against existing tools.** Competing with ROS or Isaac would be fatal. Mitigation: interop-first — build on them, bridge to them, never replace them.
-- **Export control / dual use.** Space tech carries real compliance obligations. Mitigation: governance, capability partitioning, and a documented posture from day one.
+- **Export control / dual use.** Space tech carries real compliance obligations. Mitigation: governance, capability partitioning, and a documented posture from day one. Trajectory and mission design sharpen this risk: they are admitted only as design-time exploration, with operational maneuver targeting and guided entry partitioned out and gated by an `operational_targeting` capability tag *(RFC-0001)*.
 - **Sustaining the commons.** Open projects starve without stewardship. Mitigation: an open foundation, sponsor model, and a permissive license that lets commercial layers fund the core.
 
 ## 13. Recommended next steps
@@ -255,5 +286,6 @@ The sequencing principle is to land where users exist now and expand toward oper
 - **Stand up the minimum runnable loop** — Astro-Mine-Sim + Astro-Mine-Worlds + Astro-Mine-Fleet + Astro-Mine-Bench on one scenario, so a researcher can clone, run, and score a baseline in an afternoon.
 - **Publish the first benchmark and a paper,** and recruit two or three anchor academic labs as founding contributors.
 - **Establish governance and license up front** — foundation home, Apache-2.0, RFC process, and an export-control posture — before the community forms, not after.
+- **Reserve the Mission/Phase/Regime Core hooks early** *(RFC-0001)* — design the additive mission schema (Mission, Phase, Regime, and propulsion SADF capabilities) into Core v0.x during Phase 1, so the multi-regime track can land in Phase 3 without retrofitting the narrow waist.
 
 *The defining insight to carry forward: the property that made this the weakest thing to fund — a market that does not yet exist — is exactly what makes it the strongest thing to open-source. Astro-Mine is a bet that the field arrives, and that whoever builds its commons first will be standing at the center of it when it does.*

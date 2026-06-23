@@ -1,6 +1,6 @@
 # Astro-Mine-Transit — Technology Architecture
 
-> Status: **Proposed** — pending [RFC-0001: Multi-regime missions](../rfc/0001-multi-regime-missions.md).
+> Status: **Accepted** ([RFC-0001: Multi-regime missions](../rfc/0001-multi-regime-missions.md)) — implementation Phase 3.
 > Layer: **World & environment models** · Phase: **3** (proposed)
 > The deep-space / free-space environment *between* bodies: the n-body dynamical substrate
 > and the long-cruise hazard environment (radiation, thermal/eclipse, micrometeoroid) for the

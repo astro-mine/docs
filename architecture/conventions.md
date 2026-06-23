@@ -219,6 +219,11 @@ code version, the environment lockfile, and the random seed. Datasets and polici
 - Follow `astro-mine/.github` **EXPORT_CONTROL.md**; document a clear EAR/ITAR posture per
   component where relevant (notably `Bridge`, `Ops`, parts of `Mind`/`Allocate`).
 - "Open does not mean naive": capability gating is a first-class design concern, not a bolt-on.
+- **Trajectory & mission design are design-time only** ([RFC-0001](../rfc/0001-multi-regime-missions.md)):
+  reference trajectories and Δv budgets are *descriptive* artifacts for trade studies; operational
+  maneuver targeting and guided atmospheric entry are partitioned out and gated by an
+  `operational_targeting` capability tag at the registry/`Bridge` boundary. Mission economics
+  (`Ledger`) ships as an open framework with proprietary cost data kept in the commercial layer.
 
 ---
 

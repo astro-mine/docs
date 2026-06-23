@@ -1,6 +1,6 @@
 # Astro-Mine-Guard — Technology Architecture
 
-> Layer: **Autonomy & coordination** · Phase: **1** · **safety-critical**
+> Layer: **Autonomy & coordination** · Phase: **1** · **safety-critical** · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
 > Runtime assurance: the verifiable shield that wraps any policy so hard constraints cannot be violated.
 > Cross-cutting standards: see [conventions.md](conventions.md).
 
@@ -44,6 +44,15 @@ story that learned methods otherwise lack"); §8 ("verifiable runtime assurance 
 multi-agent policies"); §9 ("verifiable safety of learned policies under latency" — guarantee learned
 controllers cannot violate hard constraints in a domain with no recovery and seconds-to-minutes of
 delay, *without neutering performance*). Roadmap Phase 1 (§11).
+
+**Deep-space, one-shot assurance (RFC-0001).** Under multi-regime missions, Guard's remit extends to
+**deep-space, one-shot, window-gated** events — proximity ops, landing/anchoring, and maneuvers that
+are *no-recovery* under tens-of-minutes light-time latency (from [Link](link.md)). Guard's existing
+discipline carries directly: it remains independent of the policies it protects and fail-safe, and its
+verdicts/clearance still gate actuation through [Ops](ops.md)→[Bridge](bridge.md). The per-phase
+[mission model](mission-model.md) means the **assurance posture is set per regime** (a different
+`SafetySpec` profile, shield set, and margins for each phase), not once per mission. This is a Phase-3
+extension; the only Phase-1 obligation is that nothing in the core design precludes it.
 
 ---
 
@@ -151,6 +160,13 @@ last line of defense never depends on a network round-trip. A **central Guard su
 verdicts, manages multi-agent responsibility partitioning in `coord`, and surfaces fleet-level safety
 state — but the per-agent local shield can enforce its agent's hard constraints autonomously even if
 the supervisor is unreachable.
+
+**Deep-space, one-shot assurance (RFC-0001).** In deep-space phases this hybrid tilts further toward
+the edge: at tens-of-minutes light-time ([Link](link.md)) any ground-side or central supervisor is
+**far off the critical path**, so the autonomous per-agent edge shield carries even more of the safety
+story for no-recovery events. The active `SafetySpec`/shield profile is selected per phase from the
+[mission model](mission-model.md)'s regime, so proximity, landing/anchoring, and maneuver phases each
+run their own assurance posture.
 
 ---
 
@@ -360,6 +376,13 @@ monitor or an infeasible/uncertifiable filter forces the backup.
   constraint locally (§8). Under comms loss, agents fall back to conservative margins and, if needed,
   safe states — degrade, never collapse (charter §9; conventions.md §8). This is the explicit answer
   to charter §9's "verifiable safety… under latency."
+- **Deep-space, one-shot assurance (RFC-0001).** Multi-regime missions push this regime to its
+  extreme: at tens-of-minutes light-time ([Link](link.md)), worst-case-staleness margins grow
+  accordingly and the **autonomous per-agent edge shield carries even more of the safety story**,
+  because the central supervisor is off the critical path by light-time. Proximity ops,
+  landing/anchoring, and maneuvers are **no-recovery, window-gated events** with no second attempt, so
+  the certify-or-fall-safe verdict is the last line of defense; the per-phase posture
+  ([mission model](mission-model.md)) lets each such phase carry its own margins and backup behaviors.
 
 ### 9.5 Conventional security & supply chain (conventions.md §9)
 
@@ -431,6 +454,11 @@ monitor or an infeasible/uncertifiable filter forces the backup.
   depends on [Sim](sim.md)/[Surrogate](surrogate.md) producing trustworthy, error-bounded models.
 - How much of the TCB can be brought under machine-checked formal verification (Kani/model checking)
   while keeping it practical to evolve.
+- **Deep-space, one-shot assurance (RFC-0001).** How to size worst-case-staleness margins and
+  certify *single-shot, no-recovery* events (proximity ops, landing/anchoring, maneuvers) at
+  tens-of-minutes light-time ([Link](link.md)), and how to author and validate **per-phase**
+  `SafetySpec` profiles for the [mission model](mission-model.md)'s regimes — co-designed with
+  [Mind](mind.md) and [Ops](ops.md). (Phase 3.)
 
 ---
 
@@ -450,3 +478,7 @@ monitor or an infeasible/uncertifiable filter forces the backup.
 - **Phase 3 (mostly out of open scope).** The embeddable Rust core behind [Bridge](bridge.md)
   flight-software adapters; certification-grade flight assurance remains **partitioned and
   access-controlled**, not part of the open core (charter §2.2, §10.5).
+- **Phase 3 — multi-regime assurance ([RFC-0001](../rfc/0001-multi-regime-missions.md)).** Per-phase
+  assurance posture and deep-space, one-shot, window-gated shielding land in Phase 3; no Core schema
+  hooks are reserved in Phase 1, since Guard consumes the [mission model](mission-model.md)'s `regime`
+  / `PhaseTransition` contract rather than defining it.

@@ -1,6 +1,6 @@
 # Astro-Mine-Link — Technology Architecture
 
-> Layer: **World & environment models** · Phase: **0–1**
+> Layer: **World & environment models** · Phase: **0–1** · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
 > The communications environment: models *when* and *where* agents can talk to each other and
 > to Earth — the constraint that makes coordination hard.
 > Cross-cutting standards: see [conventions.md](conventions.md).
@@ -29,6 +29,16 @@ Concretely, Link:
   derived **contact graph** suitable for delay-tolerant routing;
 - contributes **communication observation masks** to the [Core](core.md) Environment API so a
   policy literally cannot observe or message a peer that is currently unreachable.
+
+**Deep-space comms (RFC-0001).** Under [RFC-0001](../rfc/0001-multi-regime-missions.md), Link's
+scope extends from cislunar to **deep space** for the `interplanetary_transit` and `proximity_orbit`
+regimes ([mission-model](mission-model.md) §1.2). The same machinery — geometry-first visibility,
+parametric link budgets, store-and-forward delivery — applies, but with three regime-driven
+shifts: **DSN contact scheduling** with sparse Earth-link windows; **light-time delay of minutes
+to tens of minutes** (vs. the Moon's ~1.3 s one-way), which dominates latency and drives the
+delay-tolerant autonomy posture; and **occultation by small / irregular bodies**, which shares its
+geometry with [Transit](transit.md). This is an additive Phase-3 extension — the lunar model is
+the degenerate near-Earth case and is unchanged.
 
 **Explicitly out of scope.** Link is *not* a network stack and not a flight radio. It does **not**
 implement an actual DTN agent that ships bundles in production (it *models* store-and-forward
@@ -140,6 +150,16 @@ astro_mine.link
   G/T, frequency band, supported mod/cod, pointing capability — read from the [Core](core.md)
   SADF schema. Relay orbiters and ground stations may themselves be SADF assets.
 
+**Deep-space extension (RFC-0001).** For the `interplanetary_transit`/`proximity_orbit` regimes,
+the same modules apply with a regime-aware reach: `constellation/ground.py` schedules **DSN passes**
+into sparse Earth-link windows; `budget/propagation.py` computes **light-time of minutes to tens of
+minutes** from heliocentric/free-space geometry rather than the lunar ~1.3 s; `geometry/occlusion.py`
+adds **small/irregular-body occultation** (shared geometry with [Transit](transit.md)); and
+`network/dtn.py`'s store-and-forward becomes load-bearing over the intermittent, long-delay links.
+Free-space frame context for these regimes comes from [Transit](transit.md) (no terrain), alongside
+[Worlds](worlds.md) for the body itself; per-phase regime selection follows
+[mission-model](mission-model.md) §1.
+
 ### Extension / plugin points
 
 Per conventions.md §1.3, Link is itself a **Core environment-model plugin** (declared in its
@@ -212,6 +232,13 @@ fading model is enabled).
 
 **Versioning.** Link declares the Core interface major versions it supports; products carry the
 Link SemVer and Core schema versions they were produced against (conventions.md §13).
+
+**Deep-space data (RFC-0001).** No new product types are needed: deep-space contact plans, DSN
+window catalogs, and **DTN / Bundle-Protocol** store-and-forward delivery use the existing
+`ContactPlan`, contact-graph, and ground-station-catalog formats above. Products gain a `regime`
+tag (per the [Core](core.md) Environment-API `regime` descriptor, [mission-model](mission-model.md)
+§2.2) so consumers can distinguish a near-Earth (~1.3 s) plan from a minutes-to-tens-of-minutes
+light-time deep-space plan, and the content-address key extends to cover the active regime.
 
 ---
 
@@ -361,6 +388,15 @@ precompute jobs ride **NATS/JetStream** for lifecycle events (conventions.md §4
 - **Fading/availability uncertainty model.** How to express link availability under pointing error
   and (Mars) atmospheric/dust effects as first-class uncertainty (conventions.md §1.6).
 
+**Deep-space comms (RFC-0001).** For deep space, the recommended choices above carry over with
+regime tuning: **SPICE GF** handles small/irregular-body occultation (shared with
+[Transit](transit.md)); the **parametric link budget** spans DSN ranges; and the **abstract
+store-and-forward over a CGR-style contact graph** is the right default for **DTN / Bundle Protocol**
+over intermittent, long-delay links, with the optional **Bundle-Protocol-fidelity** plugin reserved
+for deep-space benchmarks where minutes-to-tens-of-minutes light-time makes delivery-time realism
+load-bearing. The much larger latency drives the **delay-tolerant autonomy posture** that
+[Ops](ops.md)/Guard consume; Link supplies the windows and modeled delivery times, not the policy.
+
 ---
 
 ## 12. Roadmap alignment
@@ -379,3 +415,9 @@ precompute jobs ride **NATS/JetStream** for lifecycle events (conventions.md §4
 - **Later (Phase 2–3).** Optional **ns-3 packet-level** fidelity plugin and **Bundle-Protocol**
   fidelity; Mars atmospheric/dust link effects; live-mission link prediction (capability-gated per
   §9) for [Ops](ops.md) once operations cross to Earth analogs and beyond.
+- **Phase 3 — deep-space comms (RFC-0001).** DSN contact scheduling with sparse Earth-link windows,
+  minutes-to-tens-of-minutes light-time, **DTN / Bundle Protocol** store-and-forward, and
+  small/irregular-body occultation for the `interplanetary_transit`/`proximity_orbit` regimes
+  (consuming [Transit](transit.md), feeding the delay-tolerant posture in [Ops](ops.md)/Guard). The
+  enabling **Core Environment-API `regime` hooks are reserved in Phase 1** ([mission-model](mission-model.md)
+  §3), implementation in Phase 3; the lunar model stays the unchanged near-Earth default.

@@ -1,6 +1,6 @@
 # Astro-Mine-Core — Technology Architecture
 
-> Layer: **Commons backbone** · Phase: **0** (interfaces v0.1)
+> Layer: **Commons backbone** · Phase: **0** (interfaces v0.1) · Mission/Phase/Regime hooks added in Phase 1 ([RFC-0001](../rfc/0001-multi-regime-missions.md))
 > The narrow waist. The single most important package to design well.
 > Cross-cutting standards: see [conventions.md](conventions.md).
 
@@ -21,6 +21,15 @@ package and every third-party plugin speaks to. It defines, and only defines:
 and *no* heavy dependencies. If something can live in a plugin, it MUST NOT live in Core. Core
 ships reference *types and validators*, not reference *implementations* (those are separate
 packages that depend on Core).
+
+**Multi-regime missions (RFC-0001).** Core additively absorbs the Mission/Phase/Regime model —
+the `MissionSpec` schema, a bounded `regime` dimension and `PhaseTransition` events on the
+Environment API, propulsion/staging/return SADF capability declarations, the descriptive
+design-time `TrajectoryRef`/`ManeuverBudget` message schemas, and an `operational_targeting`
+capability tag that gates dual-use. These are append-only additions, reserved in **Phase 1**; the
+full sketch is in [mission-model.md](mission-model.md). They obey the same rule as everything else
+in Core — **schema only**: the phase-sequencing *mechanism* lives in the [Sim](sim.md)/[Ops](ops.md)
+runtime and the *policy* in [Studio](studio.md)/Ops, never in Core.
 
 **Primary users:** all developers and every other component. Core is a dependency of everything
 and depends on (almost) nothing.

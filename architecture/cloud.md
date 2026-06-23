@@ -1,7 +1,7 @@
 # Astro-Mine-Cloud — Technology Architecture
 
 > Layer: **Commons backbone & platform infrastructure** · Phase: **1** (but underpins
-> scale-out from Phase 0 onward)
+> scale-out from Phase 0 onward) · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
 > The horizontal scale-out substrate: Kubernetes + Ray + Argo that runs thousands of
 > simulations, training jobs, solves, and evaluations in parallel for the whole platform.
 > Cross-cutting standards: see [conventions.md](conventions.md).
@@ -13,7 +13,12 @@
 `Astro-Mine-Cloud` is the **distributed-execution substrate** for the platform — the "how to
 run lots of it" layer. It takes workloads *defined by other components* and runs them at scale
 on a cluster: parameter sweeps, training runs, large solves, surrogate fitting, and benchmark
-evaluation batches. Concretely, it provides:
+evaluation batches. **Mission-design sweep workloads (RFC-0001).** It also schedules the design-time
+batch workloads of the mission-architecture layer — embarrassingly-parallel trajectory window /
+global-optimization sweeps from [Trajectory](trajectory.md) (e.g. pygmo island-model runs, porkchop
+scans) and OpenMDAO design sweeps for [Sizing](sizing.md)/[Ledger](ledger.md) co-optimization. These
+are additional workload *classes* on the existing substrate, not a new infra primitive. Concretely,
+it provides:
 
 - a **Kubernetes-based execution platform** with curated operators (KubeRay, Argo Workflows,
   the NVIDIA GPU Operator) and a hardened base for running the platform's OCI workloads
@@ -157,6 +162,14 @@ content-addressed outputs → `runs/` records provenance to MLflow and emits a c
 **NATS/JetStream** (conventions.md §4) that [Bench](bench.md), [Studio](studio.md), or [Hub](hub.md)
 consume. The *exact same* `submit()` call, with a `local` backend, runs the job in-process or via
 `docker compose` on a workstation.
+
+**Mission-design sweeps (RFC-0001).** The new design-time workloads compile onto the existing
+abstractions with no new construct: a porkchop / launch-window scan or an OpenMDAO design sweep is a
+`SweepSpec`/`WorkflowSpec` fanned out by **Argo** (embarrassingly-parallel, DAG); a pygmo
+island-model global optimization, whose islands exchange candidates, maps onto a tightly-coupled
+**RayJob** like a distributed [Allocate](allocate.md) solve. Both consume content-addressed
+`MissionSpec`/`TrajectoryRef` inputs and emit content-addressed artifacts, so a mission trade study
+reproduces exactly (see [mission-model](mission-model.md), conventions.md §5, §11).
 
 ---
 
@@ -324,6 +337,12 @@ slices. Multi-fidelity is exploited *for* cost — cheap surrogate/low-fidelity 
 parallel on cheap spot CPU, high-fidelity validation runs on fewer, reliable nodes. Every
 performance claim ships with a reproducible benchmark (conventions.md §8).
 
+**Mission-design sweeps (RFC-0001).** The trajectory/sizing/ledger sweeps are largely **CPU-bound**
+(vs the GPU sim/training workloads), so they fan out on the cheap spot CPU pools at the same
+scaling-efficiency targets as Argo batch above. They follow the same **spot/preemptible +
+checkpoint-to-resume** discipline: a porkchop scan check-points per-window and a pygmo island run
+check-points per-generation, so an eviction loses at most one interval.
+
 ---
 
 ## 9. Security, safety & compliance
@@ -401,6 +420,12 @@ tenants* on *shared hardware*.
 | **Experiment tracking** | MLflow; Weights & Biases | **MLflow** (OSS default, self-hostable on-cluster); W&B as a hosted option (conventions.md §6). |
 | **GitOps / install** | Helm only; Helm + Argo CD/Flux | **Helm packaging + GitOps (Argo CD or Flux)** for reproducible, auditable cluster state. |
 
+**Mission-design sweeps (RFC-0001).** No new decision row is needed: the design-time
+trajectory/sizing/ledger sweeps reuse the existing **Ray (tightly-coupled) + Argo
+(DAG/embarrassingly-parallel)** split — porkchop/window scans and OpenMDAO sweeps on Argo,
+island-model global optimization on Ray — with the same spot/preemptible + checkpointing and
+content-addressing recommendations above.
+
 **Open questions / research dependencies:**
 
 - **Tightly-coupled scaling limits for MARL** — where the Ray learner/aggregation step becomes the
@@ -430,6 +455,9 @@ tenants* on *shared hardware*.
   isolation. This makes the design/training loop (charter §6) runnable "at scale on
   Astro-Mine-Cloud" and backs [Studio](studio.md)'s heavy jobs and first public
   [Bench](bench.md) leaderboards.
+- **Phase 3 (multi-regime missions, RFC-0001):** schedule the mission-design sweep workload classes
+  ([Trajectory](trajectory.md)/[Sizing](sizing.md)/[Ledger](ledger.md)) as additional Ray/Argo
+  workloads on the same substrate — no new infra primitive (Core schema hooks land Phase 1).
 - **Phase 2+:** stronger multi-tenancy (vCluster / per-tenant clusters), on-prem/HPC adapters,
   advanced data-locality caching, refined cost/budget governance, and hosting the operations-tier
   services as the platform crosses into the operations loop. The measure of success: the *same*

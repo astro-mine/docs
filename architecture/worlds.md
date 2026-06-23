@@ -1,6 +1,6 @@
 # Astro-Mine-Worlds — Technology Architecture
 
-> Layer: **World & environment models** · Phase: **0**
+> Layer: **World & environment models** · Phase: **0** · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
 > Turns real mission data into simulatable celestial-body worlds — the physical
 > substrate (terrain, gravity, illumination, thermal, regolith, dust) on which every
 > scenario runs.
@@ -40,6 +40,18 @@ physics engine and not a resource model:
 - **No rendering.** Worlds emits geometry tiles; [View](view.md) renders them.
 - **No new transport, schema, or auth machinery** — those are owned by [Core](core.md) and
   fixed by [conventions.md](conventions.md).
+
+**Small & irregular bodies (RFC-0001).** [RFC-0001](../rfc/0001-multi-regime-missions.md)
+generalizes a single-world campaign into a [Mission](mission-model.md) of phases across regimes;
+Worlds is extended to model the *body* end of that — small / irregular bodies (asteroids, NEOs,
+small moons) for the `surface` and `proximity_orbit` regimes. Worlds remains strictly "on/at a
+body" (surface and near-surface/proximity); the **free-space interplanetary medium between bodies
+is [Transit](transit.md)**, a separate environment component — Worlds is *not* stretched to
+represent free space. Small-body support replaces three Phase-0 simplifications: full 3-D shape
+models in place of ~2.5-D heightfields, irregular non-central gravity in place of a constant
+central field, and cohesion-dominated **microgravity regolith** parameters. As ever, Worlds owns
+the spatial parameter fields; [Sim](sim.md) owns the constitutive/contact physics (including the
+new microgravity-contact regime). This lands in Phase 3 (see §12).
 
 **Primary users:** planetary scientists (curate/validate worlds from PDS data) and simulation
 builders (select and configure a world for a scenario). Indirectly, *every* component, because
@@ -133,7 +145,11 @@ Worlds is itself a host of plugins discovered through the [Core](core.md) regist
 
 - **Body packs** — a new celestial body (Mars, Enceladus, an asteroid) is a plugin contributing
   its frames, gravity model, reference radius/geoid, and default thermophysics. "Support a new
-  world" means writing a package, never patching Worlds (charter §10.2).
+  world" means writing a package, never patching Worlds (charter §10.2). Under
+  [RFC-0001](../rfc/0001-multi-regime-missions.md), **small-body gravity packs** (polyhedral /
+  mascon, with a harmonic far-field) are additional registry content that pairs with the surface
+  body-pack — the same plugin mechanism, now carrying a 3-D shape model, a non-central gravity
+  representation, and a body rotation/tumbling state alongside the surface fields.
 - **Source adapters** — new dataset providers/instruments under `ingest/`.
 - **Field models** — alternative illumination, thermal, or dust implementations registered
   against the same abstract interface and selected in `WorldSpec`.
@@ -194,7 +210,9 @@ Worlds is one of the platform's principal **data producers** (conventions.md §5
 - **Owned:** `WorldSpec` schema; the world-bundle manifest; derived terrain/illumination/thermal/
   regolith/dust layers; horizon maps and PSR masks; 3D-Tiles tilesets.
 - **Consumed:** PDS4/PDS3 + USGS Astrogeology datasets (charter §7); SPICE kernels (SPK/PCK/FK/
-  LSK) from NAIF; gravity-field coefficient sets.
+  LSK) from NAIF; gravity-field coefficient sets. For small bodies (RFC-0001): published 3-D
+  **shape models** and small-body **gravity packs** (polyhedral/mascon + harmonic far-field) plus
+  rotation/tumbling state, carried as body-pack registry content (§3).
 - **Schemas:** `WorldSpec` and the world manifest are **JSON Schema + Pydantic v2**
   (conventions.md §3), versioned and owned by Worlds; the Environment-API world surface is a
   [Core](core.md)-owned Protobuf contract. Every layer carries explicit CRS, datum, units, and
@@ -346,14 +364,14 @@ message passing — workers stream the slices they need (conventions.md §8).
 
 | Decision | Options | Recommendation |
 |---|---|---|
-| **Terrain representation** | Heightfield/raster grid (DEM); triangle mesh; implicit/SDF | **Heightfield grid as the canonical form** (matches DEM source, COG/Zarr-native, cheap LOD); generate **triangle/3D-Tiles meshes** for View and **local mesh patches** for contact-rich Sim regions on demand. SDF only as an optional accelerator for ray queries. |
+| **Terrain representation** | Heightfield/raster grid (DEM); triangle mesh; implicit/SDF | **Heightfield grid as the canonical form** (matches DEM source, COG/Zarr-native, cheap LOD); generate **triangle/3D-Tiles meshes** for View and **local mesh patches** for contact-rich Sim regions on demand. SDF only as an optional accelerator for ray queries. **Small / irregular bodies (RFC-0001) break the heightfield assumption** — they require a full 3-D closed-surface shape model (mesh/SDF), not a 2.5-D DEM, carried by the small-body pack. |
 | **Illumination / shadowing** | Precomputed per-azimuth horizon maps; on-demand CPU ray casting; GPU shadow rendering/ray casting | **Precomputed horizon maps as the default** (O(1) per-epoch sun visibility, drives PSR masks) **+ GPU ray casting for the fine on-demand path**; CPU ray casting as the portable fallback. |
 | **Regolith / terramechanics split** | All terramechanics in Worlds; all in Sim; **parameter fields here, constitutive models in Sim** | **Parameter fields in Worlds, constitutive models in [Sim](sim.md)** — Worlds owns the spatial *what-it-is-like* data; Sim owns the *how-it-behaves* physics, joined at the Core Environment API. |
 | **CRS / frame handling** | Roll-our-own planetary CRS; **PROJ planetary CRS + SPICE frames**; GDAL defaults | **PROJ (planetary `+R`/geoid) for projections + SPICE for body-fixed/inertial frames, epochs, and Sun/Earth geometry**; explicit CRS on every layer (conventions.md §5). |
 | **Field-layer store** | Zarr; HDF5; NetCDF; GeoTIFF only | **Zarr (cloud-native, chunked) primary; COG for 2-D rasters; HDF5 for interop** (conventions.md §5). |
 | **Terrain tiles for View** | 3D Tiles (Cesium); quantized-mesh; custom | **3D Tiles** (+ quantized-mesh/heightfield), matching [View](view.md)'s Cesium renderer (charter §7). |
 | **Thermal model fidelity** | Static map; 1-D thermophysical (per-class precomputed); full 3-D FEM | **1-D thermophysical model, precomputed per terrain class** and interpolated; full 3-D deferred — out of Phase-0 scope. |
-| **Gravity model** | Point-mass only; **point-mass + spherical harmonics**; polyhedral (small bodies) | **Point-mass + spherical harmonics** for the Moon/Mars; **polyhedral** added later via body packs for small bodies. |
+| **Gravity model** | Point-mass only; **point-mass + spherical harmonics**; polyhedral (small bodies) | **Point-mass + spherical harmonics** for the Moon/Mars; **polyhedral / mascon** added via small-body packs (RFC-0001, Phase 3) for irregular non-central fields, with a harmonic far-field. |
 | **Ingest cataloging** | Ad-hoc paths; **STAC**; custom DB only | **STAC** for both source and derived datasets, backed by PostGIS (conventions.md §5). |
 
 **Open questions / research dependencies:**
@@ -371,6 +389,10 @@ message passing — workers stream the slices they need (conventions.md §8).
   illumination/PSR/trafficability uncertainty (charter §8, §12).
 - **Surrogate illumination** — could a learned surrogate replace ray casting for very large
   swarm-scale queries, with tracked error? Co-design with [Surrogate](surrogate.md).
+- **Microgravity regolith taxonomy (RFC-0001)** — which cohesion-dominated parameters (and
+  body rotation/tumbling state) form the stable small-body Worlds→[Sim](sim.md) tuple for the
+  microgravity-contact regime, distinct from the gravity-dominated lunar/Martian set? Co-design
+  with Sim; the boundary with the free-space medium is [Transit](transit.md).
 
 ---
 
@@ -395,3 +417,10 @@ message passing — workers stream the slices they need (conventions.md §8).
 - **Phase 3 — ecosystem.** New environments (asteroids via polyhedral gravity, icy moons like
   Enceladus/Europa) arrive purely as community **body packs** — "support a new world" stays a
   package, never a Worlds core change (charter §10.2, §11).
+  - **Multi-regime missions (RFC-0001).** The small / irregular-body extension — 3-D shape models,
+    polyhedral/mascon non-central gravity, body rotation/tumbling, and microgravity-regolith
+    fields for the `surface` and `proximity_orbit` regimes — lands here, alongside
+    [Transit](transit.md) and the new mission-architecture components. The additive
+    [Core](core.md) schema hooks it relies on (`MissionSpec`/`regime`/`PhaseTransition`) are
+    *reserved in Phase 1* per the [mission-model](mission-model.md), so the Phase-0 narrow waist
+    is not retrofitted later.

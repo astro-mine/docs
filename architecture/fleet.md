@@ -1,6 +1,6 @@
 # Astro-Mine-Fleet — Technology Architecture
 
-> Layer: **Asset & agent models** · Phase: **0**
+> Layer: **Asset & agent models** · Phase: **0** · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
 > The content library of concrete, parameterizable robot/asset models authored *in* SADF.
 > Cross-cutting standards: see [conventions.md](conventions.md).
 
@@ -21,6 +21,15 @@ Description Format (SADF)**. Where [Core](core.md) *owns and defines* SADF as a 
 - **authoring, validation, linting, and import/export tooling** that turns CAD/URDF/USD inputs
   into well-formed SADF and checks it against the Core schema and physical-plausibility rules;
 - **asset packaging** as signed OCI artifacts published and discovered through [Hub](hub.md).
+
+**Propulsive spacecraft & launch/return vehicles (RFC-0001).** For multi-regime missions
+([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3), Fleet adds the corresponding asset
+**content** — not new components — against the additive SADF propulsion / Δv-budget / staging /
+return capabilities that [Core](core.md) gains (per [mission-model](mission-model.md) §2.1). This
+includes two new asset *kinds*, **`launch_vehicle`** and **`return_vehicle`**, authored in the
+same SADF as any other asset, plus `mobility_regimes` capability tags on cross-regime assets.
+Reusable-LEO assets are ordinary fleet members carried into a Mission with an initial in-orbit
+state.
 
 **What Fleet explicitly does NOT do:**
 
@@ -92,7 +101,8 @@ astro_mine.fleet
 │   ├── surface/     #   rovers, hoppers/flyers
 │   ├── manipulation/#   manipulators, excavators
 │   ├── logistics/   #   haulers
-│   └── isru/        #   ISRU plants (process-bearing assets)
+│   ├── isru/        #   ISRU plants (process-bearing assets)
+│   └── transit/     #   RFC-0001: launch_vehicle, return_vehicle, propulsive spacecraft (Phase 3)
 ├── templates/       # parametric asset families: base template + parameter JSON Schema + range constraints
 ├── params/          # parameter-resolution engine: bind values → emit a concrete, validated SADF doc
 ├── authoring/       # programmatic SADF builders / helpers atop Core's SADF types
@@ -128,7 +138,8 @@ astro_mine.fleet
 ### Extension / plugin points
 
 - A **new vehicle type** is a new asset package (charter §10.2) — author SADF, lint, package,
-  publish to [Hub](hub.md). No Fleet code change required.
+  publish to [Hub](hub.md). No Fleet code change required. The RFC-0001 `launch_vehicle` /
+  `return_vehicle` kinds and propulsive spacecraft arrive this way (content, not new components).
 - **Custom importers/exporters and lint rules** register via Python entry points so a
   contributor can support a niche CAD pipeline or a domain-specific plausibility check.
 - **Parameter resolvers / derived-quantity functions** are pluggable for advanced templates
@@ -184,6 +195,13 @@ Fleet **owns and produces asset content**; it does not own any schema (that is [
 **Schemas.** Fleet authors *against* Core's SADF JSON Schema and embeds the Core schema version
 each asset targets, so Sim/Studio can negotiate compatibility (conventions.md §3 schema
 evolution; core.md §6 version negotiation).
+
+**Sized configurations are SADF, never a private format (RFC-0001).** [Sizing](sizing.md)
+*produces* mass/power/propellant/staging-sized spacecraft configurations and writes them back as
+SADF (per [mission-model](mission-model.md) §2.1); Fleet *holds* them as ordinary asset content.
+Sizing produces, Fleet holds — the propulsion / Δv-budget / staging / return fields are Core SADF
+capabilities, so a sized vehicle is just another well-formed asset, validated and packaged on the
+same path. There is no Fleet-private representation for propulsive assets.
 
 **Lifecycle.** author (template or hand-authored) → lint/validate (CI) → resolve parameters to a
 concrete doc → bind/normalize geometry → package as OCI bundle → publish to [Hub](hub.md) →
@@ -358,6 +376,12 @@ side-channels (conventions.md §1).
   haulers): when does a generator earn its complexity over a parameter schema?
 - **Sensor/comms model depth in SADF** vs deferring to [Sim](sim.md)/[Link](link.md) — how much
   of a sensor's noise/range model is asset-intrinsic vs environment-coupled.
+- **Propulsion-fidelity depth in SADF (RFC-0001)** — how much of the propulsion / Δv / staging /
+  return model is asset-intrinsic before it leaks into [Sim](sim.md)/[Trajectory](trajectory.md)
+  territory; the same "leaky god-schema" caution applies. As with all tags, the new mobility,
+  propulsion, and return capability tags double as **autonomy-negotiation** input
+  ([Mind](mind.md)/[Allocate](allocate.md)) *and* **export-control gating** metadata
+  (conventions.md §12, charter §10.5) — Core owns the vocabulary, Fleet only applies it.
 
 ---
 
@@ -384,4 +408,7 @@ side-channels (conventions.md §1).
 - **Phase 3:** community-contributed vehicle types and new-body assets (asteroid/icy-moon
   platforms) as plugins; third-party commercial asset packages atop the open library
   (charter §11). The measure of success: new vehicle types arrive as packages, never as Fleet
-  code changes.
+  code changes. **Multi-regime mission content lands here** ([RFC-0001](../rfc/0001-multi-regime-missions.md)):
+  `launch_vehicle` / `return_vehicle` kinds and propulsive spacecraft authored against the additive
+  Core SADF propulsion/return capabilities — whose **schema hooks are reserved in Phase 1** (per
+  [mission-model](mission-model.md) §3), so no Fleet code change is needed when the content arrives.

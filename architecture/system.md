@@ -18,7 +18,8 @@ edges**: the contracts in §3 change slowly and deliberately; everything else is
 The platform runs in **two modes over one shared core** (charter §3):
 
 - **Design mode** — *goal in, design out*. Explore swarm compositions and policies in
-  simulation. Front door: [Studio](studio.md).
+  simulation. Front door: [Studio](studio.md). For complete interplanetary missions it also
+  performs *mission architecture* — trajectories, fleet sizing, and economics (see §13).
 - **Operate mode** — run a validated campaign, first as a digital-twin shadow, eventually
   commanding real assets. Front door: [Ops](ops.md).
 
@@ -98,6 +99,13 @@ is what makes the collection an ecosystem rather than a bundle.
 declares the Core interface major versions it supports, and `Core`'s `compat` layer refuses
 incompatible loads (conventions.md §3, §13). Changes to Core go through the RFC process.
 
+**Multi-regime missions (RFC-0001).** These five contracts gained *additive* extensions — the
+Mission/Phase/Regime schema, a bounded `regime` dimension and `PhaseTransition` events on the
+Environment API, propulsion/return SADF capabilities, and the descriptive design-time
+`TrajectoryRef` schema — reserved in Core in Phase 1. They generalize "a campaign on a world"
+into a **Mission** of **Phases** across **Regimes** without widening the waist into per-regime
+interfaces; see [mission-model.md](mission-model.md) and §13.
+
 ---
 
 ## 4. Component catalog — role · runtime · data · talks-to
@@ -108,6 +116,7 @@ incompatible loads (conventions.md §3, §13). Changes to Core go through the RF
 | [Worlds](worlds.md) | World | Celestial-body environments from real DEMs | Library; data prep on Cloud | COG/Zarr terrain, SPICE frames, 3D Tiles | Sim, Prospect, Link, View (Env API) |
 | [Prospect](prospect.md) | World | Probabilistic resource fields w/ uncertainty | Library; inference on Cloud | Zarr ground-truth + belief fields | Sim, Mind, Allocate, Bench (Env API) |
 | [Link](link.md) | World | Comms environment (LOS, windows, latency) | Library; precompute on Cloud | SPICE geometry, contact graphs, time-series | Sim, Allocate, Mind, Ops (Env API) |
+| [Transit](transit.md) † | World | Deep-space / free-space dynamical + hazard environment | Library; precompute on Cloud | n-body ephemerides, gravity, radiation/thermal/MMOD fields | Sim, Trajectory, Link (Env API) |
 | [Fleet](fleet.md) | Assets | SADF asset library (orbiters→ISRU plants) | Library + content artifacts | SADF docs, USD/glTF geometry | Sim, Mind, Studio, Hub, Bridge (SADF) |
 | [Sim](sim.md) | Simulation | Multi-physics engine + scenario runtime | Library (local) / Ray workers (Cloud) | Env state, MCAP recordings | implements Env API; consumes Worlds/Prospect/Link/Fleet; Surrogate |
 | [Surrogate](surrogate.md) | Simulation | Learned fast physics w/ error bounds | GPU train (Cloud); ONNX inference in Sim | Training sets, ONNX models, error reports | Sim (fidelity tier), Learn, Hub |
@@ -115,6 +124,9 @@ incompatible loads (conventions.md §3, §13). Changes to Core go through the RF
 | [Learn](learn.md) | Autonomy | MARL toolkit (PettingZoo, RLlib) | Ray training on Cloud | Rollouts, ONNX policies, MLflow runs | wraps Sim as RL env; Surrogate, Hub, Bench |
 | [Allocate](allocate.md) | Autonomy | Task allocation & scheduling (CP-SAT + learned) | Library; large solves on Cloud | Constraint models, assignments | implements Policy API; Mind, Link/Worlds/Prospect |
 | [Guard](guard.md) | Autonomy | Runtime assurance / safety shields | Rust core; edge + central in Ops | Safety specs, verdicts | wraps Policy API outputs; Sim, Ops→Bridge |
+| [Trajectory](trajectory.md) † | Mission arch. | Design-time trajectory & maneuver optimization | Library; sweeps on Cloud | Reference trajectories, Δv/ToF budgets (descriptive) | Transit, Allocate, Sizing, Studio, Sim (validate) |
+| [Sizing](sizing.md) † | Mission arch. | Spacecraft & payload systems-engineering sizing | Library (OpenMDAO); sweeps on Cloud | Mass/power/propellant budgets → sized SADF | Trajectory, Fleet, Ledger, Studio |
+| [Ledger](ledger.md) † | Mission arch. | Open techno-economic value model (uncertainty) | Library (OpenMDAO/MC); on Cloud | Cost/value/risk distributions | Sizing, Trajectory, Prospect, Studio, Bench |
 | [Studio](studio.md) | Design | Goal-in/design-out authoring + trade studies | Web app (React + FastAPI) on Cloud | ObjectiveSpec, DesignCandidate, Campaign | orchestrates Sim/Learn/Mind/Allocate/Guard; Hub, Bench, View |
 | [Ops](ops.md) | Operations | Online orchestration + digital-twin shadow | Stateful service; ground + edge | Event-sourced state, telemetry, SLAM map | Sim (shadow), Mind/Allocate/Guard, Bridge, View |
 | [Bridge](bridge.md) | Operations | Hardware/flight-software abstraction | Adapters: ground + flight-adjacent | Core msgs ↔ ROS 2/cFS/F´/CCSDS | Ops; targets Sim or real hardware |
@@ -122,6 +134,8 @@ incompatible loads (conventions.md §3, §13). Changes to Core go through the RF
 | [Bench](bench.md) | Backbone | Benchmarks, scenario zoo, leaderboards | FastAPI + Postgres; eval on Cloud | Scenario specs, metrics, results | pins Core; runs Sim; Hub submissions; Cloud |
 | [Hub](hub.md) | Backbone | Registry for policies/worlds/assets/plugins | OCI registry + Postgres on Cloud | OCI artifacts, manifests, provenance | indexed by Core manifest; all producers/consumers |
 | [Cloud](cloud.md) | Backbone | Distributed sim/training orchestration | Kubernetes + Ray + Argo | Content-addressed datasets/artifacts | runs Sim/Learn/Allocate/Surrogate/Bench |
+
+† Added by [RFC-0001](../rfc/0001-multi-regime-missions.md) (accepted; implementation Phase 3). "Mission arch." = the **Mission architecture & logistics** layer. Existing components are also *extended* for multi-regime scope — see §13.
 
 ---
 
@@ -190,6 +204,10 @@ assignment to [Allocate](allocate.md); [Guard](guard.md) wraps the result so har
 hold. [Bench](bench.md) scores candidates on shared scenarios; [Hub](hub.md) stores and shares
 everything produced; [Cloud](cloud.md) runs it all at scale. **Wall-clock and cost are governed
 by Sim's multi-fidelity scheduler trusting Surrogate's tracked error bounds.**
+
+For complete multi-regime missions, [Studio](studio.md)'s **Mission Architect** mode wraps this
+loop in an outer **trajectory ⇄ fleet ⇄ swarm ⇄ economics** co-optimization that adds
+[Trajectory](trajectory.md), [Sizing](sizing.md), and [Ledger](ledger.md) — detailed in §13.
 
 ### 6.2 Operations loop
 
@@ -326,10 +344,13 @@ Higher tiers are accelerators and operational surfaces, never hard dependencies.
 | **0 · 0–12 mo** | [Core](core.md) v0.1, [Sim](sim.md), [Worlds](worlds.md), [Fleet](fleet.md), [Bench](bench.md) (+ [Prospect](prospect.md), local [Cloud](cloud.md)) | A runnable, reproducible benchmark on the anchor scenario |
 | **1 · 12–30 mo** | [Mind](mind.md), [Learn](learn.md), [Allocate](allocate.md), [Guard](guard.md), [Studio](studio.md), [Hub](hub.md), [Surrogate](surrogate.md), [Link](link.md), full [Cloud](cloud.md) | The MARL + planning commons; public leaderboards & plugins |
 | **2 · 30–54 mo** | [Ops](ops.md), [Bridge](bridge.md), [View](view.md) | Cross the sim→operations threshold on Earth analogs |
-| **3 · 54 mo+** | [Bridge](bridge.md) flight adapters; new bodies as plugins | Default stack as the cislunar economy matures |
+| **3 · 54 mo+** | [Bridge](bridge.md) flight adapters; the **mission-architecture track** ([Transit](transit.md), [Trajectory](trajectory.md), [Sizing](sizing.md), [Ledger](ledger.md)) + small-body/microgravity extensions; **NEO sample-return** then **asteroid-mining** scenarios; new bodies as plugins | Default stack — surface ISRU *and* interplanetary resource missions — as the cislunar economy matures |
 
 The narrow waist is what makes this sequencing safe: later phases add edges, not core
 rewrites. Success is measured by how *little* [Core](core.md) changes as the platform grows.
+The multi-regime mission-architecture track (RFC-0001, §13) is **opt-in and gated behind the
+lunar MVP**; its only Phase-1 obligation is reserving the additive Mission/Phase/Regime Core
+schema hooks.
 
 ---
 
@@ -357,3 +378,75 @@ rewrites. Success is measured by how *little* [Core](core.md) changes as the pla
 - **Evaluation science**: what "good" means for a multi-week ISRU campaign ([Bench](bench.md)).
 - **Sim-to-real credibility** without on-world data — the central trust problem the whole
   stack must eventually answer (charter §9).
+
+---
+
+## 13. Multi-regime missions (RFC-0001)
+
+[RFC-0001](../rfc/0001-multi-regime-missions.md) (accepted) extends the platform from single-body
+surface campaigns to complete **interplanetary missions** — asteroid mining, NEO sample-return,
+cislunar logistics — without becoming a different system. The generalization is additive and
+specified in [mission-model.md](mission-model.md); this section shows how it threads through the
+system above.
+
+### 13.1 The Mission / Phase / Regime model
+A **Mission** is an ordered set of **Phases**, each in a **Regime** (`launch_ascent ·
+interplanetary_transit · proximity_orbit · surface · ascent_return · earth_interface`), sharing
+one fleet and a value model. A single-`surface`-phase Mission is exactly today's campaign, so
+every component and scenario above runs unchanged. Core gains only *schema* (the `MissionSpec`, a
+bounded `regime` dimension + `PhaseTransition` events, propulsion SADF capabilities); the
+phase-sequencing **mechanism** lives in the [Sim](sim.md)/[Ops](ops.md) runtime and the
+**policy** in [Studio](studio.md)/Ops.
+
+### 13.2 New components
+- **[Transit](transit.md)** (environment) — the interplanetary / free-space dynamical + hazard
+  environment between bodies; what [Worlds](worlds.md) is to a body.
+- **Mission architecture & logistics** (new layer): **[Trajectory](trajectory.md)** (design-time
+  trajectory/maneuver optimization — descriptive, never executable guidance),
+  **[Sizing](sizing.md)** (spacecraft/payload systems-engineering sizing → SADF), and
+  **[Ledger](ledger.md)** (open techno-economic value model under uncertainty).
+- Existing components are **extended, not replaced** — small bodies ([Worlds](worlds.md)),
+  microgravity contact ([Sim](sim.md)/[Surrogate](surrogate.md)), deep-space comms
+  ([Link](link.md)), propulsion ([Fleet](fleet.md)), window-gated planning
+  ([Mind](mind.md)/[Allocate](allocate.md)/[Guard](guard.md)), multi-phase ops
+  ([Ops](ops.md)/[Bridge](bridge.md)/[View](view.md)), mission scenarios ([Bench](bench.md)),
+  and artifacts ([Hub](hub.md)/[Cloud](cloud.md)). See [RFC-0001](../rfc/0001-multi-regime-missions.md) §4.
+
+### 13.3 The mission-architecture loop
+[Studio](studio.md)'s **Mission Architect** mode wraps the design loop (§6.1) in an outer
+co-optimization: [Trajectory](trajectory.md) finds feasible transfers/windows and Δv budgets →
+[Sizing](sizing.md) turns Δv + throughput needs into sized spacecraft (written back as SADF) →
+[Ledger](ledger.md) scores delivered value under uncertainty → [Allocate](allocate.md) solves the
+joint **asset ↔ target ↔ window ↔ trajectory** assignment → the per-phase swarm campaigns run
+through the existing Sim/Mind/Guard loop. Sizing and Ledger share one OpenMDAO graph for the tight
+vehicle⇄economics inner loop; the result is a declarative `MissionSpec` handed to [Ops](ops.md).
+
+### 13.4 End-to-end — asteroid mining
+1. **Targets & environment.** [Transit](transit.md) supplies NEO ephemerides and the deep-space
+   environment; [Worlds](worlds.md) provides small-body shape/gravity; [Prospect](prospect.md)
+   the (volumetric, uncertain) ore field; [Link](link.md) DSN windows and light-time.
+2. **Architect the mission.** In Studio's Mission Architect: state "return *N* tonnes of ore."
+   [Trajectory](trajectory.md) scans launch/transfer/return windows; [Sizing](sizing.md) sizes
+   miners, haulers, comms relays, and the return vehicle (reusing LEO assets where possible);
+   [Ledger](ledger.md) values candidates; [Allocate](allocate.md) assigns assets to asteroids and
+   windows.
+3. **Design each per-asteroid swarm.** Every `proximity_orbit`/`surface` phase is the familiar
+   prospect → allocate → mine loop, now with microgravity contact/anchoring physics
+   ([Sim](sim.md) + [Surrogate](surrogate.md)) and window-gated, high-latency assurance
+   ([Guard](guard.md)).
+4. **Score & operate.** [Bench](bench.md) scores the mission (delivered mass, Δv efficiency, ROI);
+   [Ops](ops.md) runs it phase by phase with a regime-spanning shadow twin; [Bridge](bridge.md)
+   speaks DSN/CCSDS/DTN — but **operational maneuver targeting stays out of scope**, gated by the
+   `operational_targeting` capability tag.
+
+### 13.5 What stays out
+Operational maneuver targeting, guided atmospheric entry/recovery, and proprietary mission
+economics are deliberately excluded or partitioned (charter §10.5, conventions.md §12).
+[Trajectory](trajectory.md) is design-time exploration only; its `TrajectoryRef` artifacts omit
+any executable-guidance fields by schema.
+
+### 13.6 Deployment & roadmap
+The mission-architecture engines are design-time **batch** workloads — trajectory window /
+global-optimization sweeps and OpenMDAO design sweeps — that fit the existing [Cloud](cloud.md)
+Ray/Argo substrate (mostly CPU-bound). The track is **opt-in, Phase 3**, gated behind the lunar
+MVP; only the additive Core schema hooks are reserved in **Phase 1**.

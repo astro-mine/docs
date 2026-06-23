@@ -25,34 +25,32 @@ exploration and in-situ resource utilization (ISRU).
 | Layer | Components |
 |---|---|
 | **Commons backbone** | [Core](core.md) · [Bench](bench.md) · [Hub](hub.md) · [Cloud](cloud.md) |
-| **World & environment** | [Worlds](worlds.md) · [Prospect](prospect.md) · [Link](link.md) |
+| **World & environment** | [Worlds](worlds.md) · [Prospect](prospect.md) · [Link](link.md) · [Transit](transit.md) † |
 | **Assets** | [Fleet](fleet.md) |
 | **Simulation** | [Sim](sim.md) · [Surrogate](surrogate.md) |
 | **Autonomy & coordination** | [Mind](mind.md) · [Learn](learn.md) · [Allocate](allocate.md) · [Guard](guard.md) |
+| **Mission architecture & logistics** † | [Trajectory](trajectory.md) · [Sizing](sizing.md) · [Ledger](ledger.md) |
 | **Design & operations** | [Studio](studio.md) · [Ops](ops.md) · [Bridge](bridge.md) · [View](view.md) |
 
-[Core](core.md) is the "narrow waist" — the single most important package; if only one thing is
-designed superbly, it must be Core.
+† Added by [RFC-0001](../rfc/0001-multi-regime-missions.md) (accepted; implementation Phase 3). [Core](core.md) is the "narrow waist" — the single most important package; if only one thing is designed superbly, it must be Core.
 
-## Proposed extensions — multi-regime missions (RFC-0001)
+## Multi-regime missions (RFC-0001, accepted)
 
-> **Status: Proposed**, pending [RFC-0001: Multi-regime missions](../rfc/0001-multi-regime-missions.md).
-> These documents describe a proposed extension to support end-to-end interplanetary resource
-> missions (asteroid mining, NEO sample-return, cislunar logistics) by generalizing "a campaign
-> on a world" into a **Mission** of **Phases** across **Regimes**. They are not yet accepted
-> baseline.
+> **Status: Accepted** ([RFC-0001: Multi-regime missions](../rfc/0001-multi-regime-missions.md)) —
+> implementation lands in **Phase 3**; the additive Core schema hooks are reserved in **Phase 1**.
+> The extension supports end-to-end interplanetary resource missions (asteroid mining, NEO
+> sample-return, cislunar logistics) by generalizing "a campaign on a world" into a **Mission** of
+> **Phases** across **Regimes**. A single-body surface campaign is the degenerate one-phase case,
+> so the change is additive and existing scenarios are unchanged.
 
 - **[mission-model.md](mission-model.md)** — the Mission/Phase/Regime model and the additive
   Core schema sketch (SADF, Environment API, message schemas). Start here for the extension.
-
-| New layer / additions | Components |
-|---|---|
-| **Mission architecture & logistics** (new) | [Trajectory](trajectory.md) · [Sizing](sizing.md) · [Ledger](ledger.md) |
-| **World & environment** (added) | [Transit](transit.md) |
-
-The existing components above are also *extended* (not replaced) for small bodies, microgravity,
-deep-space comms, propulsion, and multi-phase operations — see RFC-0001 §4 for the per-component
-list.
+- **New components:** [Transit](transit.md) (deep-space environment) and the **Mission
+  architecture & logistics** layer — [Trajectory](trajectory.md), [Sizing](sizing.md),
+  [Ledger](ledger.md).
+- **Extended (not replaced):** the existing components above gained multi-regime scope for small
+  bodies, microgravity, deep-space comms, propulsion, and multi-phase operations — see
+  [RFC-0001](../rfc/0001-multi-regime-missions.md) §4 for the per-component list.
 
 ## Conventions for these docs
 

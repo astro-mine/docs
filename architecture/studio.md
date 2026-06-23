@@ -1,6 +1,6 @@
 # Astro-Mine-Studio — Technology Architecture
 
-> Layer: **Design studio (offline mode)** · Phase: **1**
+> Layer: **Design studio (offline mode)** · Phase: **1** · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
 > The design front door — goal-in, design-out: capture intent, explore the design space, author campaigns.
 > Cross-cutting standards: see [conventions.md](conventions.md).
 
@@ -35,6 +35,18 @@ component reached through [Core](core.md) contracts.
 
 **Primary users:** mission designers, startups, and educators — people exploring *what to build*
 and *how to operate it* rather than implementing the engines underneath.
+
+**Mission Architect mode (RFC-0001).** Studio gains an upstream design *stage* — the **Mission
+Architect** — that authors a `MissionSpec` (an ordered set of phases across regimes; see
+[mission-model](mission-model.md)) and **co-optimizes trajectory ⇄ fleet ⇄ swarm ⇄ economics** in
+one loop. It is a **new mode/stage inside Studio, not a separate application**: the same backend
+and trade-study engine, extended to orchestrate [Trajectory](trajectory.md),
+[Sizing](sizing.md), and [Ledger](ledger.md) alongside the existing Sim/Learn/Mind/Allocate/Guard.
+A distinct *workspace and persona* (mission & systems engineers, astrodynamicists, resource
+economists) is honored in the UI without forking the loop. Per RFC-0001 R2, the **phase-sequencing
+policy** (phase ordering, contingencies, cross-phase replanning) is authored here; the validated
+`MissionSpec` is handed to [Ops](ops.md), which owns the live executor. This stage gates behind the
+lunar MVP and is opt-in — a single-`surface`-phase mission is exactly today's campaign.
 
 **Charter alignment:** §5.5 ("the design front door: goal-in, design-out … runs trade studies …
 intent capture can be LLM-assisted, reusing the 'intent-to-mission' idea"); §6 ("Astro-Mine-Studio
@@ -93,7 +105,9 @@ astro_mine.studio
 ├── designspace/     # Trade-study / DSE engine: parameterization, DoE, multi-objective search
 │   ├── search/      # Optimizer adapters (Optuna/Ax/pymoo/Ray Tune) behind one interface
 │   ├── pareto/      # Pareto-front computation, dominance, hypervolume, ranking
-│   └── encode/      # Design <-> decision-variable encoding/decoding
+│   ├── encode/      # Design <-> decision-variable encoding/decoding
+│   └── mdo/         # RFC-0001: Sizing+Ledger shared OpenMDAO graph (vehicle⇄economics inner loop)
+├── mission/         # RFC-0001 Mission Architect: MissionSpec authoring + Trajectory/Sizing/Ledger orchestration (phase 3)
 ├── orchestrate/     # The design loop: fan out candidates to Sim/Learn/Mind/Allocate/Guard/Bench
 │   ├── jobs/        # Async job model: submit, track, cancel, resume; Cloud offload
 │   └── clients/     # gRPC clients to sibling components (generated from Core schemas)
@@ -117,6 +131,13 @@ astro_mine.studio
   Pareto front**. The unit of reproducible design work.
 - **`Campaign`** — a chosen design plus its timeline, phases, and contingency branches; the
   Core-defined artifact handed to [Ops](ops.md).
+- **`MissionSpec`** *(RFC-0001)* — the Mission Architect's top-level artifact: an objective
+  reference, fleet (incl. reusable LEO inventory), global constraints, and an ordered list of
+  **phases across regimes**, each with entry/exit conditions, an optional per-phase swarm campaign,
+  and per-leg `ManeuverBudget`s. Per R4 it stays **declarative** — it records the *result* of the
+  trade study, not the optimization formulation, which lives in the trade-study engine. A single
+  `surface`-phase `MissionSpec` is exactly today's `Campaign`. Schema in [Core](core.md); see
+  [mission-model](mission-model.md).
 
 ### Key abstractions consumed (via Core)
 
@@ -188,6 +209,7 @@ asset, policy, or result data (those belong to siblings and are referenced by co
 |---|---|---|
 | Projects, designs, trade studies, comparisons, audit log | **Owned** | **PostgreSQL** (+ **pgvector** for intent/design embeddings used in search & similarity; conventions.md §5) |
 | `ObjectiveSpec`, `DesignCandidate`, `TradeStudy`, `Campaign` | **Produced** | Core-schema'd JSON/YAML (JSON Schema + Pydantic v2); canonical Protobuf wire form for cross-component calls |
+| `MissionSpec` + per-leg `ManeuverBudget`s (RFC-0001, Mission Architect) | **Produced** | Core-schema'd JSON/YAML; `TrajectoryRef`/`ManeuverBudget` are *descriptive design-time* artifacts (no guidance), consumed by [Ops](ops.md) unchanged |
 | Captured intent (raw NL + LLM transcript/tool calls) | **Owned** | PostgreSQL (provenance); large transcripts in object store, content-addressed |
 | Large artifacts (exported campaign bundles, big result sets) | **Produced** | **S3-compatible object store** (MinIO/S3/GCS), **content-addressed** (conventions.md §5) |
 | Cache / session / job status | Ephemeral | **Redis** |
@@ -226,6 +248,13 @@ Studio is a **pure consumer** of Core contracts — it integrates with nearly ev
   5. wrap and certify with [Guard](guard.md) (hard-constraint check);
   6. simulate the candidate on [Sim](sim.md) (multi-fidelity, [Surrogate](surrogate.md)-accelerated);
   7. **score** the candidate via [Bench](bench.md) against the objective metrics.
+- **Mission Architect loop (RFC-0001, Phase 3):** for a multi-regime `MissionSpec`, the same
+  trade-study engine additionally orchestrates [Trajectory](trajectory.md) (design-time Δv/ToF and
+  window scans → `TrajectoryRef`/`ManeuverBudget`), [Sizing](sizing.md) (mass/power/propellant/
+  staging → sized SADF), and [Ledger](ledger.md) (techno-economic objective). Per R4,
+  **[Sizing](sizing.md) and [Ledger](ledger.md) share one OpenMDAO graph** for the tight
+  vehicle⇄economics inner loop, with trajectory and swarm in the outer co-optimization. The
+  coupling lives here, not in Core — `MissionSpec` stays declarative.
 - **[Hub](hub.md):** Studio reads assets, policies, and plugins (indexed by Core manifest) and can
   write back published designs/campaigns as content-addressed, signed artifacts.
 - **[Cloud](cloud.md):** large fan-out (hundreds of candidates × many seeds, or
@@ -301,7 +330,10 @@ Studio is a **pure consumer** of Core contracts — it integrates with nearly ev
     learned/generated components).
   - **Every LLM output is validated against Core schemas at the boundary** (Core principle:
     "fail validation early and loudly"). An `ObjectiveSpec` that doesn't validate is rejected and
-    surfaced for human correction — it never flows downstream.
+    surfaced for human correction — it never flows downstream. *(RFC-0001)* The same optional,
+    provider-abstracted LLM may now also help draft a `MissionSpec`; it is validated against Core
+    schemas identically and is **never on a safety, planning-guarantee, or flight path** — and never
+    near trajectory guidance, which is descriptive-only by schema.
   - The provider is **abstracted**; no platform behavior depends on a specific model or vendor.
 - **Supply chain:** signed artifacts (Sigstore/cosign), SBOM (Syft/CycloneDX), SLSA provenance;
   org defaults (Dependabot, secret scanning, push protection) on (conventions.md §9). LLM **API
@@ -385,6 +417,11 @@ Studio is a **pure consumer** of Core contracts — it integrates with nearly ev
   [View](view.md); Pareto-front exploration UI; publish-to-[Hub](hub.md).
 - **Phase 2** (ops bridge): the `Campaign` hand-off to [Ops](ops.md) matures into the design→operations
   loop, so a Studio-authored campaign drives the operations runtime over Earth analogs.
+- **Phase 3** (RFC-0001): the **Mission Architect mode** ships — `MissionSpec` authoring and the
+  trajectory⇄fleet⇄swarm⇄economics co-optimization over [Trajectory](trajectory.md)/[Sizing](sizing.md)/[Ledger](ledger.md).
+  The additive Core schema hooks it depends on (`MissionSpec`/`regime`/`PhaseTransition`) are
+  **reserved in Phase 1** (R5); only the implementations are Phase 3, and the track is opt-in and
+  off the lunar-MVP critical path.
 - **Stability stance:** Studio adds no Core surface of its own — it is a *consumer*. Its measure of
   success is how much design power it unlocks while changing [Core](core.md) as little as possible;
   any new contract it needs goes through the RFC process (conventions.md, GOVERNANCE.md).

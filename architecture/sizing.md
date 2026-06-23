@@ -1,6 +1,6 @@
 # Astro-Mine-Sizing — Technology Architecture
 
-> Status: **Proposed** — pending [RFC-0001: Multi-regime missions](../rfc/0001-multi-regime-missions.md).
+> Status: **Accepted** ([RFC-0001: Multi-regime missions](../rfc/0001-multi-regime-missions.md)) — implementation Phase 3.
 > Layer: **Mission architecture & logistics (NEW layer)** · Phase: **3** (proposed)
 > Spacecraft & payload systems-engineering sizing: mass/power/propellant/staging budgets, payload packing, launch manifesting, reusable-LEO accounting.
 > Cross-cutting standards: see [conventions.md](conventions.md).

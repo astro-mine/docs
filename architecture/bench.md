@@ -1,6 +1,6 @@
 # Astro-Mine-Bench — Technology Architecture
 
-> Layer: **Commons backbone & platform infrastructure** · Phase: **0**
+> Layer: **Commons backbone & platform infrastructure** · Phase: **0** · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
 > The academic flywheel / the growth engine. Clone, run, and score a baseline in an afternoon.
 > Cross-cutting standards: see [conventions.md](conventions.md).
 
@@ -29,6 +29,22 @@ Concretely, Bench owns and only owns:
   determinism gates;
 - the **leaderboard service** — submission intake, evaluation orchestration, ranking, and a
   public web UI.
+
+**Multi-regime mission scenarios (RFC-0001).** The scenario zoo extends beyond single-body
+campaigns to **end-to-end missions** spanning multiple [regimes and phases](mission-model.md).
+RFC-0001 ([R5](../rfc/0001-multi-regime-missions.md#resolutions-and-implications)) adds two
+Phase-3 reference scenarios:
+
+- **NEO rendezvous + sample-return** — the named Phase-3 *stepping-stone* benchmark: launch,
+  interplanetary transit to a near-Earth object, proximity characterization, sampling, ascent,
+  and an `earth_interface` delivery event.
+- **Multi-asteroid mining + ore return** — the Phase-3 *capstone*: a multi-target tour with
+  in-situ extraction and bulk ore return.
+
+These are scored on the **same reproducibility harness** as existing scenarios — a ScenarioSpec
+that now pins the `MissionSpec`/`regime` mission schema and references small-body
+[Worlds](worlds.md)/[Prospect](prospect.md), propulsive [Fleet](fleet.md), and `TrajectoryRef`
+content by content hash — and add **mission-level metrics** (§5).
 
 **Explicitly out of scope:** Bench does **not** simulate (that is [Sim](sim.md)), does **not**
 define the asset/world/policy formats (those are [Core](core.md)), does **not** store or
@@ -107,7 +123,11 @@ astro_mine.bench
   **held-out seed set** (disclosed only at evaluation time); the metric set and aggregation
   rule; resource budgets (wall-clock, sim-step, compute) per submission; and the
   observation/action interface the submitted policy must satisfy. The spec *is* the task; its
-  content hash *is* the task identity.
+  content hash *is* the task identity. **Multi-regime mission scenarios (RFC-0001)** additionally
+  pin the new **`MissionSpec`/`regime`** mission schema at the pinned Core interface minor and
+  reference small-body content, propulsive [Fleet](fleet.md), and design-time `TrajectoryRef`s by
+  content hash — no new ScenarioSpec mechanism, just richer pinned content (see
+  [mission-model](mission-model.md)).
 - **Metric** — a plugin (`(episode_trace) -> scalar | distribution`) with a declared name,
   units, direction (higher/lower-better), and uncertainty handling. Metrics consume the
   [Sim](sim.md) episode trace (an [MCAP](conventions.md) recording) and emit Arrow/Parquet rows.
@@ -173,6 +193,14 @@ Bench owns the *evaluation* data; it references but does not own content or arti
 | **Provenance bundles** | content-addressed JSON + lockfiles in object store | Inputs, code version, env lockfile, seeds (conventions.md §5) |
 | **Held-out seeds / hidden specs** | encrypted; secrets-managed | Disclosed only at eval time (§9) |
 | **Cache / job state / rate limits** | **Redis** | Service ephemeral state (conventions.md §5) |
+
+**Mission-level metrics (RFC-0001).** Multi-regime scenarios extend the charter's "evaluation
+science" (§8) from campaign performance to **mission value**: delivered resource mass, Δv /
+propellant efficiency, and total mission duration, plus **ROI / value-with-uncertainty** computed
+through [Ledger](ledger.md)'s open techno-economic framework. These are ordinary pluggable
+[Metric](#key-abstractions-exposed) plugins consuming the [Sim](sim.md) episode trace across all
+phases — Bench scores them, it does not compute the value model. Per-seed mission metrics are
+stored as Parquet/Arrow alongside campaign metrics.
 
 **Provenance & versioning:** every Result records its full lineage — ScenarioSpec hash, Core
 interface version, content hashes, submission hash, code version, environment lockfile, and
@@ -337,7 +365,10 @@ REST/OpenAPI (conventions.md §3, §4).
   multi-robot ISRU campaign — throughput, energy survival across lunar night, robustness to
   comms dropout, resource-uncertainty reduction? The anchor scenario's metric set is a
   Phase-0 *proposal* to be refined via RFC, co-designed with [Prospect](prospect.md) and
-  [Mind](mind.md)/[Allocate](allocate.md).
+  [Mind](mind.md)/[Allocate](allocate.md). **Mission value (RFC-0001).** Phase-3 multi-regime
+  scenarios extend this question to mission-level value — delivered mass, Δv efficiency, duration,
+  and ROI-with-uncertainty via [Ledger](ledger.md) — an open metric-definition problem for
+  interplanetary resource campaigns.
 - **Held-out generalization.** How much held-out seed/scenario diversity is needed to prevent
   overfitting without making leaderboards noisy or unfair — an empirical question resolved as
   submissions accumulate.
@@ -365,3 +396,8 @@ REST/OpenAPI (conventions.md §3, §4).
   analog / digital-twin validation scenarios alongside [Ops](ops.md)/[Bridge](bridge.md), and
   expansion of the zoo to new bodies (asteroids, icy moons) as plugin content. Evaluation
   science matures into citable, RFC-governed metric standards.
+- **Phase 3 — multi-regime missions (RFC-0001).** The named **NEO rendezvous + sample-return**
+  stepping-stone and the **multi-asteroid mining + ore return** capstone scenarios land, with
+  mission-level metrics (delivered mass, Δv efficiency, duration, ROI via [Ledger](ledger.md))
+  on the same harness. The enabling Core hooks (`MissionSpec`/`regime`) are reserved in **Phase 1**
+  (see [mission-model](mission-model.md)); the scenarios are opt-in and do not gate the lunar MVP.

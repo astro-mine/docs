@@ -1,6 +1,6 @@
 # Astro-Mine-Sim — Technology Architecture
 
-> Layer: **Multi-physics simulation** · Phase: **0**
+> Layer: **Multi-physics simulation** · Phase: **0** · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
 > The beating heart — the execution substrate every other component runs against.
 > Cross-cutting standards: see [conventions.md](conventions.md).
 
@@ -38,6 +38,18 @@ solvers — it integrates and couples mature engines. It defines no asset format
 no UI ([View](view.md), [Studio](studio.md)), and no cluster orchestration ([Cloud](cloud.md)) —
 it is the *library* those services deploy. Surrogate *models* live in
 [Surrogate](surrogate.md); Sim only consumes them as a fidelity tier.
+
+**Multi-regime & multi-phase (RFC-0001).** [RFC-0001](../rfc/0001-multi-regime-missions.md)
+generalizes a single-world campaign into a [Mission](mission-model.md) of phases across regimes
+(`launch_ascent · interplanetary_transit · proximity_orbit · surface · ascent_return ·
+earth_interface`). Sim extends to be that mission's execution substrate in three additive ways:
+a **microgravity contact/anchoring/proximity-ops** physics domain (distinct from surface-gravity
+terramechanics), **multi-regime propagation** that couples free-space, body-proximity, and
+surface dynamics, and a thin **multi-phase sequencer** in the runtime. Per
+[RFC-0001 R2](../rfc/0001-multi-regime-missions.md), the sequencer is *mechanism* only — the
+*policy* (phase ordering, contingencies) stays in [Studio](studio.md)/[Ops](ops.md), and
+[Core](core.md) owns only the schema. Sim still **validates and propagates** trajectories from
+[Trajectory](trajectory.md); it never *optimizes* them. All of this lands in Phase 3 (see §12).
 
 **Primary users:** everyone — Sim is the execution substrate. Directly: autonomy and RL
 researchers (training/eval), mission designers (trade studies via [Studio](studio.md)),
@@ -91,12 +103,16 @@ astro_mine.sim
 ├── runtime/         # the stepping core: scenario loader, clock, RNG/seed manager, episode loop
 │   ├── scenario     #   scenario spec → resolved world + assets + agents + termination
 │   ├── clock        #   multi-rate time: SPICE epochs (TDB/ET), variable & sub-stepped dt
-│   └── episode      #   reset/step driver implementing the Core Environment API
+│   ├── episode      #   reset/step driver implementing the Core Environment API
+│   └── sequencer    #   (RFC-0001) multi-phase runtime: runs phases in order, evaluates
+│                    #     entry/exit conditions, performs the PhaseTransition handoff (mechanism only)
 ├── engines/         # physics-engine adapters (plugins), one per backend
 │   ├── orbital/     #   Basilisk / Orekit adapters; SPICE ephemerides & frames
 │   ├── contact/     #   MuJoCo, Brax adapters (fast/differentiable rigid contact)
 │   ├── manip/       #   Drake adapter (contact-rich manipulation, grasp/excavator linkages)
 │   ├── granular/    #   DEM / MPM granular-excavation backend + Surrogate tier hook
+│   ├── microg/      #   (RFC-0001) microgravity contact/anchoring/proximity-ops: cohesion-
+│   │                #     dominated low-g DEM contact (Project Chrono) — distinct from terramechanics
 │   ├── surface/     #   Isaac Sim / Omniverse + Gazebo adapters (GPU-scale terrain mobility)
 │   └── powertherm/  #   power & thermal ODE/network solver (battery, radiator, RTG, eclipse)
 ├── coupling/        # multi-domain coupler: state exchange, time sync, frame/unit bridging
@@ -147,6 +163,17 @@ In-process **library** for local/dev and embedding in [Learn](learn.md)/[Bench](
 rollouts on [Cloud](cloud.md). As a **digital-twin shadow**: a long-lived instance fed live state
 estimates from [Ops](ops.md), running ahead of reality to vet replans. Live frames stream to
 [View](view.md); recordings stream to MCAP for [Bench](bench.md)/[View](view.md) replay.
+
+**Multi-regime & multi-phase (RFC-0001).** The same engine-pluralist routing absorbs the new
+**microgravity contact** domain as just another `RegimeEngine` behind the waist (no new public
+surface), and **multi-regime propagation** is the existing co-simulation coupler spanning the
+[Transit](transit.md) free-space dynamics ↔ body-proximity ↔ surface boundaries via the
+`PhaseTransition` state handoff. The `runtime/sequencer` is a thin scheduler over `episode`: it
+drives the ordered phases of a [Mission](mission-model.md), evaluates each phase's entry/exit
+conditions, and exchanges terminal→initial state at the boundary — purely *mechanism*. The
+*policy* (which phases, in what order, with what contingencies) is authored in
+[Studio](studio.md) and executed live by [Ops](ops.md); [Core](core.md) holds only the
+`MissionSpec`/`PhaseTransition` schema ([RFC-0001 R2](../rfc/0001-multi-regime-missions.md)).
 
 ---
 
@@ -212,6 +239,14 @@ estimates from [Ops](ops.md), running ahead of reality to vet replans. Live fram
 - **Assets** — SADF documents + USD/glTF geometry from [Fleet](fleet.md)/[Core](core.md).
 - **Surrogate models** — **ONNX** artifacts from [Surrogate](surrogate.md) (conventions.md §6).
 
+**Multi-regime & multi-phase (RFC-0001).** A `Scenario` is the per-phase reproducibility unit; a
+multi-phase [Mission](mission-model.md) is run as an ordered set of phase scenarios joined by
+`PhaseTransition` handoffs, each recording carrying its phase's `regime` and the terminal→initial
+state. Sim **consumes** descriptive `TrajectoryRef`/`ManeuverBudget` artifacts from
+[Trajectory](trajectory.md) as inputs to *validate and propagate* — never as executable guidance
+— and consumes microgravity-contact surrogates from [Surrogate](surrogate.md) as an additional
+fidelity tier with its own error budget.
+
 **Storage & lifecycle.** Specs and recordings are **content-addressed** in an S3-compatible
 object store (MinIO self-host; S3/GCS in cloud); relational scenario/run metadata in
 **PostgreSQL** (+ PostGIS); ephemeral run state and the digital-twin live buffer in **Redis**
@@ -230,6 +265,10 @@ Sim is the hub of the design/training loop and the shadow of the operations loop
   consumed; all message/sensor schemas derive from Core's catalog (conventions.md §3).
 - **Consumes** worlds from [Worlds](worlds.md), resource ground-truth from [Prospect](prospect.md),
   comms models from [Link](link.md), and SADF assets from [Fleet](fleet.md).
+- **Validates trajectories from** [Trajectory](trajectory.md) (RFC-0001): Sim *propagates and
+  checks* the descriptive `TrajectoryRef`/`ManeuverBudget` arcs Trajectory designs — feasibility,
+  margins, regime coupling — and **never optimizes** them; for the free-space legs it runs against
+  the [Transit](transit.md) environment.
 - **Fidelity-accelerated by** [Surrogate](surrogate.md): learned surrogates (ONNX) slot in as
   granular/contact fidelity tiers under the scheduler, with error tracked against the
   high-fidelity engine.
@@ -365,6 +404,7 @@ ingest): **ROS 2/DDS** at the [Bridge](bridge.md) boundary.
 | **Multi-domain coupling** | Monolithic single-state engine; explicit operator-splitting/co-simulation coupler with frame/unit bridging; functional-mockup (FMI) style | **Explicit co-sim coupler** with named coupling boundaries, multi-rate sub-stepping, SPICE-frame/SI bridging, and tracked coupling residuals — the only scheme that spans heterogeneous engines. |
 | **Multi-fidelity scheduling** | Manual per-scenario fidelity choice; rule/heuristic tier selection; **error-budget-driven scheduler** (auto-select cheapest tier meeting tolerance) | **Error-budget-driven scheduler** with per-tier tracked deviation vs. high-fidelity reference (conventions.md §8). Start rule-based in Phase 0; evolve toward learned tier selection. |
 | **Granular/excavation backend** | DEM only (accurate, slow); MPM; **DEM/MPM ground truth + learned surrogate tier** | **Ground-truth DEM/MPM + [Surrogate](surrogate.md) tier** with bounded-error gating — interactive speed with quantified fidelity (charter §9). |
+| **Microgravity contact/anchoring (RFC-0001)** | Reuse the terramechanics/contact engines; **a distinct low-g cohesion-dominated DEM domain** routed separately | **Distinct routed domain** (cohesion-dominated, low-g contact via **Project Chrono**-class DEM) behind the same pluggable multi-engine waist, with a [Surrogate](surrogate.md) tier — surface-gravity terramechanics does not transfer to proximity-ops/anchoring. Phase 3. |
 | **GPU vs CPU rollouts** | CPU-only; GPU-only; **hybrid (CPU specialist regimes + GPU for parallel/contact/render)** | **Hybrid.** CPU for orbital/power-thermal/Drake and the always-works local tier; GPU (Brax/MJX/Isaac/CUDA-granular) for parallel training and rendering. |
 | **Fast-contact training engine** | MuJoCo (MJX); Brax; both | **Both, MuJoCo/MJX default, Brax for differentiable/JAX-native** massively parallel rollouts (conventions.md §6). |
 | **Orbital backend** | Orekit; Basilisk; SPICE-only propagation | **Basilisk + Orekit** (flight-like dynamics + propagation/events), **SPICE** for frames/time, **GMAT/STK** as oracles only (conventions.md §11). |
@@ -407,4 +447,7 @@ ingest): **ROS 2/DDS** at the [Bridge](bridge.md) boundary.
   terrestrial-analog rover-swarm field tests; live streaming to [View](view.md).
 - **Phase 3.** Flight-adjacent fidelity tiers feeding [Bridge](bridge.md); new regimes (asteroids,
   icy moons) added purely as engine/world plugins — the measure of success being how *little* the
-  Sim core changes as regimes grow.
+  Sim core changes as regimes grow. **Multi-regime missions (RFC-0001):** the microgravity-contact
+  engine, multi-regime propagation (coupling [Transit](transit.md)), and the multi-phase runtime
+  `sequencer` land here — consuming the additive `MissionSpec`/`regime`/`PhaseTransition`
+  [Core](core.md) schema hooks **reserved in Phase 1** ([RFC-0001 R5](../rfc/0001-multi-regime-missions.md)).

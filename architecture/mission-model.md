@@ -1,6 +1,6 @@
 # Mission / Phase / Regime Model — Core Schema Sketch
 
-> Status: **Proposed** — pending [RFC-0001: Multi-regime missions](../rfc/0001-multi-regime-missions.md).
+> Status: **Accepted** ([RFC-0001: Multi-regime missions](../rfc/0001-multi-regime-missions.md)) — implementation Phase 3.
 > Layer: **Commons backbone** (extends [Core](core.md)) · Phase: schema hooks in **1**, implementation **3**.
 > Cross-cutting standards: see [conventions.md](conventions.md).
 

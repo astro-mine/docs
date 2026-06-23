@@ -1,6 +1,6 @@
 # Astro-Mine-Hub — Technology Architecture
 
-> Layer: **Commons backbone & platform infrastructure** · Phase: **1**
+> Layer: **Commons backbone & platform infrastructure** · Phase: **1** · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
 > The registry for sharing and discovering everything the community produces — plugins,
 > worlds, assets, policies, and surrogate models — indexed by their [Core](core.md) manifest.
 > Cross-cutting standards: see [conventions.md](conventions.md).
@@ -31,6 +31,14 @@ Hub does, and only does:
 - **Resolves** dependencies and compatibility between artifacts via SemVer + Core interface
   ranges;
 - **Gates** downloads by license and export-control/dual-use policy.
+
+**Mission-architecture artifacts (RFC-0001).** When multi-regime missions land (Phase 3), the same
+registry indexes new shareable artifact *types* by their [Core](core.md) manifest: **mission
+templates / `MissionSpec`s** (see [mission-model](mission-model.md)), **`TrajectoryRef`/`ManeuverBudget`
+libraries** ([Trajectory](trajectory.md) — *descriptive, design-time* reference arcs, **not**
+executable guidance), **sized spacecraft designs** (SADF configs from [Sizing](sizing.md)), and
+**open economics / value models** from [Ledger](ledger.md). They are stored, signed, indexed, and
+served exactly like every other artifact — Hub still never executes them.
 
 **Explicitly out of scope.** Hub does *not* execute, simulate, train, or score anything — it
 **distributes the artifacts** that [Sim](sim.md), [Learn](learn.md), and [Bench](bench.md) act
@@ -115,6 +123,10 @@ astro_mine.hub
   `…world.v1`, `…asset.v1` for SADF bundles, `…surrogate.v1`, `…plugin.v1`). Its OCI manifest
   layers carry the payload (an ONNX file, a USD/glTF + SADF bundle, a Zarr/COG world, a
   surrogate checkpoint) and reference the **Core plugin manifest** as a layer/config.
+  **(RFC-0001)** The mission-architecture types add `…mission.v1` (a `MissionSpec`),
+  `…trajectory.v1` (a descriptive `TrajectoryRef`/`ManeuverBudget`), `…asset.v1` for *sized* SADF
+  designs, and `…economics.v1` (a [Ledger](ledger.md) value model) — each indexed by the same Core
+  manifest, with the same content-addressing and attestations.
 - **Catalog record** — the indexed projection of an artifact's Core manifest into Postgres:
   `kind`, `core_interface_versions[]`, `capability_tags[]`, `inputs/outputs`, `license`,
   `provenance`, `signatures[]`, plus Hub-side facets (downloads, publisher, namespace, semantic
@@ -203,7 +215,10 @@ Hub **owns the distribution and index** of artifacts; it does **not** own their 
   assigns to Hub/Cloud/Bench. Payloads: **ONNX** policies (conventions.md §6), **SADF**
   asset bundles with **USD/glTF** geometry (conventions.md §3), **Zarr/COG** world/resource
   fields (conventions.md §5), surrogate model checkpoints, plugin bundles, and Core **schema
-  bundles**.
+  bundles**. **(RFC-0001)** plus **`MissionSpec`** documents, **`TrajectoryRef`/`ManeuverBudget`**
+  libraries ([Trajectory](trajectory.md)), **sized SADF designs** ([Sizing](sizing.md)), and
+  **open economics / value models** ([Ledger](ledger.md)) — content-addressed and provenance-
+  tracked like everything else, so a mission trade study reproduces exactly.
 
 **Formats & schemas:** OCI image-manifest + custom `artifactType` media types; the **Core plugin
 manifest** as the index schema; OpenAPI 3.1 for the API; CycloneDX/SPDX for SBOMs;
@@ -345,7 +360,13 @@ want to enter and the place reproducibility lives or dies. This section is centr
   **capability tags** (Core's dual-use taxonomy). Genuinely sensitive operational capability is
   partitioned into **access-controlled/gated namespaces**; license compatibility (Apache-2.0
   default, charter §10.4) and export posture are checked before resolution returns bytes.
-  "Open does not mean naive."
+  "Open does not mean naive." **(RFC-0001)** The supply-chain stack (signing, SLSA provenance,
+  SBOM) and these gates apply unchanged to the mission-architecture artifacts: the reserved
+  `operational_targeting` capability tag plus license/export gating (OPA) govern downloads of
+  `TrajectoryRef`/`MissionSpec`/sized-SADF artifacts at the boundary — keeping descriptive,
+  design-time trajectory work in the open commons while partitioning operational maneuver targeting
+  and guided EDL out. **Proprietary cost-data plugins** (the commercial layer above the open
+  [Ledger](ledger.md) framework) are access-gated, **not** part of the open commons.
 - **Org/CI supply-chain defaults** (conventions.md §9) apply: Dependabot, secret scanning, push
   protection, read-only default Actions permissions; secrets via External Secrets Operator +
   Vault/KMS — none in images or repos.
@@ -403,6 +424,11 @@ want to enter and the place reproducibility lives or dies. This section is centr
   useful; validated against curated relevance sets.
 - **Reproducibility ↔ storage cost** of never deleting referenced digests — retention/tiering
   policy for yanked-but-referenced artifacts, co-designed with [Bench](bench.md).
+- **(RFC-0001) Mission-architecture artifact handlers & gating** — per-`artifactType` validators
+  for `MissionSpec`/`TrajectoryRef`/sized-SADF/economics artifacts, and the OPA gating that ties
+  `TrajectoryRef` downloads to the `operational_targeting` tag — co-designed with
+  [Trajectory](trajectory.md), [Sizing](sizing.md), [Ledger](ledger.md), and the
+  [mission-model](mission-model.md) schema.
 
 ---
 
@@ -427,3 +453,8 @@ want to enter and the place reproducibility lives or dies. This section is centr
   ranking; ecosystem features (third-party verified publishers, commercial layers) as the
   cislunar ecosystem matures (charter §11, Phase 3). The measure of success is the same as the
   commons itself: how readily a contribution published once becomes usable everywhere.
+- **Phase 3 (multi-regime missions, RFC-0001).** Hub indexes and serves the new
+  mission-architecture artifact types — `MissionSpec`s, `TrajectoryRef`/`ManeuverBudget` libraries,
+  sized SADF designs, and open economics models — with `operational_targeting`-aware gating. No
+  earlier Hub work is required since these reuse the existing artifact/manifest machinery; the
+  enabling [Core](core.md) manifest hooks are reserved in Phase 1 ([mission-model](mission-model.md)).

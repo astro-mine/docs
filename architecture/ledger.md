@@ -1,6 +1,6 @@
 # Astro-Mine-Ledger — Technology Architecture
 
-> Status: **Proposed** — pending [RFC-0001: Multi-regime missions](../rfc/0001-multi-regime-missions.md).
+> Status: **Accepted** ([RFC-0001: Multi-regime missions](../rfc/0001-multi-regime-missions.md)) — implementation Phase 3.
 > Layer: **Mission architecture & logistics** (NEW layer) · Phase: **3** (proposed)
 > Open techno-economic & logistics modeling — cost / value / risk under explicit uncertainty: the mission-level objective / value function for trade studies.
 > Cross-cutting standards: see [conventions.md](conventions.md).

@@ -1,6 +1,6 @@
 # Astro-Mine-Allocate — Technology Architecture
 
-> Layer: **Autonomy & coordination** · Phase: **1**
+> Layer: **Autonomy & coordination** · Phase: **1** · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
 > The combinatorial core of swarm coordination — who does what, when, and where.
 > Cross-cutting standards: see [conventions.md](conventions.md).
 
@@ -26,6 +26,16 @@ It owns and only owns:
 - a portfolio of **solver backends** (exact, metaheuristic, market/auction, learned-guided)
   behind one strategy interface;
 - **anytime / online re-solving** machinery for replanning under change.
+
+**Mission-level joint assignment (RFC-0001).** With the multi-regime extension, the same engine
+also decides the discrete backbone of an interplanetary resource mission: **which asset → which
+target** (e.g. which asteroid) **→ which launch/transfer window → which trajectory**. This is the
+discrete/continuous joint problem the RFC identified as having no owner — it sits between Allocate
+and [Sim](sim.md) (RFC-0001 §4, motivation item 1) and is **assigned to Allocate** for the
+discrete-assignment half, mixing combinatorial choice with continuous orbital-mechanics
+feasibility. Allocate still owns only the *assignment*; trajectory *optimization* is
+[Trajectory](trajectory.md)'s, and the trade-study loop that couples them is
+[Studio](studio.md)'s.
 
 **Explicitly out of scope:** Allocate does **not** own the Policy/Planner API itself — that is
 [Core](core.md). It is not a mission planner or behavior orchestrator — that hierarchy lives in
@@ -134,6 +144,17 @@ and indexed by [Hub](hub.md). A research lab ships "learning-to-branch for excav
 a guidance plugin without touching Allocate's core. Reference solvers ship as *replaceable
 examples*.
 
+**Mission-level joint assignment (RFC-0001).** Multi-regime missions add new *constraint
+families* and *edge weights* to this same machinery — no new solver paradigm. Window-feasibility,
+Δv, and time-of-flight from [Trajectory](trajectory.md)'s `TrajectoryRef`/`ManeuverBudget`
+artifacts enter as a constraint builder (launch/transfer windows as time-windowed availability,
+Δv/ToF as edge costs), with Δv→propellant feasibility resolved via [Sizing](sizing.md); the
+asset↔target↔window↔trajectory choice is encoded in the existing Allocation IR as additional
+decision variables over a **time-expanded** asset-target-window graph. The combinatorial backbone
+(CP-SAT / MILP + learned warm-starts) is unchanged; the constraint set and the time-expanded
+structure grow. See the [mission-model](mission-model.md) for the Mission/Phase/Regime vocabulary
+these constraints reference.
+
 ### Interaction patterns
 
 In-process: [Mind](mind.md) imports Allocate and calls the allocation sub-interface directly
@@ -232,6 +253,13 @@ Allocate sits inside the autonomy layer and integrates entirely through Core con
   uncertainty), [Fleet](fleet.md) (asset capabilities & budgets). Where durations/costs come from
   physics, they are sourced via [Sim](sim.md)/[Surrogate](surrogate.md) rollouts or cached
   cost tables, not re-derived.
+- **Mission-level constraints from [Trajectory](trajectory.md)/[Sizing](sizing.md) (RFC-0001):**
+  for multi-regime missions Allocate additionally consumes `TrajectoryRef`/`ManeuverBudget`
+  feasibility plus Δv/time-of-flight from [Trajectory](trajectory.md) as window-gated constraints
+  and edge weights, and Δv→propellant feasibility from [Sizing](sizing.md) — alongside the
+  existing power, comms-window, and terrain constraints. The Mission/Phase/Regime contract these
+  reference lives in [Core](core.md) ([mission-model](mission-model.md)). [Link](link.md) supplies
+  deep-space comms windows for the transit/proximity phases on the same contact-graph interface.
 - **Outputs wrapped by [Guard](guard.md):** the `Allocation` is handed to Guard, which enforces
   hard constraints (collision, power floors, keep-out) **independently** of Allocate's solver
   (conventions.md §9). Feasible-by-construction plans still pass through the independent shield.
@@ -394,6 +422,15 @@ Allocate sits inside the autonomy layer and integrates entirely through Core con
 - **Granularity of the contact-graph and traversal-cost interface** with [Link](link.md) and
   [Worlds](worlds.md) so the IR stays solver-neutral without leaking physics.
 
+**Mission-level joint assignment (RFC-0001).** The asset↔target↔window↔trajectory problem reuses
+every recommendation above: **CP-SAT / MILP** as the combinatorial backbone, **learned
+warm-starts** for the larger search, and the **GNN-over-graph** encoder extended to the
+asset-target-window graph. It is **window-gated with hard orbital deadlines** (a missed launch
+window is infeasible until the next synodic opportunity), which makes it a natural fit for the
+existing **anytime / rolling-horizon** re-solve. The open dependency here is the IR encoding of the
+continuous Δv/ToF feasibility from [Trajectory](trajectory.md) without leaking orbital mechanics
+into the solver-neutral model — the mission-scale analogue of the contact-graph question above.
+
 ---
 
 ## 12. Roadmap alignment
@@ -417,3 +454,8 @@ Allocate sits inside the autonomy layer and integrates entirely through Core con
   new task/asset regimes (asteroids, icy moons) arrive purely as constraint/solver plugins, never
   as core changes — the measure of success being how little Allocate's IR has to change as the
   edges grow.
+- **Phase 3 (RFC-0001):** mission-level joint asset↔target↔window↔trajectory assignment lands as
+  added constraint families/edge weights consuming [Trajectory](trajectory.md)/[Sizing](sizing.md)
+  feasibility over the Mission/Phase/Regime contract ([mission-model](mission-model.md)) — Core
+  schema hooks reserved in **Phase 1**, implementation in **Phase 3**; the IR and CP-SAT/MILP
+  backbone are unchanged.

@@ -1,8 +1,9 @@
 # RFC 0001: Multi-regime missions (interplanetary resource campaigns)
 
-- **Status:** draft
+- **Status:** accepted
 - **Author(s):** djankov (https://github.com/djankov)
 - **Created:** 2026-06-22
+- **Accepted:** 2026-06-22
 - **Affects Core:** yes
 
 ## Summary
@@ -188,6 +189,9 @@ not type explosion.
 
 ## Unresolved questions
 
+*Resolved on acceptance — see [Resolutions and implications](#resolutions-and-implications) below.
+This section is retained as the deliberative record of what was open at draft time.*
+
 - **Regime-enum completeness:** is `{launch_ascent, interplanetary_transit, proximity_orbit,
   surface, ascent_return, earth_interface}` sufficient for icy-moon and multi-target tours, or are
   `aerobraking` / `formation` regimes needed? Resolve via reference scenarios, not speculation.
@@ -203,3 +207,97 @@ not type explosion.
   Bench benchmark.
 - **Scope governance:** this roughly doubles platform surface area; the steering group should
   decide the opt-in track's resourcing so it does not compete with the lunar MVP.
+
+## Resolutions and implications
+
+*Accepted 2026-06-22. The questions above are resolved as follows.*
+
+### Resolved questions
+
+**R1 — Regime enumeration: the six are the closed baseline; `formation` and `aerobraking` are not
+added.** The accepted set is `{launch_ascent, interplanetary_transit, proximity_orbit, surface,
+ascent_return, earth_interface}`. *Formation flying* is a multi-agent coordination **pattern**, not
+a distinct dynamical regime — it is modeled within `proximity_orbit`/`interplanetary_transit` as a
+swarm campaign. *Aerobraking* is a maneuver that implies guided atmospheric flight and so brushes
+the EDL dual-use line; it is deferred and treated with the same caution as `earth_interface`. New
+regimes are added only by RFC, only when a concrete reference scenario forces them.
+
+**R2 — Phase sequencing: schema in Core, mechanism in the runtime, policy in Studio/Ops.** Core
+owns only the `MissionSpec`/`PhaseTransition` schema. The *mechanism* — running a phase, evaluating
+entry/exit conditions, performing the state handoff — is a thin **sequencer in the
+[Sim](../architecture/sim.md) scenario runtime**, mirrored by an executor in
+[Ops](../architecture/ops.md) for live operations. The *policy* — phase ordering, contingencies,
+cross-phase replanning — lives in [Studio](../architecture/studio.md) (design) and Ops
+(operations). Core never learns how to fly a mission.
+
+**R3 — `TrajectoryRef`: descriptive-only, enforced by schema omission.** It carries ordered
+segments, maneuvers (epoch, Δv magnitude and direction in a named SPICE frame, maneuver type),
+reference state samples at a bounded cadence, feasibility margins, and provenance. It **omits — by
+schema, not convention** — actuator/thruster command channels, control gains, closed-loop guidance
+laws, and any binding to an onboard flight clock. It is a reference for trade studies and
+[Sim](../architecture/sim.md) validation, never a command, and is additionally gated by the
+`operational_targeting` capability tag.
+
+**R4 — Co-optimization: `MissionSpec` stays declarative; coupling lives in Studio.** `MissionSpec`
+is the result/spec artifact (objective reference, fleet, phases, per-leg `ManeuverBudget`s); it does
+**not** encode the optimization formulation. The trajectory⇄fleet⇄swarm⇄economics co-optimization
+is [Studio](../architecture/studio.md)'s trade-study engine's job, orchestrating
+[Trajectory](../architecture/trajectory.md)/[Sizing](../architecture/sizing.md)/[Ledger](../architecture/ledger.md)/[Sim](../architecture/sim.md),
+with Sizing and Ledger sharing one OpenMDAO graph for the tight vehicle⇄economics inner loop. This
+keeps Core thin and the coupling swappable.
+
+**R5 — Roadmap: Core hooks in Phase 1, implementations in Phase 3, NEO sample-return as a named
+benchmark.** The additive Core schema hooks (`MissionSpec`/`regime`/`PhaseTransition` + SADF
+propulsion fields) land in **Phase 1**, while Core is already being extended for autonomy. The four
+new components and the small-body / microgravity / deep-space extensions land in **Phase 3**. **NEO
+rendezvous + sample-return** is added as the named Phase-3 stepping-stone
+[Bench](../architecture/bench.md) benchmark; full multi-asteroid mining is the Phase-3 capstone.
+The track is opt-in and must not gate the lunar MVP.
+
+**R6 — Governance: a dedicated working group, off the MVP critical path.** The mission-architecture
+track is owned by a working group under the steering group, resourced separately from the
+lunar-MVP critical path. The only Phase-0/1 obligation on the core team is reserving the additive
+Core schema hooks. The track is reviewed at the Phase-2 → Phase-3 gate.
+
+### Architectural implications
+
+- **Core stays thin.** The only Core deltas are schema additions (`MissionSpec`, `regime`,
+  `PhaseTransition`, SADF propulsion/return capabilities, capability tags). Mechanism lives in the
+  Sim/Ops runtime; policy in Studio/Ops. The Environment API gains a bounded `regime` dimension —
+  not per-regime interfaces.
+- **One new layer, one new environment component.** "Mission architecture & logistics"
+  ([Trajectory](../architecture/trajectory.md), [Sizing](../architecture/sizing.md),
+  [Ledger](../architecture/ledger.md)) plus [Transit](../architecture/transit.md); everything else
+  is an additive extension to an existing component (see §4).
+- **Backward-compatible by construction.** A single-`surface`-phase Mission is exactly today's
+  campaign; existing scenarios and components run unchanged.
+
+### Implementation implications
+
+- **Bridge, don't build.** Trajectory wraps pykep/pygmo/poliastro/Orekit/Basilisk (GMAT/STK as
+  oracles); Sizing and Ledger build on OpenMDAO. No astrodynamics or MDO engine is reinvented,
+  per the charter's "integrate aggressively, reinvent little" mandate.
+- **Determinism & provenance extend to missions.** Global trajectory optimization is seeded, and
+  `TrajectoryRef`s, sized SADF configs, and value models are content-addressed, so a mission trade
+  study reproduces exactly (conventions.md §5, §11).
+- **Phase-1 cost is small.** Only the additive Core schema work sits on the early critical path; the
+  component build is Phase 3.
+
+### User-surface implications
+
+- **Studio gains a Mission Architect mode** — a distinct workspace and persona (mission & systems
+  engineers, astrodynamicists, resource economists) over the same backend and trade-study loop.
+- **View gains** multi-body trajectory rendering, a mission timeline across regimes, and
+  cross-phase plan explanation.
+- **Ops gains** phase-gated adjustable autonomy for the much higher latency of deep-space phases.
+- **New audiences** join the existing robotics / RL / planetary-science base without disrupting it.
+
+### Security, export-control & commons implications
+
+- **Design-time only.** Trajectory produces descriptive artifacts; operational maneuver targeting
+  and guided EDL stay excluded and are gated by the `operational_targeting` capability tag at the
+  registry and [Bridge](../architecture/bridge.md) boundary.
+  [EXPORT_CONTROL.md](https://github.com/astro-mine/.github/blob/main/EXPORT_CONTROL.md) gains the
+  explicit design-time-vs-operational line.
+- **Commons/commercial split preserved.** Ledger ships an open parametric framework; proprietary
+  cost data, pricing, and ROI tuning remain commercial plugins above the open core.

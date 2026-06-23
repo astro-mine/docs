@@ -1,6 +1,6 @@
 # Astro-Mine-Bridge — Technology Architecture
 
-> Layer: **Design & operations** (operations runtime, online mode) · Phase: **2** (flight-software integration matures in Phase 3)
+> Layer: **Design & operations** (operations runtime, online mode) · Phase: **2** (flight-software integration matures in Phase 3) · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
 > The hardware and flight-software abstraction layer. The boundary between Astro-Mine's planes and the ROS 2/DDS + flight-software world.
 > Cross-cutting standards: see [conventions.md](conventions.md).
 
@@ -41,6 +41,17 @@ Concretely, Bridge does:
   [Ops](ops.md). Bridge is mechanism, not policy.
 - **No physics.** The simulator is [Sim](sim.md); Bridge merely speaks to it like any backend.
 - **No mission-control UI.** That is [View](view.md) (OpenMCT/Cesium).
+
+**Deep-space stacks & the targeting boundary (RFC-0001).** Multi-regime missions add
+*operational-phase* flight-stack and protocol adapters for the long-delay, deep-space phases —
+**DSN telecommand/telemetry**, **CCSDS** (including **CFDP** for file transfer) and **DTN / Bundle
+Protocol (BPv7)** for delay-tolerant links — alongside the existing ROS 2 / cFS / F´ adapters.
+This is purely more *translation*: it carries plans and telemetry over harder links, it does not
+add decisions. Critically, the RFC's dual-use line is **reaffirmed, not weakened**: operational
+**maneuver targeting** stays **partitioned and excluded** from the open commons. Bridge does
+**not** turn [Trajectory](trajectory.md)'s descriptive `TrajectoryRef` reference arcs into
+executable guidance for real flight hardware; the reserved `operational_targeting` capability tag
+gates this boundary at the registry/Bridge edge (RFC §6, R3; [mission-model](mission-model.md) §4).
 
 **Primary users:** flight-software engineers and integrators who write or maintain the adapter
 for a given robot/flight stack, and operations engineers who configure the sim-vs-hardware
@@ -105,7 +116,8 @@ astro_mine.bridge
 │   ├── ros2/          #   → ROS 2 / DDS topics, actions, services (rcl)
 │   ├── cfs/           #   → NASA cFS Software Bus (SB) apps/messages
 │   ├── fprime/        #   → JPL F´ commands / channelized telemetry
-│   └── ccsds/         #   → Space Packet Protocol, TC/TM, (opt.) CFDP / BP-DTN
+│   ├── ccsds/         #   → Space Packet Protocol, TC/TM, (opt.) CFDP / BP-DTN
+│   └── dsn/           #   → DSN telecommand/telemetry for deep-space phases (RFC-0001, sensitive → §9)
 ├── transform/         # shared translation services used by every adapter
 │   ├── timebase/      #   SPICE TDB/ET ⇄ stack clocks; correlation & skew
 │   ├── frames/        #   SPICE body-fixed/inertial ⇄ stack frames (tf2, etc.)
@@ -150,6 +162,10 @@ astro_mine.bridge
 - **New robot/payload on an existing backend** = new/extended `Codec` registered against a Core
   schema version.
 - **New link profile / delivery policy** = a `delivery` strategy plugin.
+- **Deep-space stacks (RFC-0001)** = additional `Adapter`s (DSN, extended CCSDS/CFDP, DTN/BP)
+  behind the *same* hexagon port — no new port, no new decision surface. The very long light-times
+  of deep-space phases lean hard on the existing `delivery` (store-and-forward) machinery rather
+  than adding new mechanism.
 
 ### Interaction patterns
 
@@ -338,6 +354,14 @@ actuation line. This section is deliberately the most thorough (charter §10.5; 
   planner/solver and the principle "translation, never decision" (§2.3) is a contract test, not
   just a guideline. Genuinely sensitive operational targeting is therefore *structurally* absent
   from the open layer, not merely discouraged.
+- **Deep-space adapters & operational targeting (RFC-0001).** The new deep-space stacks add
+  *links*, not *decisions*: Bridge still never converts [Trajectory](trajectory.md)'s descriptive
+  `TrajectoryRef` reference arcs into executable maneuver guidance — operational targeting remains
+  **partitioned out of the open commons** and gated by the `operational_targeting` capability tag
+  at the registry/`Session` edge (RFC §6, R3; [mission-model](mission-model.md) §4). Generic CCSDS
+  handling stays open; **DSN, mission-specific, and operational-targeting-adjacent adapters are
+  treated as potentially controlled** and live in **access-controlled repos** under the EAR/ITAR
+  posture below (conventions.md §12).
 
 ### AuthN / AuthZ
 
@@ -419,7 +443,7 @@ actuation line. This section is deliberately the most thorough (charter §10.5; 
 | **Adapter architecture** | Monolithic per-stack translators; **per-stack plugins behind one Bridge port (hexagonal)**; codegen-only | **Per-stack plugins behind a common port (hexagonal)** — the only architecture that preserves the identical-plan invariant and clean capability partitioning |
 | **Sim-path transport** | **ROS 2 bridge**; **gRPC**; **shared memory** | **gRPC by default** for the sim/digital-twin path (typed, streaming, matches conventions.md §4 control plane); **shared memory** for co-located high-rate twin; ROS 2 used when the twin already lives on the DDS plane |
 | **Robotics data plane** | ROS 2/DDS; custom transport | **ROS 2 / DDS** (rmw_cyclonedds default; Zenoh bridge for WAN) — the charter lingua franca (conventions.md §4); not negotiable |
-| **CCSDS handling depth** | Minimal SPP only; **SPP + TC/TM**; full stack incl. CFDP + DTN/BP | **SPP + TC/TM as baseline; CFDP and DTN Bundle Protocol (BPv7) added as link delay/file-transfer needs demand** — don't build the full stack before a real link requires it |
+| **CCSDS handling depth** | Minimal SPP only; **SPP + TC/TM**; full stack incl. CFDP + DTN/BP | **SPP + TC/TM as baseline; CFDP and DTN Bundle Protocol (BPv7) added as link delay/file-transfer needs demand** — don't build the full stack before a real link requires it. Deep-space phases (RFC-0001) are what *demand* CFDP + DTN/BP; the **DSN telecommand/telemetry adapter** that rides on them is a Phase-3, access-controlled addition (§9) |
 | **cFS / F´ binding** | Reimplement; **link native (cFS SB app, F´ GDS ports)**; ground-only | **Link native** via a cFS Software Bus bridge app and the F´ ground data interface (charter §7) — interop, not reinvention |
 | **Sim-vs-hardware switch** | Build-time flag; **runtime `BridgeTarget` config**; separate binaries | **Runtime `BridgeTarget` selection** with an **identical-plan conformance test** (HIL/SIL) as the CI gate — config differs, the plan bytes do not |
 | **Clock / time-sync** | Trust each stack's clock; **SPICE TDB/ET as canonical + measured correlation**; PTP/NTP only | **SPICE TDB/ET canonical**, with measured, bounded, surfaced correlation to each stack's clock (PTP/NTP where the medium allows) — explicit time, never assumed (conventions.md §5) |
@@ -466,3 +490,8 @@ actuation line. This section is deliberately the most thorough (charter §10.5; 
   **hardware-in-the-loop** validation; sensitive hardware/mission adapters delivered through
   **access-controlled repos** under the documented EAR/ITAR posture (§9). The certification-grade
   flight-code/targeting generator remains **permanently out of scope** (charter §2.2, §10.5).
+  - **Multi-regime deep-space stacks (RFC-0001):** the **DSN telecommand/telemetry**, extended
+    **CCSDS/CFDP**, and **DTN/BP** operational-phase adapters land in **Phase 3** (the
+    `MissionSpec`/`regime`/`PhaseTransition` Core hooks and the `operational_targeting` capability
+    tag Bridge gates on are reserved in **Phase 1**); operational maneuver targeting stays
+    partitioned and excluded throughout ([mission-model](mission-model.md) §4).

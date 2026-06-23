@@ -1,6 +1,6 @@
 # Astro-Mine-Trajectory — Technology Architecture
 
-> Status: **Proposed** — pending [RFC-0001: Multi-regime missions](../rfc/0001-multi-regime-missions.md).
+> Status: **Accepted** ([RFC-0001: Multi-regime missions](../rfc/0001-multi-regime-missions.md)) — implementation Phase 3.
 > Layer: **Mission architecture & logistics (NEW layer)** · Phase: **3** (proposed)
 > Design-time trajectory & maneuver optimization across mission regimes — the platform's first component that *optimizes* trajectories rather than merely propagating them.
 > Cross-cutting standards: see [conventions.md](conventions.md).

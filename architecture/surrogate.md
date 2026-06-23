@@ -1,6 +1,6 @@
 # Astro-Mine-Surrogate — Technology Architecture
 
-> Layer: **Multi-physics simulation** · Phase: **1**
+> Layer: **Multi-physics simulation** · Phase: **1** · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
 > Learned, fast surrogates for the most expensive physics — with error you can trust.
 > Cross-cutting standards: see [conventions.md](conventions.md).
 
@@ -23,6 +23,15 @@ What it does:
   feasible) that [Sim](sim.md) loads as a **low-cost fidelity tier**.
 - **Detects drift** and **re-validates / resamples** against ground truth on a schedule or a
   trigger, so a surrogate that has wandered out of its trust region is caught and retired.
+
+**Microgravity contact / anchoring surrogates (RFC-0001).** The multi-regime extension adds a new
+surrogate *domain*: small-body / microgravity regolith contact and anchoring, for the
+`proximity_orbit` and `surface` phases of asteroid-mining and NEO-sample-return missions (see
+[mission-model](mission-model.md), [Worlds](worlds.md)'s small-body work). This is the
+**lowest-data, hardest case** the platform faces — there is almost no ground truth for small-body
+regolith mechanics or microgravity contact dynamics — so it is the most demanding test of the same
+bounded-error contract Surrogate already runs for lunar terramechanics, not a new contract. It is
+trained, packaged, and ONNX-served exactly like every other surrogate domain.
 
 **Explicitly out of scope:**
 
@@ -133,7 +142,9 @@ astro_mine.surrogate
 - **New uncertainty method** — pluggable: deep ensembles, conformal wrappers, GP residual
   models, Bayesian NN — all expose the same `uncertainty` interface.
 - **New physics domain** — declare the state/action space and a `SamplingPolicy`; the rest of
-  the pipeline (datagen → train → eval → drift → serve) is reused.
+  the pipeline (datagen → train → eval → drift → serve) is reused. **Microgravity contact /
+  anchoring (RFC-0001)** is exactly such an additive domain: it registers a `SurrogateModel` +
+  `ErrorReport` like any other and changes no Surrogate–[Sim](sim.md) contract.
 
 ### Interaction patterns
 
@@ -289,6 +300,12 @@ for the cloud training/serving service and **NATS/JetStream** for job lifecycle 
   - *Long-horizon error accumulation* — autoregressive rollouts drift. Mitigation: noise
     injection / pushforward training, periodic reanchoring to high-fidelity checkpoints, and
     uncertainty growth that the scheduler can see and act on.
+  - *Data scarcity in microgravity contact (RFC-0001)* — small-body regolith/microgravity
+    contact has almost no real ground truth, so the data-generation bottleneck is sharper and the
+    *honesty* of the bound matters more than its tightness. Mitigation: **conservative trust
+    regions and wider calibrated error bounds** (the [Sim](sim.md) scheduler is expected to fall
+    back to ground truth more often here than for lunar terramechanics), aggressive **active
+    resampling**, and lower drift/OOD thresholds that re-validate sooner — see §11.
 - **Scaling strategy** (conventions.md §8): multi-fidelity everywhere — the surrogate *is* the
   cheap dial; horizontal scale-out for training (Ray/K8s) and datagen ([Sim](sim.md) fan-out);
   cloud-native chunked data (Zarr/Parquet) so workers stream only the slices they need.
@@ -354,6 +371,7 @@ for the cloud training/serving service and **NATS/JetStream** for job lifecycle 
 | Decision | Options | Recommendation |
 |---|---|---|
 | **Surrogate family — granular/excavation contact** | GNN particle simulator (learned DEM); neural operator (FNO/DeepONet); GP emulator; hybrid physics-informed NN | **GNN particle simulator** (e.g., GNS/MeshGraphNet-style) — best fit for particle/contact dynamics and graph-structured granular media; physics-informed losses added |
+| **Surrogate family — microgravity contact / anchoring (RFC-0001)** | GNN particle simulator (low-g cohesive DEM); GP emulator; hybrid physics-informed NN | **GNN particle simulator with conservative uncertainty** — same family as excavation contact but tuned for low-g cohesion/anchoring; given the scarce ground truth, **calibrated bounds and trust-region width are weighted over point accuracy**, with the validation gate held strict |
 | **Surrogate family — fields (thermal, continuum)** | Neural operator (FNO/DeepONet); CNN/U-Net; GP | **Neural operator (FNO)** — resolution-independent, fast field-to-field maps |
 | **Surrogate family — low-dim emulation (scalar I/O, screening)** | GP; small MLP ensemble; polynomial chaos | **Gaussian process** — native calibrated uncertainty, data-efficient for low-dim |
 | **Uncertainty / error-bound method** | Deep ensembles; conformal prediction; GP residual model; Bayesian NN | **Deep ensembles + conformal calibration** as default (scalable, well-calibrated, distribution-free coverage); **GP** where it is the model. Bayesian NN deferred |
@@ -377,6 +395,11 @@ for the cloud training/serving service and **NATS/JetStream** for job lifecycle 
   end-to-end uncertainty budget is a research thread shared with [Worlds](worlds.md)/[Prospect](prospect.md).
 - **Active-learning acquisition** for granular physics: which sampling policy most cheaply shrinks
   the trust region — co-developed against [Sim](sim.md) datagen cost.
+- **Calibration with almost no ground truth (RFC-0001):** for microgravity contact/anchoring there
+  is little real-world data to anchor against, so honest calibration must lean on physics-informed
+  priors and conservative, possibly worst-case bounds. How to certify a surrogate as "trustworthy
+  enough to substitute" when the oracle itself is sparsely validated is an open thread shared with
+  [Worlds](worlds.md)/[Sim](sim.md).
 
 ---
 
@@ -397,3 +420,8 @@ for the cloud training/serving service and **NATS/JetStream** for job lifecycle 
   the active-learning datagen loop, online drift monitoring in the [Ops](ops.md) digital-twin,
   and a [Hub](hub.md)-driven community catalog of surrogates with comparable error reports — the
   "beat-the-leaderboard" flywheel applied to physics fidelity itself.
+- **Phase 3 (multi-regime missions, [RFC-0001](../rfc/0001-multi-regime-missions.md)):**
+  microgravity contact / anchoring surrogates for small-body work land with the broader multi-regime
+  extension. No Core hooks are needed beyond those reserved in Phase 1 (the surrogate reuses the
+  unchanged [Sim](sim.md) `ErrorReport`/fidelity-tier contract); only the new physics domain and its
+  datagen are added (see [mission-model](mission-model.md)).
