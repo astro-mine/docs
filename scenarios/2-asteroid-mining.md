@@ -18,9 +18,9 @@
 
 A fleet launches from Earth (reusing assets already in LEO where possible), cruises to a
 volatile-rich near-Earth asteroid under solar-electric propulsion, characterizes the body's
-shape, gravity, and resource field on arrival, descends to the surface to acquire a bulk
-regolith sample, and returns that sample to Earth — an end-to-end **Mission** spanning all six
-regimes of the [Mission/Phase/Regime model](../architecture/mission-model.md). The baseline is
+shape, gravity, and resource field on arrival, disperses a **swarm of samplers** that descend to
+multiple sites to acquire bulk regolith samples, and returns those samples to Earth — an end-to-end
+**Mission** spanning all six regimes of the [Mission/Phase/Regime model](../architecture/mission-model.md). The baseline is
 deliberately a **NEO rendezvous + sample-return** mission: the concrete, achievable first rung
 of the asteroid-mining vision that exercises the entire launch-to-return lifecycle. Sustained
 production — anchored excavation, in-situ volatile extraction, tonne-scale or in-situ-propellant
@@ -60,14 +60,16 @@ one-phase case of the same model.
 ## 3. Mission objective & success criteria
 
 **Objective (illustrative baseline — see [README honesty note](README.md#conventions)).**
-*"Rendezvous with a volatile-rich C-type NEO, characterize its resource field, acquire and return
-a bulk regolith sample of tens of kilograms to Earth, within a fixed cost and schedule envelope —
-demonstrating the complete launch-to-return mining precursor loop."*
+*"Rendezvous with a volatile-rich C-type NEO, characterize its resource field, and use a **swarm of
+samplers** to acquire and return bulk regolith samples from **multiple distinct sites** (tens of
+kilograms total) to Earth, within a fixed cost and schedule envelope — demonstrating the complete
+launch-to-return mining precursor loop with a swarm-based surface campaign."*
 
 | Success criterion | Baseline target (illustrative) | Maps to metric (§13) |
 |---|---|---|
-| Sample returned to Earth | ≥ 1 capsule, **10–50 kg** bulk regolith delivered | delivered sample mass |
-| Resource characterization | Volatile-content posterior uncertainty reduced ≥ X% over the sampled region | information gain |
+| Samples returned to Earth | **≥ 3 distinct-site samples**, **10–50 kg** bulk regolith total | delivered sample mass |
+| Site coverage / diversity | samples span **N distinct sites** across the resource field (spatial/geological spread) | site coverage |
+| Resource characterization | Volatile-content posterior uncertainty reduced ≥ X% over the **sampled sites** | information gain |
 | Mission completes all six phases | All `PhaseTransition` handoffs succeed; no phase-fatal anomaly | phase completion |
 | Within envelope | Total cost ≤ budget; schedule ≤ N years (window-feasible) | ROI-under-uncertainty, schedule |
 | Autonomy under latency | No loss-of-mission attributable to a missed/incorrect deep-space decision | autonomy-under-light-time |
@@ -101,7 +103,7 @@ constraints, and an ordered list of phases, each in one **Regime**, connected by
 flowchart LR
   L["launch_ascent<br/>Earth → LEO/escape"] -->|Leg: injection| T["interplanetary_transit<br/>SEP heliocentric cruise"]
   T -->|Leg: rendezvous| P["proximity_orbit<br/>approach · characterize · station-keep"]
-  P -->|descent| S["surface<br/>contact · sample acquisition"]
+  P -->|disperse & descend| S["surface<br/>multi-site sampling (swarm)"]
   S -->|ascent| A["ascent_return<br/>depart with sample"]
   A -->|Leg: return| E["earth_interface<br/>capsule delivery event"]
 ```
@@ -111,7 +113,7 @@ flowchart LR
 | Launch & ascent | `launch_ascent` | Worlds (Earth boundary) | liftoff → escape/LEO state | minutes–hours | powered ascent; LEO aggregation; reusable-tug mate |
 | Cruise | `interplanetary_transit` | [Transit](../architecture/transit.md) | escape → NEO arrival state | ~1–2 yr | SEP low-thrust arc; radiation/thermal exposure; sparse DSN contacts |
 | Proximity | `proximity_orbit` | [Worlds](../architecture/worlds.md) small-body + Transit | arrival → descent-ready | weeks–months | shape/gravity estimation; relay deploy; resource survey; site selection |
-| Surface | `surface` | Worlds (small body) | touchdown → sample secured | hours–days per contact | anchored contact; bulk regolith acquisition; assay |
+| Surface | `surface` | Worlds (small body) | first touchdown → all samples secured | hours–days per contact | **sampler-swarm dispersal to distinct sites**; anchored contact; bulk regolith acquisition; assay |
 | Ascent & return | `ascent_return` | Worlds boundary → Transit | liftoff → return injection | months (incl. cruise) | ascent; rendezvous/stow; return SEP arc |
 | Earth interface | `earth_interface` | boundary **event** | return approach → recovery | event | **ballistic capsule delivery + recovery** (mass/Δv accounting — *not* guided EDL, §14) |
 
@@ -130,7 +132,7 @@ contingencies, window-miss responses) lives in [Studio](../architecture/studio.m
 | Gravity | [Transit](../architecture/transit.md) + Worlds | polyhedral / mascon near-field + harmonic far-field; ~10⁻⁴–10⁻³ g surface |
 | Regolith | Worlds (microgravity taxonomy) | **cohesion-dominated** (cohesion ~10–100 Pa dominates weight), distinct from gravity-dominated lunar terramechanics — a *new* contact regime, not a parameter tweak (worlds.md §11) |
 | Thermal | Worlds | rapid-rotation diurnal cycle; rubble-pile heterogeneity; no eclipses from other bodies in proximity |
-| Resource field | [Prospect](../architecture/prospect.md) | volatile/hydrate distribution as a GP posterior (mean ± variance) from carbonaceous-chondrite spectral priors; sealed ground truth vs. agent belief |
+| Resource field | [Prospect](../architecture/prospect.md) | volatile/hydrate distribution as a GP posterior (mean ± variance) from carbonaceous-chondrite spectral priors; sealed ground truth vs. agent belief; supports selection of **multiple distinct high-value sites** for the sampler swarm |
 | Deep-space env | [Transit](../architecture/transit.md) | n-body heliocentric dynamics; solar-radiation pressure; GCR/SEP radiation; micrometeoroid (Grün) flux — all uncertainty-tracked |
 | Comms geometry | [Link](../architecture/link.md) | sparse DSN passes, **8–20 min one-way light-time**; relay orbiter for surface↔orbiter LOS; store-and-forward |
 
@@ -146,23 +148,33 @@ resolves parametric families to concrete sized configs.
 
 | Asset | Role | Key declared SADF capabilities | Active in regimes |
 |---|---|---|---|
-| Launch vehicle | Earth → LEO/escape | `mobility.rocket`, staging, cryo propulsion, Δv budget | launch_ascent |
-| Reusable LEO tug | LEO aggregation & transfer (reused across launches) | `propulsion.*`, reusable, in-orbit initial state | launch_ascent → transit |
-| SEP carrier / transfer spacecraft | cruise & return propulsion | `propulsion.electric_ion`, high-Isp, Δv budget | transit, ascent_return |
+| Launch vehicle (e.g. **Starship**, Falcon Heavy, SLS, New Glenn) | Earth → LEO/escape | `mobility.rocket`, staging, cryo propulsion, Δv budget | launch_ascent |
+| Reusable LEO tug / depot (e.g. **Starship** w/ orbital refueling; commercial SEP OTV) | LEO aggregation, refuel & transfer (reused across launches) | `propulsion.*`, reusable, in-orbit initial state | launch_ascent → transit |
+| SEP carrier / mothership | cruise & return propulsion; carries & disperses the sampler swarm | `propulsion.electric_ion`, high-Isp, Δv budget, carrier/dispenser | transit, proximity, ascent_return |
 | Relay orbiter | NEO-orbit comms relay | comms, `mobility.orbiter` | proximity, surface |
-| Lander / sampler | descent, anchored contact, sample acquisition | `sample_collection.drill`/scoop, anchoring, `return.sample_canister` | proximity → surface → ascent_return |
+| **Sampler swarm** — multiple landers/probes (e.g. **3–6**) | descend to **distinct sites**, anchored contact, sample acquisition; cooperate under relay comms | `sample_collection.drill`/scoop, anchoring, `return.sample_canister`, comms | proximity → surface → ascent_return |
 | Surface mobility (≥1 rover or hopper) | local characterization & site survey | sensors (spectrometer, GPR), `mobility.*` | surface |
-| Sample-return capsule | Earth delivery | `return.sample_canister`, ballistic capsule (`earth_interface: ballistic_capsule`) | ascent_return → earth_interface |
+| Sample-return capsule(s) | Earth delivery (samples aggregated, or per-sampler canisters) | `return.sample_canister`, ballistic capsule (`earth_interface: ballistic_capsule`) | ascent_return → earth_interface |
 
-**Scale:** a small heterogeneous fleet (≈ 5–10 distinct assets) — the multi-regime story is about
-*lifecycle breadth*, not swarm size; the per-phase swarm (e.g. multiple surface samplers) can grow
-toward the capstone. **Reusable-LEO inventory** (the tug) is modeled as a fleet member with an
-initial in-orbit state, exercising Sizing's launch-manifesting and reuse accounting.
+**Scale & swarm.** The cross-regime *transit* stack is compact, but the proximity/surface phases run
+a genuine **sampler swarm** — multiple samplers (e.g. 3–6) dispersed to distinct sites and
+coordinated under intermittent relay comms — so this is swarm-based, not a single touch-and-go. The
+swarm can grow toward the mining capstone.
+
+**Realistic vehicles** (illustrative): a super-heavy-lift launcher such as **Starship** (with LEO
+propellant transfer / refueling) — or Falcon Heavy, SLS, New Glenn — plus a reusable in-orbit
+tug/depot and a commercial-class solar-electric transfer stage. Starship-class orbital refueling is
+what makes the reusable-LEO, high-departure-energy architecture credible. **Reusable-LEO inventory**
+(the tug/depot) is modeled as a fleet member with an initial in-orbit state, exercising
+[Sizing](../architecture/sizing.md)'s launch-manifesting and reuse accounting.
 
 ## 7. Concept of operations (ConOps)
 
-1. **Launch & aggregate.** One or more launches deliver the SEP carrier, lander, and relay to LEO;
-   a reusable tug mates the stack and performs the escape injection (`launch_ascent` → handoff).
+1. **Launch & aggregate.** One or more launches (e.g. **Starship**, Falcon Heavy, SLS) deliver the
+   SEP carrier (mothership), the **sampler swarm**, and the relay to LEO; a reusable tug/depot
+   (Starship-class orbital refueling) mates the stack and performs the escape injection
+   (`launch_ascent` → handoff). Depending on architecture (§10 Fork E) the samplers ride one carrier
+   or several.
 2. **Cruise.** The SEP carrier flies a months-long low-thrust heliocentric arc to the NEO
    (`interplanetary_transit`). Earth contact is sparse (DSN), one-way light-time grows to
    8–20 min; the spacecraft executes pre-loaded arcs with contingency branches on propellant /
@@ -170,14 +182,17 @@ initial in-orbit state, exercising Sizing's launch-manifesting and reuse account
 3. **Approach & characterize.** On arrival (`proximity_orbit`) the spacecraft estimates the body's
    shape and gravity from optical/altimetry data (relative nav, GNSS-denied), deploys the relay,
    and surveys the resource field — [Prospect](../architecture/prospect.md)'s belief posterior
-   sharpens, and [Allocate](../architecture/allocate.md) ranks candidate sample sites by
-   information gain × accessibility × anchoring feasibility.
-4. **Descend & sample.** The lander performs a window-gated, latency-tolerant descent to the chosen
-   site (`surface`), anchors against the cohesion-dominated regolith, and acquires a bulk sample —
-   every actuation cleared by [Guard](../architecture/guard.md) against keep-out, descent-rate, and
+   sharpens, and [Allocate](../architecture/allocate.md) ranks candidate sites by information gain ×
+   accessibility × anchoring feasibility and **assigns each sampler to a distinct site** (multi-robot
+   allocation) for maximum coverage.
+4. **Disperse & sample (swarm).** The sampler swarm disperses; each sampler performs a window-gated,
+   latency-tolerant descent to its assigned site (`surface`), anchors against the cohesion-dominated
+   regolith, and acquires a bulk sample — cooperating under relay comms, with every actuation cleared
+   by [Guard](../architecture/guard.md) (per agent) against keep-out, descent-rate, and
    anchoring-force limits computed under worst-case state staleness.
-5. **Ascend & return.** With the sample stowed, the lander ascends (`ascent_return`), rendezvouses
-   with the carrier, and flies the return arc.
+5. **Ascend, aggregate & return.** With samples stowed, the samplers ascend (`ascent_return`),
+   rendezvous with the carrier, and the samples are aggregated into the return capsule(s) for the
+   return arc.
 6. **Deliver.** At Earth (`earth_interface`) the sample-return **capsule is released as a delivery
    event** with mass/Δv accounting — **not** a guided re-entry simulation (§14) — and recovered.
 7. **Close the loop.** Returned-sample ground truth refines the carbonaceous-chondrite priors in
@@ -283,6 +298,7 @@ scores and operational readings comparable (the reuse property, system.md §6).
 | Problem (charter §7 research / §8 engineering) | How this scenario stresses it |
 |---|---|
 | Microgravity proximity ops & anchoring (§7) | anchored contact/sampling on a cohesion-dominated rubble pile under ~10⁻⁴ g |
+| Cooperative multi-agent coordination under intermittent comms (§7) | a **sampler swarm** coordinating site coverage and contact under relay-gated comms and light-time |
 | Autonomous nav around uncharacterized irregular bodies (§7) | shape/gravity estimation + relative nav on arrival, GNSS-denied, feature-poor |
 | Window-gated, no-recovery decisions under deep-space latency (§7) | one-shot, orbital-mechanics-deadlined ops at 8–20 min light-time |
 | Joint multi-regime mission optimization (§7) | trajectory⇄fleet⇄swarm⇄economics co-optimization across six regimes |
@@ -344,8 +360,21 @@ scores and operational readings comparable (the reuse property, system.md §6).
   is a capstone, §15.)*
 
 **Fork D — Launch & aggregation (lighter fork).** Single dedicated launch (simpler, lower fidelity)
-vs. **multi-launch + reusable LEO tug** (recommended — exercises manifesting/reuse and matches real
-architectures).
+vs. **multi-launch + reusable LEO tug/depot** (recommended — exercises manifesting/reuse and matches
+real architectures). Model with **realistic vehicles**: a super-heavy-lift launcher such as
+**Starship** with LEO propellant transfer/refueling makes the reusable-LEO, high-departure-energy
+path credible (Falcon Heavy / SLS / New Glenn as alternatives).
+
+**Fork E — Sampler delivery & dispersal.**
+- *Single carrier (mothership-and-daughters).* One SEP carrier delivers the whole sampler swarm and
+  disperses it to sites. Pro: one cruise stack, lowest mass/cost, simplest manifest. Con: single
+  delivery point of failure; sites must be reachable from one parking orbit.
+- *Multiple carriers.* Each carrier delivers one or a few samplers. Pro: risk distribution, widely
+  separated sites, staggered windows. Con: more launches/mass/cost.
+- *Hybrid.* A mothership plus one or two independent free-flyers.
+- **Recommendation: single carrier (mothership-and-daughters)** for the baseline — efficient and the
+  cleanest swarm-from-one-stack story; multiple carriers documented for site-spread/redundancy.
+  Either way the proximity/surface campaign is **swarm-based** (multiple cooperating samplers).
 
 *Settled / platform-mandated (stated, not "optioned"):* trajectory is **design-time only**
 (§14; RFC-0001 §6); economics are **uncertainty-first** (conventions.md §1.6); autonomy is the
@@ -360,13 +389,13 @@ crosses [Guard](../architecture/guard.md); reproducibility is content-addressed.
 | [Transit](../architecture/transit.md) | heliocentric n-body + SRP + radiation/thermal/MMOD fields; small-body gravity pack; free-space Environment API profile |
 | [Worlds](../architecture/worlds.md) | 3-D polyhedral shape; cohesion-dominated microgravity regolith; diurnal thermal |
 | [Prospect](../architecture/prospect.md) | volatile-field GP posterior; sealed-truth/belief isolation; information-gain maps for site selection |
-| [Link](../architecture/link.md) | DSN windows, light-time, store-and-forward; relay LOS; window-feasibility as a hard constraint |
+| [Link](../architecture/link.md) | DSN windows, light-time, store-and-forward; relay LOS **(orbiter ↔ sampler swarm ↔ Earth)**; window-feasibility as a hard constraint |
 | [Fleet](../architecture/fleet.md) | launch/return vehicle kinds; SEP/chemical propulsion & staging blocks; reusable-LEO inventory; sample-canister return |
 | [Sim](../architecture/sim.md) | multi-phase runtime + sequencer; per-regime physics routing; microgravity contact; sensor models; shadow twin |
 | [Surrogate](../architecture/surrogate.md) | bounded-error microgravity contact/anchoring surrogate (GNN); error reports gating fidelity substitution |
 | [Mind](../architecture/mind.md) | per-regime autonomy stacks; delay-tolerant plans with validity horizons; Guard-wrapped output |
-| [Learn](../architecture/learn.md) | comms-limited cooperative policies for surface ops; surrogate-accelerated training; ONNX export |
-| [Allocate](../architecture/allocate.md) | **asset↔target↔window↔trajectory** joint assignment (CP-SAT + learned warm-starts); decision explanations |
+| [Learn](../architecture/learn.md) | comms-limited **cooperative multi-sampler** policies for surface ops; surrogate-accelerated training; ONNX export |
+| [Allocate](../architecture/allocate.md) | **asset↔target↔window↔trajectory** joint assignment *and* **sampler-swarm → distinct-site** multi-robot allocation (CP-SAT + learned warm-starts); decision explanations |
 | [Guard](../architecture/guard.md) | descent/anchoring/keep-out shields; power-floor monitors; worst-case-staleness margins |
 | [Trajectory](../architecture/trajectory.md) | porkchop scans + low-thrust global opt; **descriptive** TrajectoryRef only; Pareto frontier for Studio/Ledger |
 | [Sizing](../architecture/sizing.md) | coupled mass/power/propellant/staging; launch manifesting; reusable-LEO accounting → sized SADF |
@@ -427,6 +456,14 @@ Authoritative, traceable requirements. IDs are stable and append-only:
 - **AST-TR-006** — Objective metrics and the mission value model MUST be deterministic/seeded and
   content-addressed (conventions.md §5, §11) so design scores and operational readings reproduce and
   are comparable.
+- **AST-FR-011** — The platform MUST support a **swarm of multiple samplers** assigned to **distinct
+  sites**, with cooperative multi-robot allocation ([Allocate](../architecture/allocate.md)) and
+  coordination under intermittent relay comms / light-time
+  ([Mind](../architecture/mind.md)/[Learn](../architecture/learn.md)).
+- **AST-FR-012** — The fleet/`MissionSpec` MUST support **either delivery architecture** — one carrier
+  dispersing the sampler swarm, or multiple carriers — as a design parameter resolved by
+  [Sizing](../architecture/sizing.md) manifesting (§10 Fork E), using **realistic** launch/transfer
+  vehicles (e.g. Starship-class) from [Fleet](../architecture/fleet.md).
 
 ### 12.2 User-experience / high-level workflows
 - **AST-UX-001** — A mission architect MUST be able to go goal-in → `MissionSpec`-out through the
@@ -443,6 +480,8 @@ Authoritative, traceable requirements. IDs are stable and append-only:
   attainment, Δv/cost/schedule margins, projected ROI) and the **Pareto frontier** of mission
   architectures in [Studio](../architecture/studio.md)/[View](../architecture/view.md) (extends
   AST-UX-002/AST-UX-003).
+- **AST-UX-007** — [View](../architecture/view.md) MUST show **per-sampler status** and a
+  **site-coverage map** (sites assigned / sampled / pending) across the swarm.
 
 ### 12.3 Data requirements
 - **AST-DR-001** — Inputs: NEO ephemerides & shape/gravity models (SPICE + small-body packs),
@@ -485,6 +524,8 @@ bundles, seeds, expected ROI distribution) for byte-for-byte reproducibility.
 | ROI under uncertainty | Ledger value distribution (mean ± quantiles), net of loss risk |
 | Schedule adherence | phases completed within window-feasible timeline |
 | Information gain | reduction in Prospect volatile-field posterior uncertainty |
+| Site coverage / diversity | number of distinct sites sampled and their spread across the resource field |
+| Sampler success rate | fraction of the sampler swarm that completed its assigned sampling |
 | Autonomy under light-time | mission-critical decisions made correctly without ground in the loop |
 | Anchoring / contact success | fraction of contacts completed within force/anchoring limits |
 
@@ -537,6 +578,8 @@ The track is **opt-in and must not gate the lunar MVP** ([Scenario 1](1-lunar-po
   trajectory⇄fleet⇄swarm⇄economics vs. keeping `MissionSpec` declarative (RFC-0001 R4).
 - **Target selection** — pin a specific representative accessible C-type NEO for the Bench scenario,
   or keep it parametric over a target set.
+- **Sampler-swarm size & delivery** — how many samplers, and shared vs. separate carriers (§10
+  Fork E)? Trade coverage/redundancy against cost via a Studio trade study, not a fixed choice.
 - **Objective contract** *(resolved — Phase-0 direct decision, no RFC)* — the `ObjectiveSpec` and
   the objective→metric **binding** are a **first-class additive [Core](../architecture/core.md)
   schema**; [Studio](../architecture/studio.md) authors instances, and
