@@ -1,0 +1,356 @@
+# Phase 1 — Autonomy & studio
+
+> **Window:** ~12–30 mo · **Theme:** Autonomy & studio · **Roadmap home:** [README](README.md)
+> **Goal:** become the **MARL and planning commons** for planetary swarms — first public
+> leaderboards and community plugins (charter §10; system.md §11).
+
+**Entry dependencies:** Phase 0 complete — a runnable, reproducible anchor benchmark on
+`Core v0.1` + Sim + Worlds + Fleet + Bench (+ Prospect, Link MVP, local Cloud).
+
+**Integration milestones:**
+
+- **M1.1 — Closed design loop:** [Studio](../architecture/studio.md) turns a stated objective into a
+  scored [Campaign](../architecture/studio.md) by orchestrating
+  Sim ← (Learn → Mind → Allocate → Guard), scored by Bench, on the anchor scenario.
+- **M1.2 — The flywheel turns:** an external party publishes a policy to [Hub](../architecture/hub.md)
+  and a result to a **public** [Bench](../architecture/bench.md) leaderboard, reproducibly.
+
+**Phase exit criteria:** M1.1 + M1.2 met; learned, safety-wrapped policies are publishable and
+beat-able on the leaderboard; full Cloud scale-out runs the loop; the **RFC-0001 Core schema hooks
+are reserved** (below). The narrow waist held — Core grew only additively, every change via RFC.
+
+**Phase-level cross-cutting obligation — [CX-RFC0001](README.md#cross-cutting-workstreams):**
+this is the *only* phase where the mission-architecture track touches the critical path, and only as
+**additive schema**, while Core is already being extended for autonomy. See **Core (this phase)** below.
+
+---
+
+## Core — autonomy additions + reserved mission hooks
+
+> Architecture: [core.md](../architecture/core.md). Still **schema only**; mechanism/policy live above.
+
+**Scope & deliverables**
+
+- **RM-P1-CORE-01** — **Policy/Planner API hardening for composition**: the sub-interfaces
+  ([Mind](../architecture/mind.md)/[Allocate](../architecture/allocate.md)/[Guard](../architecture/guard.md)/[Learn](../architecture/learn.md))
+  compose cleanly; ONNX policy artifacts satisfy the contract. *(trace: core.md §12; charter §5.4)*
+- **RM-P1-CORE-02** — **Hub-indexing manifest fields** (capability negotiation, provenance,
+  signatures) finalized so [Hub](../architecture/hub.md) indexes by the Core manifest, not a private
+  schema. *(trace: core.md §3, §6; hub.md §2)*
+- **RM-P1-CORE-03** — **`ObjectiveSpec` + objective→metric binding** matured for Studio authoring /
+  Bench measurement (the P0 schema, now exercised end-to-end). *(trace: core.md §3; `LUNAR-FR-008,009,010`)*
+- **RM-P1-CORE-04** — *(RFC-0001, reserved hooks — no implementation)* **`MissionSpec` / `regime`
+  descriptor / `PhaseTransition`** schema, **propulsion/staging/return SADF capability declarations**,
+  the **descriptive `TrajectoryRef`/`ManeuverBudget`** message schemas, and the reserved
+  **`operational_targeting`** capability tag — all **append-only minors**, proto3 unknown-field
+  tolerant. *(trace: RFC-0001 R5, "Impact on Core"; mission-model §2, §3; [CX-RFC0001](README.md#cross-cutting-workstreams))*
+
+**Dependencies:** `Core v0.1`. **Exit criteria:** autonomy + hub + studio run against the additions;
+a single-`surface`-phase mission validates as a one-phase `MissionSpec` with no author action;
+existing P0 consumers ignore `regime` and operate unchanged. **Deferred → P3:** all mission-architecture
+*implementations* (Transit/Trajectory/Sizing/Ledger).
+
+---
+
+## Surrogate — the granular/excavation surrogate
+
+> Architecture: [surrogate.md](../architecture/surrogate.md). Error is the product. Ordered **after**
+> the P0 minimum runnable loop ([resolved sequencing #4](README.md#resolved-sequencing-decisions)).
+
+**Scope & deliverables**
+
+- **RM-P1-SURR-01** — **`SurrogateModel` + `ErrorReport` + `SurrogateManifest`** behind the Core
+  physics-step contract; `predict → (next_state, uncertainty, in_domain)`. *(trace: surrogate.md §3)*
+- **RM-P1-SURR-02** — **Granular/excavation GNN particle simulator** with **deep-ensemble + conformal**
+  calibrated error bounds and enforced trust regions. *(trace: surrogate.md §11, §12; charter §8, §9; `LUNAR-TR-002`)*
+- **RM-P1-SURR-03** — **`datagen` from high-fidelity Sim** (Sobol/LHS + active learning) and the
+  **offline-retrain + gated-promotion** loop. *(trace: surrogate.md §3, §11)*
+- **RM-P1-SURR-04** — **ONNX-served fidelity tier loaded by Sim**, whose **scheduler consumes the
+  `ErrorReport`** to admit/fall-back per task tolerance; drift/OOD monitors trigger re-validation.
+  *(trace: surrogate.md §6, §11; sim.md §3)*
+
+**Dependencies:** Core physics-step contract, working high-fidelity **Sim** (P0), Cloud GPU (P1).
+**Exit criteria:** demonstrated **speedup at a published, calibrated error bound** on a Bench
+scenario; Sim substitutes the tier only within budget. **Deferred → P2:** neural-operator field
+(thermal) surrogates, ops-twin drift monitoring. **Deferred → P3:** microgravity contact/anchoring.
+
+---
+
+## Learn — the MARL toolkit
+
+> Architecture: [learn.md](../architecture/learn.md). Library first, cluster second.
+
+**Scope & deliverables**
+
+- **RM-P1-LEARN-01** — **`SwarmEnv` adapter**: Core Environment API → Gymnasium / PettingZoo
+  `ParallelEnv`, with per-agent observation/action spaces keyed by SADF capabilities. *(trace: learn.md §3; `LUNAR-FR-005`)*
+- **RM-P1-LEARN-02** — **`CommsModel` wrapper**: declarative observation masks + drop/delay/budget
+  channel, driven by [Link](../architecture/link.md) when present — the knob that makes charter §8
+  measurable and comparable across algorithms. *(trace: learn.md §3, §11; charter §8)*
+- **RM-P1-LEARN-03** — **Baselines: IPPO + MAPPO + QMIX** as reproducible plugins (CTDE default;
+  comms-learning as a first-class research track). *(trace: learn.md §11, §12)*
+- **RM-P1-LEARN-04** — **Single-GPU-workstation training that just works** (tier 1) + **KubeRay
+  distributed training** on Cloud; surrogate-accelerated and GPU-vectorized rollout paths. *(trace: learn.md §7, §12)*
+- **RM-P1-LEARN-05** — **`PolicyPackage` export (ONNX + typed metadata sidecar)** with ONNX-Runtime
+  equivalence check and honest provenance (comms/observability assumptions, surrogate-fidelity
+  caveats). *(trace: learn.md §3, §5, §10)*
+- **RM-P1-LEARN-06** — **Honest evaluation harness**: held-out eval envs, seed sweeps, variance and
+  comms-stress curves. *(trace: learn.md §10; charter §8)*
+
+**Dependencies:** Core (`RM-P1-CORE-01`), Sim, Surrogate, Link (full), Cloud (full). **Exit criteria:**
+a comms-limited cooperative prospecting policy trains overnight on one GPU, exports to ONNX, and is
+consumed by Mind/Guard and scored by Bench. **Deferred → P2:** automatic curricula, learned allocation
+heuristics for Allocate, sim-to-real-aware training validated on analogs.
+
+---
+
+## Allocate — the combinatorial core
+
+> Architecture: [allocate.md](../architecture/allocate.md). Feasibility non-negotiable; optimality a budget.
+
+**Scope & deliverables**
+
+- **RM-P1-ALLOC-01** — **Allocation IR + Core allocation sub-interface** (`AllocationRequest →
+  Allocation`), the solver-neutral canonical model. *(trace: allocate.md §3, §5)*
+- **RM-P1-ALLOC-02** — **CP-SAT (OR-Tools) backend** behind the strategy interface (interval/
+  cumulative/no-overlap scheduling + assignment + solver hints). *(trace: allocate.md §4, §11; `LUNAR-FR-004`)*
+- **RM-P1-ALLOC-03** — **Constraint builders: power, comms-window, terrain traversability** —
+  consuming Link contact graph, Worlds traversability, Fleet budgets, Prospect value (with
+  uncertainty). *(trace: allocate.md §3, §5; `LUNAR-FR-004`)*
+- **RM-P1-ALLOC-04** — **Info-gain-vs-ROI objective** (active perception traded against extraction).
+  *(trace: allocate.md §11; scenario §7; charter §8)*
+- **RM-P1-ALLOC-05** — **Anytime contract** (streaming incumbents + monotone bounds + optimality gap)
+  for online re-solve. *(trace: allocate.md §2, §3)*
+- **RM-P1-ALLOC-06** — **Explainability**: objective decomposition, binding constraints, and an
+  **IIS** on infeasibility ("which window/power floor bound the result"). *(trace: allocate.md §10; `LUNAR-UX-004`)*
+- **RM-P1-ALLOC-07** — **Determinism** (recorded seeds + pinned solver) so a Bench score reproduces.
+  *(trace: allocate.md §8; conventions §11)*
+
+**Dependencies:** Core (`RM-P1-CORE-01`), Link (full), Worlds, Fleet, Prospect. **Exit criteria:**
+tens-of-robots / hundreds-of-tasks solved to a few-% gap within a deadline on the anchor scenario,
+delegated from Mind, wrapped by Guard, scored by Bench. **Deferred → P1-late/P2:** MILP track
+(HiGHS/SCIP), learned warm-starts/branching, decomposition (rolling-horizon/spatial), auction
+fallback, stochastic/robust formulations, ops-replan hardening. **Deferred → P3:** mission-level
+joint asset↔target↔window↔trajectory assignment.
+
+---
+
+## Mind — the hierarchical autonomy framework
+
+> Architecture: [mind.md](../architecture/mind.md). Compose, don't centralize.
+
+**Scope & deliverables**
+
+- **RM-P1-MIND-01** — **Three-tier hierarchy over the Core Policy/Planner API** (mission planner →
+  per-agent TAMP → local controller) composed from a declarative **stack spec**. *(trace: mind.md §3, §12)*
+- **RM-P1-MIND-02** — **BehaviorTree.CPP execution scaffold** (Groot-compatible XML) with
+  selector/decorator fallbacks. *(trace: mind.md §4, §11)*
+- **RM-P1-MIND-03** — **PDDL/temporal mission backend** (unified-planning) + **OMPL-based TAMP** +
+  **classical (MPC/PID) and ONNX controllers**, all pluggable. *(trace: mind.md §4, §11; `LUNAR-FR-005`)*
+- **RM-P1-MIND-04** — **Delegation to Allocate** for assignment (Mind owns decomposition/execution,
+  not the combinatorics). *(trace: mind.md §6, §11)*
+- **RM-P1-MIND-05** — **Mandatory Guard-wrapping** of every emitted action (the only output path).
+  *(trace: mind.md §2, §7)*
+- **RM-P1-MIND-06** — **Degrade-not-collapse**: validity-horizoned `ContingentPlan`s + decentralized
+  `coord/` so agents act on cached intent through comms-denied PSR intervals, validated under
+  injected blackouts. *(trace: mind.md §2, §10; `LUNAR-FR-005`; charter §8, §9)*
+- **RM-P1-MIND-07** — **Determinism + decision-trace (MCAP)** for reproducibility and plan
+  explanation. *(trace: mind.md §5, §10; `LUNAR-UX-003`)*
+
+**Dependencies:** Core (`RM-P1-CORE-01`), Allocate, Guard, Learn (ONNX policies), Sim, Link, Fleet.
+**Exit criteria:** a composed stack runs the anchor scenario against Sim, scored on Bench, with the
+degrade-not-collapse fallback validated under comms loss. **Deferred → P2:** online replanning inside
+Ops, the ground/edge split. **Deferred → P3:** window-gated cross-phase composition.
+
+---
+
+## Guard — runtime assurance
+
+> Architecture: [guard.md](../architecture/guard.md). **Safety-critical.** Minimal trusted computing base.
+
+**Scope & deliverables**
+
+- **RM-P1-GUARD-01** — **`SafetySpec` schema** (declarative hard constraints: collision/keep-out,
+  power floor, thermal/torque ceilings, kinematic limits, STL/MTL temporal clauses) + constraint
+  compiler. RFC-gated as a safety contract. *(trace: guard.md §3, §9.3; `LUNAR-FR-006`)*
+- **RM-P1-GUARD-02** — **Rust safety core (the TCB)**: `arbiter` + **CBF-QP shield (OSQP/Clarabel)**
+  + **STL/MTL runtime monitors** + **simplex backup controller**, deterministic, allocation-free on
+  the hot path, fail-safe-never-open. *(trace: guard.md §2, §3, §9; conventions §2; `LUNAR-SR-004`)*
+- **RM-P1-GUARD-03** — **`PolicyShield`** implementing the Core Policy/Planner API (a shielded policy
+  *is* a policy), wrapping Mind/Allocate/Learn outputs transparently. *(trace: guard.md §3, §6)*
+- **RM-P1-GUARD-04** — **Power-floor & thermal monitors + night-survival safe behaviors** for the
+  anchor scenario; **slope/keep-out** shields from Worlds. *(trace: guard.md §6; scenario §10; `LUNAR-FR-006`)*
+- **RM-P1-GUARD-05** — **Signed spec/model loading + adversarial/falsification testing** (search for
+  actions that try to violate; confirm the shield prevents them). *(trace: guard.md §9.5, §10)*
+- **RM-P1-GUARD-06** — **`SafetyVerdict` stream (MCAP)** with spec-clause/cert provenance, for
+  Bench scoring ("violations per scenario", "performance cost of shielding") and View overlays.
+  *(trace: guard.md §5, §6)*
+
+**Dependencies:** Core (`RM-P1-CORE-01`), Worlds (keep-out/slope), Fleet (limits), Sim (dynamics).
+**Exit criteria:** a Learn policy runs **shielded** in Sim on the anchor scenario; zero hard-constraint
+violations under adversarial test; shielding-cost measured and reproducible. **Deferred → P1-late/P2:**
+multi-agent latency-aware shielding (`coord`), HJ-reachability filters, edge sidecar + central
+supervisor, View overlays. **Deferred → P3:** embeddable flight-adjacent core; per-phase deep-space
+one-shot assurance.
+
+---
+
+## Studio — the design front door
+
+> Architecture: [studio.md](../architecture/studio.md). Studio computes nothing; it orchestrates.
+
+**Scope & deliverables**
+
+- **RM-P1-STUDIO-01** — **Structured (no-LLM) intent capture → Core-validated `ObjectiveSpec`** (the
+  deterministic `intent.forms` path; the LLM is optional and added later). *(trace: studio.md §3, §9; `LUNAR-UX-001`)*
+- **RM-P1-STUDIO-02** — **Trade-study / DSE engine** (pluggable Ax/BoTorch · Optuna · pymoo · Ray
+  Tune) producing **Pareto-ranked** `DesignCandidate`s; multi-fidelity evaluation (Surrogate prune →
+  Sim escalate). *(trace: studio.md §3, §11; `LUNAR-FR-010`, `LUNAR-UX-006`)*
+- **RM-P1-STUDIO-03** — **The design loop orchestration** (fan candidates to
+  Sim/Learn/Mind/Allocate/Guard/Bench over gRPC; async durable/cancelable/resumable jobs; Cloud
+  fan-out). *(trace: studio.md §3, §6, §12)*
+- **RM-P1-STUDIO-04** — **`Campaign` authoring + contingencies + hand-off package** consumed
+  unchanged by Ops in P2. *(trace: studio.md §3, §12)*
+- **RM-P1-STUDIO-05** — **Optional, provider-abstracted LLM intent capture** (Claude API adapter;
+  structured outputs validated against Core schemas; never on a safety/planning/flight path). *(trace: studio.md §9, §11; `LUNAR-UX-001`)*
+- **RM-P1-STUDIO-06** — **Embedded [View](../architecture/view.md) + publish-to-Hub** for candidate
+  inspection and sharing. *(trace: studio.md §6, §12)*
+- **RM-P1-STUDIO-07** — **Reproducibility-by-construction** (every candidate records inputs/seeds/
+  versions; a re-run reproduces the Pareto front). *(trace: studio.md §5, §10)*
+
+**Dependencies:** the full autonomy stack + Bench + Hub + Cloud. **Exit criteria:** goal-in →
+scored-design-out end-to-end on the anchor scenario, producing a `Campaign` (M1.1). **Deferred → P2:**
+the Campaign→Ops hand-off matures into the live design→operations loop. **Deferred → P3:** Mission
+Architect mode.
+
+---
+
+## Hub — the artifact registry
+
+> Architecture: [hub.md](../architecture/hub.md). The supply-chain trust boundary; the flywheel's other half.
+
+**Scope & deliverables**
+
+- **RM-P1-HUB-01** — **OCI-backed, content-addressed registry** (Zot/Harbor) for worlds, SADF
+  assets, ONNX policies, surrogates, plugins, schema bundles; immutable `name:version→digest`.
+  *(trace: hub.md §3, §5, §11)*
+- **RM-P1-HUB-02** — **Index by the Core plugin manifest** (kind, interface versions, capability tags,
+  provenance) into Postgres; **faceted + full-text + pgvector semantic + capability-match** discovery.
+  *(trace: hub.md §3, §11)*
+- **RM-P1-HUB-03** — **Verify-twice supply chain** (cosign signatures + SLSA provenance + SBOM at
+  **publish and at pull**, client-side re-verification). *(trace: hub.md §9; `LUNAR-SR-002`)*
+- **RM-P1-HUB-04** — **SemVer + Core-interface-range dependency/compat resolution**. *(trace: hub.md §3, §11)*
+- **RM-P1-HUB-05** — **License + export-control download gating** (OPA against capability tags;
+  tiered open vs. curated/verified namespaces). *(trace: hub.md §9; conventions §12; `LUNAR-SR-001`)*
+- **RM-P1-HUB-06** — **`astro-mine-hub` client/CLI** that resolves/verifies/pulls against *any* OCI
+  registry (so the local tier needs no hosted Hub). *(trace: hub.md §3, §7)*
+
+**Dependencies:** Core (`RM-P1-CORE-02`), Cloud (deploys on it). **Exit criteria:** a contributor
+publishes a signed policy/world/asset and another pulls + verifies it; Bench resolves submissions by
+digest (M1.2). **Deferred → P2:** multi-region replication / offline mirrors. **Deferred → P3:**
+mission-architecture artifact types + `operational_targeting`-aware gating.
+
+---
+
+## Cloud — the hosted scale-out platform
+
+> Architecture: [cloud.md](../architecture/cloud.md). Infrastructure, not logic.
+
+**Scope & deliverables**
+
+- **RM-P1-CLOUD-01** — **Helm-installable platform on conformant Kubernetes**: KubeRay (RayJob/
+  RayCluster), Argo Workflows, plain K8s Jobs, the NVIDIA GPU Operator (MIG). *(trace: cloud.md §3, §4, §12)*
+- **RM-P1-CLOUD-02** — **`JobSpec`/`SweepSpec`/`WorkflowSpec` contracts + submission client/CLI**,
+  with the **local↔cluster backend-equivalence** guarantee (same call site). *(trace: cloud.md §3)*
+- **RM-P1-CLOUD-03** — **Kueue queueing + quotas/fair-share; Karpenter/cluster-autoscaler; spot-first
+  + content-addressed checkpoint-resume; per-tenant budgets.** *(trace: cloud.md §3, §11)*
+- **RM-P1-CLOUD-04** — **Data-locality layer** (lazy Zarr/COG/Parquet chunk-streaming + pull-through
+  cache; co-locate cluster with object store). *(trace: cloud.md §5, §8)*
+- **RM-P1-CLOUD-05** — **MLflow + content-addressed artifact I/O** (`RunContext` provenance);
+  **namespace-per-tenant isolation** (RBAC/OPA, NetworkPolicies); admission of cosign-verified images
+  only. *(trace: cloud.md §5, §9)*
+
+**Dependencies:** Core (interface-version declaration), Sim/Learn/Allocate/Bench images. **Exit
+criteria:** the design/training loop runs "at scale on Cloud" — Studio heavy jobs + first public Bench
+leaderboard eval fan out; a cluster run reproduces the laptop run for the same inputs+seed. **Deferred
+→ P2:** vCluster/stronger tenancy, hosting ops-tier services. **Deferred → P3:** mission-design sweep
+workload classes (no new primitive).
+
+---
+
+## Link — full constellation & multi-hop
+
+> Architecture: [link.md](../architecture/link.md). Builds on the P0 MVP.
+
+**Scope & deliverables**
+
+- **RM-P1-LINK-10** — **Richer constellation geometry + multi-hop reachability** (multiple lunar
+  and/or Earth relay orbiters as SADF nodes with their own ephemerides). *(trace: link.md §3, §12; see the relay-fleet Q&A)*
+- **RM-P1-LINK-11** — **Contact-graph / CGR delivery model + abstract store-and-forward
+  `DeliveryModel`** for delay-tolerant routing. *(trace: link.md §3, §11, §12)*
+- **RM-P1-LINK-12** — **Full latency/bandwidth time-series to [Allocate](../architecture/allocate.md)/
+  [Mind](../architecture/mind.md)** (contact graph for combinatorics + continuous cube for fidelity).
+  *(trace: link.md §6, §11)*
+- **RM-P1-LINK-13** — **Earth-link windows delivered to Ops (forward-looking)** + ground-station
+  catalog beyond DSN (ESTRACK/custom). *(trace: link.md §6, §12)*
+
+**Dependencies:** Link MVP (P0), Fleet relay assets. **Exit criteria:** a multi-relay constellation's
+time-varying coverage of the PSR work is modeled, masks/windows drive Allocate/Mind, and a Studio
+trade study can compare relay geometries. **Deferred → P2:** optional ns-3 packet-level fidelity,
+live-mission link prediction (capability-gated). **Deferred → P3:** deep-space DSN/light-time/DTN.
+
+---
+
+## Worlds & Prospect — Phase-1 extensions
+
+**Worlds**
+
+- **RM-P1-WORLDS-10** — **GPU on-demand fine illumination + learned illumination surrogate**
+  (co-designed with [Surrogate](../architecture/surrogate.md)) for swarm-scale queries. *(trace: worlds.md §11, §12)*
+- **RM-P1-WORLDS-11** — **Mars worlds (MOLA/HiRISE) + Martian frames + richer dust model** as the
+  first non-anchor body, validating "support a new world = a package, not a core change." *(trace: worlds.md §12; charter §10.2)*
+
+**Prospect**
+
+- **RM-P1-PROSPECT-10** — **GMRF and deep-generative backends** behind the `ResourceField` contract
+  (large lattice domains; non-Gaussian/multimodal structure). *(trace: prospect.md §11, §12)*
+- **RM-P1-PROSPECT-11** — **Richer active-perception objectives (EVPI tied to ISRU yield)** for
+  Learn/Allocate, + the **distributed field service** + Hub-published community priors. *(trace: prospect.md §11, §12)*
+
+**Dependencies:** P0 Worlds/Prospect, Surrogate, Cloud. **Exit criteria:** a second body (Mars) and a
+second field backend ship as plugins with no Core change; EVPI objective consumable by Allocate.
+**Deferred → P3:** small/irregular-body Worlds; asteroid volatile fields (Prospect reuse).
+
+---
+
+## Bench — public leaderboards
+
+**Scope & deliverables**
+
+- **RM-P1-BENCH-10** — **Public leaderboard service** (hosted FastAPI + Postgres + Redis + object
+  store on Cloud) with ingestion of community **ONNX/plugin submissions from Hub by digest**. *(trace: bench.md §12)*
+- **RM-P1-BENCH-11** — **Scale-out evaluation on Cloud** (Argo + Ray; KubeRay GPU rollouts). *(trace: bench.md §7, §12)*
+- **RM-P1-BENCH-12** — **Pluggable community metrics** (Core-registry plugins via Hub) + richer
+  scenario zoo + **[View](../architecture/view.md) leaderboard/replay UI** + **Studio scoring
+  integration**. *(trace: bench.md §3, §12; `LUNAR-UX-005,006`)*
+
+**Dependencies:** Hub, Cloud, View (thin slice), Studio. **Exit criteria:** an external lab beats a
+baseline on the public leaderboard, reproducibly (M1.2). **Deferred → P2:** analog/digital-twin
+validation scenarios, hidden test scenarios, multi-objective ranking. **Deferred → P3:** mission-level
+scenarios + metrics.
+
+---
+
+## Fleet — Phase-1 extensions
+
+- **RM-P1-FLEET-10** — **Broaden parametric families + capability taxonomy**; **Hub publish/discover
+  integration**; **expose the asset menu in Studio**; **feed capability declarations to
+  Mind/Allocate** as autonomy lands. *(trace: fleet.md §12)*
+
+**Dependencies:** Hub, Studio, Mind/Allocate. **Exit criteria:** new vehicle types arrive as Hub
+packages and appear in Studio's menu with no Fleet code change. **Deferred → P2:** Bridge hardware
+mapping. **Deferred → P3:** launch/return vehicle kinds + propulsion content.
+
+---
+
+← [Phase 0](phase-0-commons-seed.md) · [Roadmap index](README.md) · [Phase 2 →](phase-2-operations-bridge.md)

@@ -345,6 +345,10 @@ Higher tiers are accelerators and operational surfaces, never hard dependencies.
 
 ## 11. Roadmap view — how the system grows
 
+> The **detailed, planner-ready roadmap** — per-phase, per-component scope and requirements with
+> stable `RM-*` item IDs — lives in [roadmap/](../roadmap/README.md). This section is the integration
+> summary.
+
 | Phase | Components stood up | System capability |
 |---|---|---|
 | **0 · 0–12 mo** | [Core](core.md) v0.1, [Sim](sim.md), [Worlds](worlds.md), [Fleet](fleet.md), [Bench](bench.md) (+ [Prospect](prospect.md), local [Cloud](cloud.md)) | A runnable, reproducible benchmark on the anchor scenario |
