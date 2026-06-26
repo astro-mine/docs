@@ -61,11 +61,15 @@ Breadth (Mars, more engines, autonomy, studio) is deliberately out of scope.
   (Pydantic from JSON Schema); **Python reference validator** plus an optional **Rust fast path**;
   ship contract-test utilities so any component can assert it honors the Core versions it claims.
   *(trace: core.md §4, §10; conventions §11)*
-- **RM-P0-CORE-08** — **Distribution**: `astro-mine-core` wheel + per-language client libs + a
-  **versioned, content-addressed schema bundle (OCI artifact)**. *(trace: core.md §7; conventions §7)*
+- **RM-P0-CORE-08** — **Distribution**: make Core a versioned, consumable artifact — **version from
+  the Git tag** (`v0.1.0`, `hatch-vcs`), pinned by downstream via a `uv` **Git source + CI PAT**
+  during private incubation; per-language client libs; a **versioned, content-addressed schema
+  bundle (OCI artifact, private GHCR)**. Public-PyPI wheel + signed GitHub Releases are **deferred
+  to the public flip**. *(trace: VERSIONING.md §2, §5–7; core.md §7; conventions §7)*
 
 **Dependencies:** none upstream. **Exit criteria:** Sim/Worlds/Fleet/Bench compile and run the M0.1
-slice against frozen `Core v0.1`; contract tests green; schema bundle published and content-addressed.
+slice against frozen `Core v0.1` (pinned via a tag + `uv.lock`); contract tests green; schema bundle
+published to private GHCR and content-addressed.
 **Deferred → P1:** Mission/Phase/Regime + propulsion-SADF schema hooks (RFC-0001, *reserved* P1,
 [CX-RFC0001](README.md#cross-cutting-workstreams)); autonomy-composition / hub-indexing / studio-intent
 additions; Rust validator hardening.
