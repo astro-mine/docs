@@ -145,7 +145,9 @@ code version, the environment lockfile, and the random seed. Datasets and polici
   4. **Flight-adjacent** (Phase 3, mostly out of open scope) — `Bridge` adapters to cFS/F´.
 - **Packaging & releases:** Python wheels on an index; OCI artifacts for content; **SemVer**
   for all packages. Multi-repo (one repo per package per charter) with `Core` published as a
-  versioned dependency.
+  versioned dependency. *(This is the public end-state; during private incubation it is deferred —
+  see [VERSIONING.md](../VERSIONING.md) §5–7: a source-pinned `uv` Git dependency + PAT, no public
+  index yet.)*
 - **Plugin distribution:** plugins are **OCI artifacts** in a registry (Harbor/ghcr),
   described by a Core plugin manifest and discovered via `Hub`. In-process plugins use Python
   entry points; untrusted or non-Python plugins run **out-of-process** (gRPC + sandboxed
@@ -234,5 +236,8 @@ code version, the environment lockfile, and the random seed. Datasets and polici
 - Every component repo carries an `ARCHITECTURE.md` that links back to this directory.
 - Interface versions are independent of implementation versions; a component declares the Core
   interface major versions it supports.
+- The full **release & version policy** — per-package SemVer, the Git tag as the version source
+  of truth, the private-incubation distribution stance, and the held Core interface version — is
+  specified in [VERSIONING.md](../VERSIONING.md).
 - This directory is the **source of truth** for cross-cutting decisions; component docs cite it
   with relative links (e.g., `see conventions.md §4`).

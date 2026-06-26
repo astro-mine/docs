@@ -13,6 +13,7 @@ exploration and in-situ resource utilization (ISRU).
 - **[Roadmap](roadmap/README.md)** — detailed per-phase, per-component scope & requirements (planner-ready), derived from charter §10.
 - **[Charter](charter/Swarm_Exploration_ISRU_Orchestrator_OSS_Project.md)** — product envisioning & vision (source of truth).
 - **[RFCs](rfc/)** — accepted and proposed design changes.
+- **[Versioning & releases](VERSIONING.md)** — per-package SemVer, Git-tag versions, and the private-incubation distribution policy (no public PyPI yet).
 
 ## See also
 
