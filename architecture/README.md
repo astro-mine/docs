@@ -28,7 +28,7 @@ exploration and in-situ resource utilization (ISRU).
 
 | Layer | Components |
 |---|---|
-| **Commons backbone** | [Core](core.md) · [Bench](bench.md) · [Hub](hub.md) · [Cloud](cloud.md) |
+| **Commons backbone** | [Core](core.md) · [Spice](spice.md) ‡ · [Bench](bench.md) · [Hub](hub.md) · [Cloud](cloud.md) |
 | **World & environment** | [Worlds](worlds.md) · [Prospect](prospect.md) · [Link](link.md) · [Transit](transit.md) † |
 | **Assets** | [Fleet](fleet.md) |
 | **Simulation** | [Sim](sim.md) · [Surrogate](surrogate.md) |
@@ -37,6 +37,8 @@ exploration and in-situ resource utilization (ISRU).
 | **Design & operations** | [Studio](studio.md) · [Ops](ops.md) · [Bridge](bridge.md) · [View](view.md) |
 
 † Added by [RFC-0001](../rfc/0001-multi-regime-missions.md) (accepted; implementation Phase 3). [Core](core.md) is the "narrow waist" — the single most important package; if only one thing is designed superbly, it must be Core.
+
+‡ Added by [RFC-0002](../rfc/0002-shared-spice-foundation.md) (accepted; implementation Phase 0). [Spice](spice.md) is the SPICE-backed realization of [Core](core.md)'s frame/time vocabulary, factored out as a *Core companion* so Worlds, Link, Sim, and Transit share **one** SPICE implementation rather than re-deriving it per package.
 
 ## Multi-regime missions (RFC-0001, accepted)
 
@@ -55,6 +57,23 @@ exploration and in-situ resource utilization (ISRU).
 - **Extended (not replaced):** the existing components above gained multi-regime scope for small
   bodies, microgravity, deep-space comms, propulsion, and multi-phase operations — see
   [RFC-0001](../rfc/0001-multi-regime-missions.md) §4 for the per-component list.
+
+## Shared SPICE foundation (RFC-0002, accepted)
+
+> **Status: Accepted** ([RFC-0002: A shared SPICE foundation package](../rfc/0002-shared-spice-foundation.md))
+> — implementation lands in **Phase 0**, sequenced before the Link MVP.
+
+[Core](core.md) defines the frame/time *vocabulary* (`Epoch`, `ReferenceFrame`, `PlanetaryCRS`) but
+deliberately cannot host the *resolution* of names into geometry — `spiceypy`/`numpy` are exactly the
+heavy dependencies the narrow waist must never carry ([core.md](core.md) §2.3). [Spice](spice.md)
+(`astro-mine-spice`, import `astro_mine.spice`) is that resolution, factored into a thin **Core
+companion** on the Commons backbone: it turns Core's vocabulary into positions (`spkpos`), rotations
+(`pxform`), and topocentric site geometry, and **stops there** — window search stays in
+[Link](link.md), terrain occlusion stays in [Worlds](worlds.md) (served through the Core
+`WorldProvider` contract). Every SPICE consumer ([Worlds](worlds.md), [Link](link.md), Sim's orbital
+engine, and later [Transit](transit.md)) depends on this one implementation, so frame/aberration
+conventions and oracle cross-checks are written once and trusted everywhere
+([conventions.md](conventions.md) §5, §11).
 
 ## Conventions for these docs
 

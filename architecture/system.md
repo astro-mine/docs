@@ -109,6 +109,16 @@ Environment API, propulsion/return SADF capabilities, and the descriptive design
 into a **Mission** of **Phases** across **Regimes** without widening the waist into per-regime
 interfaces; see [mission-model.md](mission-model.md) and §13.
 
+**Shared SPICE foundation (RFC-0002).** Core defines the frame/time *vocabulary* (`Epoch`,
+`ReferenceFrame`, `PlanetaryCRS`) but defers name→geometry *resolution* (kernels, `spkpos`, `pxform`)
+because `spiceypy`/`numpy` are the heavy dependencies the waist must never carry (core.md §2.3). That
+resolution lives in **[Spice](spice.md)** (`astro_mine.spice`), a thin **Core companion** that every
+SPICE consumer — [Worlds](worlds.md), [Link](link.md), [Sim](sim.md)'s orbital engine, later
+[Transit](transit.md) — depends on, so the waist stays thin while frame/aberration conventions stay
+singular across the platform. Spice resolves Core's vocabulary into positions/rotations/topocentric
+scalars and nothing more (window search stays in Link, terrain occlusion in Worlds via the Core
+`WorldProvider` contract); Core does not depend on it. See [spice.md](spice.md) and conventions.md §5.
+
 ---
 
 ## 4. Component catalog — role · runtime · data · talks-to
@@ -116,6 +126,7 @@ interfaces; see [mission-model.md](mission-model.md) and §13.
 | Component | Layer | Role (one line) | Runtime / where it runs | Key data it touches | Talks to (via) |
 |---|---|---|---|---|---|
 | [Core](core.md) | Backbone | The narrow-waist contracts | In-process library, everywhere | Schemas only (SADF, messages, manifests) | (depended on by all) |
+| [Spice](spice.md) ‡ | Backbone | SPICE-backed frame/time/geometry resolution (Core companion) | In-process library; kernels furnished locally | NAIF kernels (SPK/PCK/FK/LSK) → positions/rotations | Worlds, Link, Sim, Transit; depends on Core |
 | [Worlds](worlds.md) | World | Celestial-body environments from real DEMs | Library; data prep on Cloud | COG/Zarr terrain, SPICE frames, 3D Tiles | Sim, Prospect, Link, View (Env API) |
 | [Prospect](prospect.md) | World | Probabilistic resource fields w/ uncertainty | Library; inference on Cloud | Zarr ground-truth + belief fields | Sim, Mind, Allocate, Bench (Env API) |
 | [Link](link.md) | World | Comms environment (LOS, windows, latency) | Library; precompute on Cloud | SPICE geometry, contact graphs, time-series | Sim, Allocate, Mind, Ops (Env API) |
@@ -139,6 +150,8 @@ interfaces; see [mission-model.md](mission-model.md) and §13.
 | [Cloud](cloud.md) | Backbone | Distributed sim/training orchestration | Kubernetes + Ray + Argo | Content-addressed datasets/artifacts | runs Sim/Learn/Allocate/Surrogate/Bench |
 
 † Added by [RFC-0001](../rfc/0001-multi-regime-missions.md) (accepted; implementation Phase 3). "Mission arch." = the **Mission architecture & logistics** layer. Existing components are also *extended* for multi-regime scope — see §13.
+
+‡ Added by [RFC-0002](../rfc/0002-shared-spice-foundation.md) (accepted; implementation Phase 0). [Spice](spice.md) is a **Core companion** — the SPICE-backed realization of Core's frame/time vocabulary that Core cannot host (heavy deps; core.md §2.3). See §3 and [spice.md](spice.md).
 
 ---
 

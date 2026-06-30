@@ -67,7 +67,7 @@ determinism-and-provenance discipline (conventions.md §5, §11).
 
 | Phase | Window | Theme | Headline ships | Goal (exit definition) |
 |---|---|---|---|---|
-| **[0](phase-0-commons-seed.md)** | ~0–12 mo | Commons seed | Core v0.1 · Sim · Worlds · Fleet · Bench (+ Prospect, Link MVP, local Cloud) | A runnable, reproducible benchmark on the lunar-polar anchor scenario — *clone, run, score in an afternoon* |
+| **[0](phase-0-commons-seed.md)** | ~0–12 mo | Commons seed | Core v0.1 · Spice · Sim · Worlds · Fleet · Bench (+ Prospect, Link MVP, local Cloud) | A runnable, reproducible benchmark on the lunar-polar anchor scenario — *clone, run, score in an afternoon* |
 | **[1](phase-1-autonomy-studio.md)** | ~12–30 mo | Autonomy & studio | Mind · Learn · Allocate · Guard · Studio · Hub · Surrogate · full Link · full Cloud | Become the MARL + planning commons; first public leaderboards & community plugins |
 | **[2](phase-2-operations-bridge.md)** | ~30–54 mo | Operations bridge | Ops · Bridge · View; digital-twin shadow mode | Cross the sim→operations threshold on terrestrial analogs |
 | **[3](phase-3-flight-mission-architecture.md)** | 54 mo + | Flight, mission architecture & ecosystem | Bridge flight adapters; **Transit · Trajectory · Sizing · Ledger** + small-body/microgravity extensions; NEO sample-return → asteroid-mining scenarios | Become the default stack for surface ISRU *and* interplanetary resource missions |
@@ -85,6 +85,7 @@ platform grows (system.md §11; charter §9).
 | Layer | Component | P0 | P1 | P2 | P3 |
 |---|---|:--:|:--:|:--:|:--:|
 | Backbone | [Core](../architecture/core.md) | ● v0.1 | ▲ Mission/Phase/Regime + ObjectiveSpec hooks | · | · |
+| | [Spice](../architecture/spice.md) ‡ | ● shared SPICE foundation | · | · | (○ Transit reuse) |
 | | [Bench](../architecture/bench.md) | ● anchor + repro harness | ▲ public leaderboards, Cloud eval | ▲ analog/twin scenarios | ▲ NEO/asteroid + mission metrics |
 | | [Hub](../architecture/hub.md) | · | ● registry, signing, gating | ▲ replication/mirrors | ▲ mission-arch artifact types |
 | | [Cloud](../architecture/cloud.md) | ● local/container-first | ● full K8s/Ray/Argo | ▲ stronger tenancy | ▲ mission-design sweep classes |
@@ -106,6 +107,9 @@ platform grows (system.md §11; charter §9).
 | Mission-arch | [Trajectory](../architecture/trajectory.md) | · | (○) | · | ● impulsive→low-thrust→global, oracles |
 | | [Sizing](../architecture/sizing.md) | · | · | · | ● OpenMDAO closure, staging, manifesting, SADF emit |
 | | [Ledger](../architecture/ledger.md) | · | (○ objective hook) | · | ● ValueModel, CERs, MC uncertainty |
+
+‡ [Spice](../architecture/spice.md) added by [RFC-0002](../rfc/0002-shared-spice-foundation.md)
+(accepted) — the shared SPICE foundation; a Phase-0 deliverable sequenced before the Link MVP.
 
 ---
 

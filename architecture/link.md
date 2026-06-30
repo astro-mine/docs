@@ -68,9 +68,12 @@ intermittent comms and partial observability"). Link is the package that makes t
    geometrically open links. The two concerns are cleanly separated so either can be dialed in
    fidelity independently.
 2. **Borrow ephemerides and terrain; never re-derive them.** Frames, epochs, body orientation,
-   and orbits come from SPICE/NAIF; horizons and elevation come from [Worlds](worlds.md). Link
-   adds the *communications* interpretation, consistent with conventions.md §1.7 ("interop, don't
-   reinvent") and the SPICE-backed frame/time mandate in §5.
+   and orbits come from SPICE/NAIF through the shared **[`astro-mine-spice`](spice.md)** foundation
+   (`astro_mine.spice`, [RFC-0002](../rfc/0002-shared-spice-foundation.md)); horizons and elevation
+   come from [Worlds](worlds.md), consumed through the Core `WorldProvider` contract. Link depends on
+   neither a private SPICE adapter nor the `astro-mine-worlds` package — it adds only the
+   *communications* interpretation, consistent with conventions.md §1.7 ("interop, don't reinvent")
+   and the SPICE-backed frame/time mandate in §5.
 3. **Time-varying by construction.** Connectivity is a function of epoch, not a static graph. The
    first-class product is an interval/time-series over an explicit epoch window, from which
    boolean snapshots are derived — never the other way around.
@@ -106,7 +109,7 @@ astro_mine.link
 ├── geometry/        # LOS + occlusion: SPICE visibility, terrain horizon raycasting
 │   ├── visibility.py    # node-pair LOS over epoch ranges (SPICE gfposc/gftfov style)
 │   ├── occlusion.py     # terrain/horizon masking from Worlds DEM/horizon maps
-│   └── frames.py        # frame/epoch helpers (thin wrapper over Core units/frames)
+│   └── frames.py        # frame/epoch helpers (thin wrapper over astro_mine.spice + Core units/frames)
 ├── constellation/   # relay-orbiter geometry, ground-station station-keeping geometry
 │   ├── orbiters.py      # relay constellation contact geometry, multi-hop reachability
 │   └── ground.py        # Earth ground-station (DSN/ESTRACK/custom) contact windows
@@ -141,11 +144,16 @@ astro_mine.link
 
 ### Key abstractions consumed
 
-- **SPICE/NAIF** (via [Core](core.md) `units`/`frames`, conventions.md §5): SPK ephemerides, PCK
-  body orientation, FK/IK frames, CK pointing where available, and the visibility/geometry
-  routines (SpiceyPy in Python; CSPICE in native paths).
-- **[Worlds](worlds.md)**: DEMs (Cloud-Optimized GeoTIFF via GDAL) and precomputed
-  **horizon maps** for fast terrain-occlusion tests, in an explicit body-fixed CRS.
+- **SPICE/NAIF** via the shared **[`astro-mine-spice`](spice.md)** foundation (`astro_mine.spice`,
+  [RFC-0002](../rfc/0002-shared-spice-foundation.md)), which realizes [Core](core.md)'s `units`/`frames`
+  vocabulary (conventions.md §5): SPK ephemerides, PCK body orientation, FK/IK frames, CK pointing
+  where available (SpiceyPy in Python; CSPICE in native paths). Link drives `astro_mine.spice` for
+  body-fixed positions and may run `spiceypy` geometry-finder routines (`gfposc`/`gftfov`) *on top of*
+  those shared primitives for its own window search (LINK-02).
+- **Terrain occlusion** via the Core **`WorldProvider`** contract (`core.world`): `ray_intersect` /
+  horizon-map `line_of_sight` over [Worlds](worlds.md) DEMs (Cloud-Optimized GeoTIFF via GDAL) in an
+  explicit body-fixed CRS. Link consumes an **injected** provider through the contract; it does **not**
+  import or depend on the `astro-mine-worlds` package (no edge→edge side-channel, conventions.md §1.1).
 - **[Fleet](fleet.md)/SADF**: each node's comms capability block — antenna gain pattern, EIRP,
   G/T, frequency band, supported mod/cod, pointing capability — read from the [Core](core.md)
   SADF schema. Relay orbiters and ground stations may themselves be SADF assets.
@@ -186,10 +194,12 @@ cloud tier; interactive queries run in-process.
   for hundreds of node-pairs) are the candidate for a **C++20** core via Pybind11, or vectorized
   NumPy/Numba first and promoted only if profiling demands it ("measure before optimizing",
   conventions.md §8).
-- **Geometry/astrodynamics:** **SPICE/NAIF** via **SpiceyPy** (CSPICE under the hood); SPICE
-  geometry-finder routines (`gfposc`, `gftfov`, occultation/visibility solvers) for window search.
-  **Astropy** for unit/coordinate convenience where SPICE is overkill. Optional **Skyfield** as a
-  cross-check oracle for ground-station passes.
+- **Geometry/astrodynamics:** SPICE/NAIF accessed through the shared **`astro-mine-spice`**
+  foundation (`astro_mine.spice`; SpiceyPy/CSPICE under the hood) for ephemerides, frames, and
+  body-fixed positions; Link layers its **SPICE geometry-finder** window search (`gfposc`, `gftfov`,
+  occultation/visibility solvers) on top of those primitives (LINK-02). **Astropy** for
+  unit/coordinate convenience where SPICE is overkill. Optional **Skyfield** as a cross-check oracle
+  for ground-station passes.
 - **Terrain:** **GDAL/rasterio** to read Worlds COG DEMs and horizon products (conventions.md §5).
 - **Link budget:** implemented in NumPy against a CCSDS-aligned mod/cod table; no external RF
   dependency in the default path. Optional **ns-3** bridge (out-of-process) for packet-level
@@ -201,8 +211,9 @@ cloud tier; interactive queries run in-process.
   **gRPC** service for cloud precompute (conventions.md §3, §4). Stateless service; products land
   in object storage.
 - **Build/packaging:** Python wheel `astro-mine-link` (import `astro_mine.link`); OCI image for
-  the service; SemVer; depends on a pinned `astro-mine-core` interface major version
-  (conventions.md §7, §13). Native kernels ship as manylinux wheels with bundled CSPICE.
+  the service; SemVer; depends on a pinned `astro-mine-core` interface major version **and on
+  `astro-mine-spice`** for SPICE resolution (conventions.md §7, §13). Native kernels ship as manylinux
+  wheels with bundled CSPICE.
 
 ---
 
@@ -247,10 +258,13 @@ light-time deep-space plan, and the content-address key extends to cover the act
 Link sits in the **World & environment** layer and integrates exclusively through
 [Core](core.md) contracts (conventions.md §1.1 — no private side-channels):
 
-- **Consumes** from [Worlds](worlds.md): terrain DEMs and horizon maps for occlusion, in an
-  explicit planetary CRS. **Consumes** SPICE ephemerides/frames via the Core `units`/`frames`
-  conventions. **Consumes** node comms capabilities from [Fleet](fleet.md) SADF (relay orbiters
-  and ground stations may be SADF assets themselves).
+- **Consumes** terrain occlusion (DEMs/horizon maps in an explicit planetary CRS) through the Core
+  **`WorldProvider`** contract — an injected [Worlds](worlds.md) provider, **not** a dependency on the
+  `astro-mine-worlds` package. **Consumes** SPICE ephemerides/frames through the shared
+  **[`astro-mine-spice`](spice.md)** foundation (`astro_mine.spice`, [RFC-0002](../rfc/0002-shared-spice-foundation.md)),
+  which realizes Core's `units`/`frames` vocabulary (conventions.md §5). **Consumes** node comms
+  capabilities from [Fleet](fleet.md) SADF (relay orbiters and ground stations may be SADF assets
+  themselves).
 - **Provides** the comms model to [Sim](sim.md): a `ConnectivitySampler` and `DeliveryModel` so
   per-tick message delivery, latency, and bandwidth reflect real geometry. Link is registered as an
   **environment-model plugin** and contributes **comms observation masks** through the

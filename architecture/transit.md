@@ -159,8 +159,8 @@ Aligned with conventions.md §2:
   orchestration (type-hinted, `mypy`/`pyright`). **C++20** (Pybind11) for the **hot inner loop** —
   per-step force evaluation, polyhedral-gravity summation, ray/occultation — that a propagator calls
   millions of times. **Rust** optional for the content-addressed bundle packing/verification tool.
-- **Astrodynamics & force models:** **SpiceyPy** (CSPICE) for ephemerides, frames, epochs (TDB/ET),
-  and Sun/Earth/body geometry — the charter §7 standard, identical to Worlds'. **Orekit** (py-wrapped)
+- **Astrodynamics & force models:** ephemerides, frames, epochs (TDB/ET), and Sun/Earth/body geometry
+  via the shared **`astro-mine-spice`** foundation ([RFC-0002](../rfc/0002-shared-spice-foundation.md); SpiceyPy/CSPICE under the hood) — the charter §7 standard, the same resolver Worlds and Link use. **Orekit** (py-wrapped)
   and/or **Basilisk** supply validated force models (harmonics, SRP, third-body, drag); **GMAT/STK**
   serve as external verification oracles. Small-body **polyhedral gravity** via an established C++
   kernel; spherical harmonics via a `pyshtools`-class evaluator, mirroring Worlds' gravity stack.

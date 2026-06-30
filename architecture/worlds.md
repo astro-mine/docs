@@ -245,12 +245,20 @@ Worlds plugs into the platform exclusively through [Core](core.md) contracts
   owns *where the ground is and what it is like*.
 - **→ [Link](link.md).** Worlds exposes the **terrain occlusion / line-of-sight** service
   (`ray_intersect`, horizon maps) that Link uses to compute inter-agent and Earth-link
-  visibility — the same horizon machinery that drives PSR detection.
+  visibility — the same horizon machinery that drives PSR detection. Link consumes this through the
+  Core **`WorldProvider`** contract (`core.world`), not a direct dependency on Worlds; the SPICE
+  ephemeris half of Link's geometry comes from [Spice](spice.md), not from here ([RFC-0002](../rfc/0002-shared-spice-foundation.md)).
 - **→ [View](view.md).** Worlds streams **3D Tiles** (LOD terrain) and raster overlays to View's
   Cesium/3D-Tiles renderer over HTTP.
 - **↔ [Core](core.md).** Worlds depends on `astro-mine-core` for the Environment-API contract,
   the plugin manifest/registry, units/frames/time conventions, and message schemas; body/world
   packs register via the Core manifest.
+- **← [Spice](spice.md).** Worlds resolves SPICE-backed frames, epochs, and Sun/Earth geometry
+  through the shared **`astro-mine-spice`** foundation (`astro_mine.spice`,
+  [RFC-0002](../rfc/0002-shared-spice-foundation.md)) instead of embedding its own SPICE adapter — the
+  illumination/PSR machinery (RM-P0-WORLDS-03) drives `sun_geometry`/`body_geometry` from it, and
+  `worlds.crs` re-imports the body reference radius (`MOON_RADIUS_M`) from there. This replaces the
+  former in-package `astro_mine.worlds.spice` module (extracted on acceptance of RFC-0002).
 - **→ [Hub](hub.md).** World bundles are published, versioned, and discovered as content-addressed
   OCI artifacts via Hub (charter §6, §10.3).
 - **→ [Bench](bench.md).** Bench pins a specific world version (and Core interface version) per
