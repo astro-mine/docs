@@ -67,7 +67,8 @@ re-entry simulator** (RFC-0001 §6, R3; mission-model §4; conventions §12;
 - **RM-P3-TRANSIT-06** — **Oracle validation** (GMAT/Orekit/Basilisk/STK; SPENVIS-style hazard
   references) with explicit error budgets; determinism + frame/epoch sanity gates. *(trace: transit.md §10; `AST-TR-003`)*
 
-**Dependencies:** Core mission hooks (`RM-P1-CORE-04`), SPICE. **Exit criteria:** a designer
+**Dependencies:** Core mission hooks (`RM-P1-CORE-04`), the shared [`astro-mine-spice`](../architecture/spice.md)
+foundation ([RFC-0002](../rfc/0002-shared-spice-foundation.md)). **Exit criteria:** a designer
 propagates/scores an interplanetary baseline cruise locally; arcs validated against oracles. **Deferred:**
 new target bodies / time-resolved SEP / learned force-hazard surrogates as later packs.
 

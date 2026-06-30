@@ -110,6 +110,13 @@ single file carries heterogeneous, timestamped, schema-tagged channels.
 **Coordinate reference systems:** all spatial data is tagged with an explicit planetary CRS
 (body-fixed frame, datum, projection) resolved via SPICE/PROJ. No implicit Earth/WGS84
 assumptions. Frames and time are SPICE-backed (TDB/ET, body-fixed and inertial frames).
+[Core](core.md) defines the frame/time **types** (`Epoch`, `ReferenceFrame`, `PlanetaryCRS`) and the
+`require_frame`/`require_crs` fail-loud guards, but defers SPICE **resolution** — kernels, `spkpos`,
+`pxform`, topocentric geometry — to **[`astro-mine-spice`](../architecture/spice.md)**
+(`astro_mine.spice`, [RFC-0002](../rfc/0002-shared-spice-foundation.md)), the single shared resolver
+every SPICE consumer (Worlds, Link, Sim, Transit) depends on. Core cannot host that resolution itself
+(`spiceypy`/`numpy` are heavy deps the narrow waist excludes — core.md §2.3); centralizing it in one
+package keeps frame/aberration conventions singular platform-wide.
 
 **Provenance:** every generated artifact records its inputs (content hashes), the producing
 code version, the environment lockfile, and the random seed. Datasets and policies are
