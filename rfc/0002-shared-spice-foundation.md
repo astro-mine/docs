@@ -1,8 +1,9 @@
 # RFC 0002: A shared SPICE foundation package (`astro-mine-spice`)
 
-- **Status:** draft
+- **Status:** accepted
 - **Author(s):** djankov
 - **Created:** 2026-06-29
+- **Accepted:** 2026-06-29
 - **Affects Core:** no (depends on Core; no schema change) — but adds a new top-level package and updates a cross-cutting convention (`conventions.md §5`), so it goes through the RFC process per [GOVERNANCE.md](https://github.com/astro-mine/.github/blob/main/GOVERNANCE.md).
 
 ## Summary
@@ -187,19 +188,18 @@ the one in-repo caller graph, so this is a single coordinated PR, not a deprecat
    (`conventions.md §13`) and makes the shared foundation discoverable to Sim/Transit, which have
    no reason to look inside Worlds.
 
-## Unresolved questions
+## Resolved decisions
 
-- **Final name.** `astro-mine-spice` (recommended, discoverable, honest about the foundation) vs.
-  `astro-mine-frames` (impl-agnostic, but the package is intrinsically SPICE-bound — kernels, ET,
-  `spkpos` — so the abstraction would oversell swappability).
-- **Where body reference radii live.** `MOON_RADIUS_M` (and future per-body radii) in
-  `astro_mine.spice` (recommended — it is geometry) vs. `astro_mine.core.units` (with the other
-  frame/body constants).
-- **Roadmap line.** Does this become a new `RM-P0-SPICE-*` track in the Phase-0 roadmap, sequenced
-  before LINK-01 and refactoring the shipped WORLDS-02? Recommended: yes, a short foundation entry,
-  tracked as issues post-acceptance (new repo · Worlds extraction · Link rewire).
-- **Sim cut-over timing.** Cut Sim's orbital engine (SIM-03) over to `astro-mine-spice` in Phase 0
-  alongside Worlds+Link, or defer until Sim next touches SPICE? (Deferring is safe; the foundation
-  is additive.)
-- **Migration tactic.** Hard cut of `astro_mine.worlds.spice` (recommended, pre-1.0) vs. a temporary
-  re-export shim for one release.
+Accepted 2026-06-29 by the steering group (the Phase-0 founding team) — each with the
+recommended option:
+
+- **Name:** `astro-mine-spice` (import `astro_mine.spice`).
+- **Body reference radii:** live in `astro_mine.spice` (they are geometry); `worlds.crs`
+  re-imports `MOON_RADIUS_M` from there to keep its `PlanetaryCRS` datum in one place.
+- **Roadmap:** add an `RM-P0-SPICE-*` track to the Phase-0 roadmap, sequenced before LINK-01 and
+  refactoring the shipped WORLDS-02; implementation tracked as issues (new repo · Worlds
+  extraction · Link rewire).
+- **Sim cut-over:** deferred — only Worlds and Link cut over now; Sim's orbital engine (SIM-03)
+  and Transit (Phase 3) adopt the foundation when they next touch SPICE (additive, no rework).
+- **Migration tactic:** hard cut of `astro_mine.worlds.spice` (Worlds is pre-1.0, all consumers
+  in-tree), no re-export shim.
