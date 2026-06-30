@@ -185,7 +185,7 @@ conditions, and exchanges terminal→initial state at the boundary — purely *m
   for GPU contact/granular kernels and parallel rollouts, behind device-agnostic interfaces.
 - **Physics & robotics engines (charter §7).**
   - *Orbital:* **Basilisk** (spacecraft dynamics/GNC, flight-like) and **Orekit** (propagation,
-    events, frames); **SPICE/NAIF** (via SpiceyPy) for ephemerides, frames, and time; **GMAT/STK**
+    events, frames); **SPICE/NAIF** via the shared **`astro-mine-spice`** foundation ([RFC-0002](../rfc/0002-shared-spice-foundation.md); SpiceyPy under the hood) for ephemerides, frames, and time; **GMAT/STK**
     as external verification oracles only (conventions.md §11).
   - *Contact-rich manipulation:* **Drake** (rigorous multibody, grasp/excavator linkages,
     hydroelastic contact).

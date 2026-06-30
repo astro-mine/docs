@@ -43,8 +43,10 @@ that is [Transit](transit.md)/[Sim](sim.md)), not a CRS/projection library (that
 [Worlds](worlds.md)), and carries **no operational guidance** (generic geometry over public
 ephemerides only — see §9).
 
-**Primary users:** every SPICE consumer — [Worlds](worlds.md) (illumination/PSR), [Link](link.md)
-(LOS geometry), [Sim](sim.md)'s orbital engine, and later [Transit](transit.md).
+**Primary users:** every SPICE consumer — [Worlds](worlds.md) (illumination/PSR) and [Link](link.md)
+(LOS geometry) in Phase 0, and — as they adopt it — [Sim](sim.md)'s orbital engine, [Bridge](bridge.md)
+(time/frame transforms), [Trajectory](trajectory.md), and [Transit](transit.md) (deep-space
+ephemerides/frames).
 
 **Charter alignment:** §7 designates **SPICE/NAIF** the astrodynamics standard; `conventions.md §1.7`
 ("interop, don't reinvent — bridge to … SPICE") sanctions naming the bridge plainly.
@@ -165,9 +167,10 @@ dependencies (no service plane, no side-channels — conventions.md §1.1):
 - **→ [Link](link.md).** Link resolves Earth/relay body-fixed positions through Spice for LOS, then
   evaluates terrain occlusion via the Core `WorldProvider` contract — **no dependency on
   `astro-mine-worlds`** (RFC-0002).
-- **→ [Sim](sim.md) / [Transit](transit.md).** Sim's orbital engine (SIM-03) and Transit (Phase 3)
-  consume the same primitives when they next touch SPICE — additive, no rework (RFC-0002 deferred
-  cut-over).
+- **→ [Sim](sim.md), [Bridge](bridge.md), [Trajectory](trajectory.md), [Transit](transit.md).** Sim's
+  orbital engine (SIM-03, Phase 0), Bridge's time/frame transforms (Phase 2), and Trajectory/Transit
+  (Phase 3) consume the same primitives when they next touch SPICE — additive, no rework (RFC-0002
+  deferred cut-over).
 
 **This is the seam fix.** By being the one package every consumer depends on, Spice eliminates both the
 "re-derive a thin SPICE adapter per package" drift and the "depend on `astro-mine-worlds` just for
@@ -242,6 +245,6 @@ Phase-0 deliverable, sequenced **before the Link MVP** (see [roadmap/phase-0](..
 - **RM-P0-SPICE-03** — distribution (Git-tag versioning, pinned downstream; no operational-targeting tag).
 
 **Consumed by** RM-P0-WORLDS-02/03 (illumination/PSR) and RM-P0-LINK-01 (LOS geometry) in Phase 0.
-**Deferred:** Sim's orbital engine (SIM-03) and [Transit](transit.md) (Phase 3) adopt the foundation
-when they next touch SPICE — additive, no rework ([RFC-0002](../rfc/0002-shared-spice-foundation.md)
-resolved decisions).
+**Deferred:** Sim's orbital engine (SIM-03, Phase 0), [Bridge](bridge.md) (Phase 2), and
+[Trajectory](trajectory.md)/[Transit](transit.md) (Phase 3) adopt the foundation when they next touch
+SPICE — additive, no rework ([RFC-0002](../rfc/0002-shared-spice-foundation.md) resolved decisions).

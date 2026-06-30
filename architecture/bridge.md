@@ -199,7 +199,7 @@ egress → backend executes → native telemetry returns through `adapters/*` �
   - **CCSDS** — Space Packet Protocol (SPP), TC/TM Space Data Link, optionally **CFDP** for file
     transfer and **DTN Bundle Protocol (BPv7)** for delay-tolerant store-and-forward. Built on
     existing libraries where available rather than hand-rolled.
-  - **SPICE/NAIF** (via SpiceyPy) for time/frame transforms; **tf2** for ROS 2 frame trees.
+  - **SPICE/NAIF** via the shared **`astro-mine-spice`** foundation ([RFC-0002](../rfc/0002-shared-spice-foundation.md); SpiceyPy under the hood) for time/frame transforms; **tf2** for ROS 2 frame trees.
 - **Codegen:** adapter `Codec`s are generated where possible — `buf` for the Core proto side
   (conventions.md §3), and per-stack generators (`rosidl` for ROS 2 `.msg`, cFS message-ID/struct
   tables, F´ XML topologies, CCSDS packet definitions) — so a schema bump regenerates mappings

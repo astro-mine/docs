@@ -204,8 +204,9 @@ arcs and budgets — and persists little beyond results and provenance.
   - **`WindowScan` grids and trade frontiers** — emitted as **Apache Parquet** (Arrow in memory),
     the tabular porkchop/Pareto data for [Studio](studio.md) and [View](view.md);
   - **verification residuals** — the oracle/Sim re-propagation deltas attached to each `TrajectoryRef`.
-- **Consumes:** **force models + ephemerides** from [Transit](transit.md) and **SPICE** kernels
-  (frames, TDB/ET epochs); **propulsion/Δv capability** from [Fleet](fleet.md) SADF
+- **Consumes:** **force models + ephemerides** from [Transit](transit.md) and SPICE geometry via the
+  shared **`astro-mine-spice`** foundation ([RFC-0002](../rfc/0002-shared-spice-foundation.md); frames,
+  TDB/ET epochs); **propulsion/Δv capability** from [Fleet](fleet.md) SADF
   (mission-model.md §2.1); **body shape/gravity field** from [Worlds](worlds.md) for proximity
   legs. All states carry an explicit planetary/inertial CRS resolved via SPICE/PROJ and SI units
   (conventions.md §5; mission-model.md §2.2).
