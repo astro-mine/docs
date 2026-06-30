@@ -31,12 +31,12 @@ full sketch is in [mission-model.md](mission-model.md). They obey the same rule 
 in Core — **schema only**: the phase-sequencing *mechanism* lives in the [Sim](sim.md)/[Ops](ops.md)
 runtime and the *policy* in [Studio](studio.md)/Ops, never in Core.
 
-**Mission objectives (Phase 1).** Core additively owns the **`ObjectiveSpec`** schema and the
+**Mission objectives.** Core additively owns the **`ObjectiveSpec`** schema and the
 **objective→metric binding** — the shared contract by which [Studio](studio.md) states a goal,
 [Bench](bench.md) measures it, [Ledger](ledger.md) values it, and [Ops](ops.md)/[View](view.md)
 track progress against it in both design and operations. Like everything in Core it is **schema
 only**: the optimization (Studio's trade-study engine) and the evaluation (Bench/Ops) live above
-Core. Append-only; reserved in **Phase 1**.
+Core. Part of the Core v0.1 baseline (**Phase 0**, RM-P0-CORE-04); append-only thereafter.
 
 **Primary users:** all developers and every other component. Core is a dependency of everything
 and depends on (almost) nothing.
