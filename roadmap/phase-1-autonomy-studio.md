@@ -301,6 +301,26 @@ live-mission link prediction (capability-gated). **Deferred → P3:** deep-space
 
 ---
 
+## Sim — Phase-1 extensions
+
+**Scope & deliverables**
+
+- **RM-P1-SIM-01** — **Content-pinned `ScenarioSpec → Sim Scenario` bridge**: resolve the
+  Worlds/Fleet/Prospect content a [Bench](../architecture/bench.md) `ScenarioSpec` pins **by content
+  hash** (Hub-published) into a Sim `Scenario`, replacing the `RM-P0-SIM-11` inline reduced-order
+  anchor. Sim resolves via Hub + Core manifests — no sibling-package import. *(trace: sim.md §3, §5; bench.md §5, §6)*
+- **RM-P1-SIM-02** — **ISRU extraction/storage support**: a reduced-order extraction/storage process
+  model + an ISRU-storage sensor (a new `RESOURCE_STORAGE` `SensorKind` via RFC — Core is frozen in
+  P0) reporting stored water (kg), unblocking Bench's `water_mass` / `energy_per_kg` metrics. *(trace: sim.md §1, §3; bench.md §3)*
+
+**Dependencies:** `RM-P0-SIM-11`, Hub (publish/discover), the Hub-published Worlds/Fleet/Prospect
+bundles (`RM-P0-WORLDS-07` / `RM-P0-FLEET-06` / `RM-P0-PROSPECT-04`); `RM-P1-SIM-02` additionally a
+Core RFC for the `SensorKind`. **Exit criteria:** the anchor's provisional content pins resolve to
+real Hub digests and a Sim run reproduces from them; a Sim run reports stored-water so Bench scores
+`water_mass`/`energy_per_kg`. **Deferred → P3:** microgravity/small-body regimes; multi-species extraction.
+
+---
+
 ## Worlds & Prospect — Phase-1 extensions
 
 **Worlds**
