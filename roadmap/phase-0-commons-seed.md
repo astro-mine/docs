@@ -235,6 +235,12 @@ parametric families, capability-taxonomy growth, Hub publish/discover, Studio as
 - **RM-P0-SIM-10** — **Oracle-validated orbital regression** (STK/GMAT/Basilisk) and terramechanics
   validation against analytic/lab cases, each with explicit error budgets; determinism gates in CI.
   *(trace: sim.md §9, §10; conventions §11; `LUNAR-TR-005`)*
+- **RM-P0-SIM-11** — **Bench-scorable anchor run — Core-Policy-driven MCAP**: `run_episode`/
+  `record_episode` accept an injected **Core `Policy`** and record an MCAP that
+  [Bench](../architecture/bench.md) scores — the M0.2 loop. `astro_mine.sim` imports **only Core**,
+  never Bench; the two meet at the MCAP artifact + an injected policy (conventions §1.1). The anchor
+  scenario/driver stay test fixtures, not shipped (a policy is autonomy's; the scenario is Bench's).
+  *(trace: sim.md §3, §6; bench.md §2, §6; conventions §1.1)*
 
 **Dependencies:** Core (`RM-P0-CORE-02,04,06`), Worlds, Prospect, Fleet, Link MVP. **Exit criteria:**
 the anchor scenario runs headless and interactively, deterministically, at mid-fidelity on a
@@ -267,6 +273,10 @@ sequencer.
   *clone → run anchor → score in an afternoon*, offline, no account. *(trace: bench.md §7, §8, §12; `LUNAR-TR-004`)*
 - **RM-P0-BENCH-06** — **Minimal leaderboard service** (FastAPI + Postgres) with submit-policy-we-run
   + held-out seeds + sampled re-execution as the integrity baseline. *(trace: bench.md §9, §12; `LUNAR-UX-005`)*
+- **RM-P0-BENCH-07** — **MCAP → `EpisodeTrace` decoder** (the Sim artifact boundary, bench.md §6):
+  decode a [Sim](../architecture/sim.md) MCAP recording into the metric input, so Bench scores a Sim
+  run **without importing Sim** (`mcap` behind an optional extra; the two meet at the MCAP artifact —
+  conventions §1.1). Pairs with `RM-P0-SIM-11`. *(trace: bench.md §3, §5, §6; conventions §1.1)*
 
 **Dependencies:** Core, Sim, Worlds, Fleet, Prospect, Link MVP. **Exit criteria:** the anchor
 scenario scores a baseline reproducibly across two clean checkouts; determinism gate wired into CI.
