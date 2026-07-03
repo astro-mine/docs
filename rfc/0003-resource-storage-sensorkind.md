@@ -1,8 +1,9 @@
 # RFC 0003: Append-only Core vocabulary additions for Phase-1 Wave-10 consumers
 
-- **Status:** proposed
+- **Status:** accepted
 - **Author(s):** djankov
 - **Created:** 2026-07-03
+- **Accepted:** 2026-07-03
 - **Affects Core:** yes — two **append-only** members: one added to the SADF `SensorKind`
   vocabulary, one to the `CapabilityTag` vocabulary (the latter also added to
   `GATED_CAPABILITY_TAGS`). Both are string-enum additions with **no wire change**;
@@ -174,11 +175,27 @@ via the Core capability vocabulary"*), so no roadmap edit is required. On accept
 (RM-P1-SIM-02) + Bench consume the SensorKind, and Link (RM-P1-LINK-13) + the Hub OPA gate consume
 the capability tag; no other architecture doc changes.
 
+## Decision
+
+**Accepted 2026-07-03** by the steering group (the Phase-0 founding team), both additions as
+specified — each the append-only change described in *Design*:
+
+- **`SensorKind.RESOURCE_STORAGE = "resource_storage"`** — the ISRU stored-mass gauge, appended to
+  the `SensorKind` enum in `sadf/enums.py` and mirrored in `$defs/SensorKind` of
+  `sadf/schema/sadf.schema.json`.
+- **`CapabilityTag.COMMS_LIVE_MISSION_LINK_PREDICTION = "comms.live_mission_link_prediction"`** —
+  appended to the `CapabilityTag` enum and to `GATED_CAPABILITY_TAGS` in `sadf/enums.py`, and
+  mirrored in the `$defs/CapabilityTag` enum of both `sadf.schema.json` and
+  `registry/manifest.schema.json`.
+
+`CORE_INTERFACE_VERSIONS` stays frozen at `0.1.0` (no wire change; [VERSIONING.md §4](../VERSIONING.md)).
+Implementation is tracked as the Wave-10 issues: the Core additions (astro-mine-core#36) and their
+consumers — the Sim ISRU sensor (astro-mine-sim#21) and the Link Earth-link-window product
+(astro-mine-link#20). Multi-species storage remains deferred to the Sim implementation (below) and
+does not affect these enum members.
+
 ## Unresolved questions
 
 - **Multi-species storage.** The anchor needs only water. If future scenarios store multiple
   species per asset, whether that is N readings (one per `resource_species`) or a structured
   payload is deferred to the Sim implementation — it does **not** affect this enum member.
-- **Acceptance.** Pending steering-group (Phase-0 founding team) sign-off, tracked with the Core
-  implementation PR (astro-mine-core#36) and its Wave-10 consumers — the Sim ISRU sensor
-  (astro-mine-sim#21) and the Link Earth-link-window product (astro-mine-link#20).
