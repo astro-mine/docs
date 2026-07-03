@@ -312,12 +312,24 @@ live-mission link prediction (capability-gated). **Deferred → P3:** deep-space
 - **RM-P1-SIM-02** — **ISRU extraction/storage support**: a reduced-order extraction/storage process
   model + an ISRU-storage sensor (a new `RESOURCE_STORAGE` `SensorKind` via RFC — Core is frozen in
   P0) reporting stored water (kg), unblocking Bench's `water_mass` / `energy_per_kg` metrics. *(trace: sim.md §1, §3; bench.md §3)*
+- **RM-P1-SIM-03** — **Error-budget-driven multi-fidelity scheduler**: upgrade the `RM-P0-SIM-05`
+  rule-based scheduler to consume the [Surrogate](../architecture/surrogate.md) `ErrorReport` and
+  admit / fall back per task tolerance, emitting error-budget reports. *(trace: sim.md §11, §12;
+  surrogate.md §6; pairs with `RM-P1-SURR-04`)*
+- **RM-P1-SIM-04** — **Brax/MJX GPU-vectorized swarm-scale rollout**: a JAX (Brax/MJX) GPU-batched
+  engine/rollout path behind the `RegimeEngine` framework for [Learn](../architecture/learn.md)
+  swarm-scale training, with Ray fan-out on Cloud. *(trace: sim.md §12; charter §8)*
+- **RM-P1-SIM-05** — **Richer sensor models**: extend the `RM-P0-SIM-06` sensor suite with additional
+  / higher-fidelity models, still rendering observations *of* Prospect fields (never a point guess).
+  *(trace: sim.md §3; prospect.md §6)*
 
 **Dependencies:** `RM-P0-SIM-11`, Hub (publish/discover), the Hub-published Worlds/Fleet/Prospect
 bundles (`RM-P0-WORLDS-07` / `RM-P0-FLEET-06` / `RM-P0-PROSPECT-04`); `RM-P1-SIM-02` additionally a
-Core RFC for the `SensorKind`. **Exit criteria:** the anchor's provisional content pins resolve to
-real Hub digests and a Sim run reproduces from them; a Sim run reports stored-water so Bench scores
-`water_mass`/`energy_per_kg`. **Deferred → P3:** microgravity/small-body regimes; multi-species extraction.
+Core RFC for the `SensorKind`; `RM-P1-SIM-03`/`04` on [Surrogate](../architecture/surrogate.md)
+(`RM-P1-SURR-04`) + Cloud GPU (`RM-P1-CLOUD-01`). **Exit criteria:** the anchor's provisional content
+pins resolve to real Hub digests and a Sim run reproduces from them; a Sim run reports stored-water so
+Bench scores `water_mass`/`energy_per_kg`; the scheduler substitutes the Surrogate tier only within
+its error budget. **Deferred → P3:** microgravity/small-body regimes; multi-species extraction.
 
 ---
 
@@ -329,6 +341,18 @@ real Hub digests and a Sim run reproduces from them; a Sim run reports stored-wa
   (co-designed with [Surrogate](../architecture/surrogate.md)) for swarm-scale queries. *(trace: worlds.md §11, §12)*
 - **RM-P1-WORLDS-11** — **Mars worlds (MOLA/HiRISE) + Martian frames + richer dust model** as the
   first non-anchor body, validating "support a new world = a package, not a core change." *(trace: worlds.md §12; charter §10.2)*
+- **RM-P1-WORLDS-12** — **Full per-cell topocentric horizon maps**: replace the `RM-P0-WORLDS-03`
+  grid-azimuth horizon approximation (and its grid-convergence correction) with a rigorous per-cell
+  topocentric computation — a drop-in fidelity upgrade behind the same `IlluminationModel` API and
+  PSR semantics. *(trace: worlds.md §3, §11, §12; refines `RM-P0-WORLDS-03`)*
+- **RM-P1-WORLDS-13** — **Illumination-driven per-cell surface thermal**: drive the `RM-P0-WORLDS-04`
+  1-D thermophysical solver with real horizon-mapped per-cell insolation (+ SPICE Sun geometry)
+  instead of the representative per-class arc; keep the class curves as a fast low-fi tier.
+  *(trace: worlds.md §8, §11; refines `RM-P0-WORLDS-04`)*
+- **RM-P1-WORLDS-14** — **Diviner/LEND/M³ conditioning-layer ingest**: ingest Diviner temperature,
+  LEND epithermal-neutron (WEH), and M³ OH/H₂O rasters as world layers on the Shackleton–de Gerlache
+  CRS/grid, so [Prospect](../architecture/prospect.md) can condition real priors on them (unblocks
+  `RM-P1-PROSPECT-12`). *(trace: worlds.md §6, §12; prospect.md §6; `LUNAR-DR-001`)*
 
 **Prospect**
 
@@ -336,9 +360,16 @@ real Hub digests and a Sim run reproduces from them; a Sim run reports stored-wa
   (large lattice domains; non-Gaussian/multimodal structure). *(trace: prospect.md §11, §12)*
 - **RM-P1-PROSPECT-11** — **Richer active-perception objectives (EVPI tied to ISRU yield)** for
   Learn/Allocate, + the **distributed field service** + Hub-published community priors. *(trace: prospect.md §11, §12)*
+- **RM-P1-PROSPECT-12** — **Real PDS raster-ingest prior-recipe**: replace the P0 *parametric* prior
+  with a real public-dataset (LOLA / Diviner / LEND / M³) raster-ingest recipe, reprojected onto the
+  Worlds Shackleton CRS/grid with per-product content-addressed provenance and Hub-published; the
+  parametric prior stays the offline default. *(trace: prospect.md §2.4, §3, §4, §6, §12; defers from `RM-P0-PROSPECT-03`)*
 
-**Dependencies:** P0 Worlds/Prospect, Surrogate, Cloud. **Exit criteria:** a second body (Mars) and a
-second field backend ship as plugins with no Core change; EVPI objective consumable by Allocate.
+**Dependencies:** P0 Worlds/Prospect, Surrogate, Cloud; `RM-P1-PROSPECT-12` on `RM-P1-WORLDS-14`
+(conditioning layers) + Hub. **Exit criteria:** a second body (Mars) and a second field backend ship
+as plugins with no Core change; the EVPI objective is consumable by Allocate; the real-ingest prior
+reproduces from cited public inputs and is Hub-published while the offline parametric default still
+runs with no network. **Deferred → P2:** operational belief from real *mission* sensors (Ops/Bridge).
 **Deferred → P3:** small/irregular-body Worlds; asteroid volatile fields (Prospect reuse).
 
 ---
@@ -363,12 +394,13 @@ scenarios + metrics.
 
 ## Fleet — Phase-1 extensions
 
-- **RM-P1-FLEET-10** — **Broaden parametric families + capability taxonomy**; **Hub publish/discover
-  integration**; **expose the asset menu in Studio**; **feed capability declarations to
-  Mind/Allocate** as autonomy lands. *(trace: fleet.md §12)*
+- **RM-P1-FLEET-10** — **Broaden parametric families + capability taxonomy** + **Hub publish/discover
+  integration** (the P1 upgrade from the P0 local/object-store OCI path). *(trace: fleet.md §12)*
+- **RM-P1-FLEET-11** — **Expose the asset menu in Studio** + **feed capability declarations to
+  Mind/Allocate** for role negotiation / task allocation as autonomy lands. *(trace: fleet.md §12)*
 
-**Dependencies:** Hub, Studio, Mind/Allocate. **Exit criteria:** new vehicle types arrive as Hub
-packages and appear in Studio's menu with no Fleet code change. **Deferred → P2:** Bridge hardware
+**Dependencies:** `RM-P1-FLEET-10` on Hub; `RM-P1-FLEET-11` on Studio + Mind/Allocate. **Exit
+criteria:** new vehicle types arrive as Hub packages and appear in Studio's menu with no Fleet code change. **Deferred → P2:** Bridge hardware
 mapping. **Deferred → P3:** launch/return vehicle kinds + propulsion content.
 
 ---
