@@ -155,7 +155,7 @@ and **hazard-model packs** (alternative radiation/thermal/micrometeoroid sources
 
 Aligned with conventions.md §2:
 
-- **Language:** **Python 3.11+** for the API, model assembly, ephemeris/frame handling, and
+- **Language:** **Python 3.12+** for the API, model assembly, ephemeris/frame handling, and
   orchestration (type-hinted, `mypy`/`pyright`). **C++20** (Pybind11) for the **hot inner loop** —
   per-step force evaluation, polyhedral-gravity summation, ray/occultation — that a propagator calls
   millions of times. **Rust** optional for the content-addressed bundle packing/verification tool.

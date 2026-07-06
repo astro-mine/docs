@@ -173,7 +173,7 @@ run their own assurance posture.
 ## 4. Application programming & runtime platforms
 
 - **Languages.** **Rust** for the safety core — monitors, shields, arbiter, backup, spec evaluator —
-  per conventions.md §2 (high-assurance, memory-safe, deterministic, small TCB). **Python 3.11+** for
+  per conventions.md §2 (high-assurance, memory-safe, deterministic, small TCB). **Python 3.12+** for
   the orchestration/authoring layer, the `PolicyShield` wrapper, and integration glue, so Guard's
   public API is reachable from Python (conventions.md §2 rule). **C++20** only where a shield must
   link a native solver in a hot inner loop (e.g., embedding a QP solver), behind a stable boundary.

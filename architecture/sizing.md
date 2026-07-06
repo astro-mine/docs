@@ -162,7 +162,7 @@ never sits on a simulation or operations hot path.
 
 ## 4. Application programming & runtime platforms
 
-- **Languages.** **Python 3.11+** (conventions.md §2) for requirements parsing, subsystem models,
+- **Languages.** **Python 3.12+** (conventions.md §2) for requirements parsing, subsystem models,
   MDAO assembly, manifesting, emit, and CLI — Python is both the conventions default and OpenMDAO's
   native language. No C++ is required; the math is algebraic/iterative, not a hot inner loop. A
   **Rust** path is *optional* only for a future fast packing/bin-fit kernel if it ever bottlenecks

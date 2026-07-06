@@ -149,7 +149,7 @@ examples*, not privileged internals (charter §10.2).
 
 ## 4. Application programming & runtime platforms
 
-- **Language:** **Python 3.11+** for the entire public surface (conventions.md §2), type-checked
+- **Language:** **Python 3.12+** for the entire public surface (conventions.md §2), type-checked
   with `mypy`/`pyright`. Performance-critical vectorized rollout kernels may drop to **JAX** (XLA)
   or, where a custom op is unavoidable, a C++/CUDA kernel behind a Python binding (conventions.md
   §2) — but these stay behind the same `Algorithm`/env interfaces.

@@ -180,7 +180,7 @@ egress → backend executes → native telemetry returns through `adapters/*` �
 ## 4. Application programming & runtime platforms
 
 - **Languages** (conventions.md §2):
-  - **Python 3.11+** for the port, orchestration glue, `transform`, `delivery`, registry, and
+  - **Python 3.12+** for the port, orchestration glue, `transform`, `delivery`, registry, and
     the `rclpy`-based ROS 2 adapter — keeps the public API Python-reachable (conventions.md §2
     rule).
   - **C++20** where it must speak native flight/robotics ABIs: `rclcpp` for high-rate ROS 2,

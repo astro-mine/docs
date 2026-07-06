@@ -189,7 +189,7 @@ cloud tier; interactive queries run in-process.
 
 ## 4. Application programming & runtime platforms
 
-- **Language:** **Python 3.11+** for the public API, orchestration, and the parametric models
+- **Language:** **Python 3.12+** for the public API, orchestration, and the parametric models
   (conventions.md §2). The hot occlusion/visibility kernels (per-tick raycasting over horizon maps
   for hundreds of node-pairs) are the candidate for a **C++20** core via Pybind11, or vectorized
   NumPy/Numba first and promoted only if profiling demands it ("measure before optimizing",

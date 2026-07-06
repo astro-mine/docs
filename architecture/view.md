@@ -173,7 +173,7 @@ shape genuinely demands it (conventions.md §3).
   to platform data through custom OpenMCT telemetry/time plugins.
 - **Replay:** the **MCAP** TypeScript/wasm reader; **Foxglove**-compatible message schemas and
   panels reused where it saves work (conventions.md §4).
-- **Gateway:** **Python 3.11+** with **FastAPI** (REST/OpenAPI, WebSocket, SSE) — same stack as the
+- **Gateway:** **Python 3.12+** with **FastAPI** (REST/OpenAPI, WebSocket, SSE) — same stack as the
   rest of the platform's edge services (conventions.md §2, §3). It speaks **gRPC** to internal
   services and reads **MCAP**/object storage. A **rosbridge/Foxglove WebSocket bridge** is the
   adapter for the ROS 2/DDS data plane when telemetry originates there.

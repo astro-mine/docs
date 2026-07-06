@@ -170,7 +170,7 @@ against one consistent economic model; orchestrated over **NATS/JetStream** when
 
 ## 4. Application programming & runtime platforms
 
-- **Language:** **Python 3.11+** (conventions.md §2) — the techno-economic, MDO, and probabilistic-
+- **Language:** **Python 3.12+** (conventions.md §2) — the techno-economic, MDO, and probabilistic-
   programming ecosystem is Python-native. Type-hinted, `mypy`/`pyright`-checked.
 - **Multidisciplinary optimization:** **OpenMDAO** (charter §7) — Ledger ships a `LedgerComponent`
   that plugs in as the objective alongside [Sizing](sizing.md)'s sizing components, so fleet ⇄

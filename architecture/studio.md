@@ -173,7 +173,7 @@ Results stream back to the UI (SSE/WebSocket) as candidates are evaluated. Studi
   the OpenAPI client; types generated from the FastAPI OpenAPI 3.1 schema. (Deviation note: the
   charts and Pareto-exploration views are GraphQL candidates per conventions.md §3 — REST is the
   default, GraphQL only where a view's query shape demands it.)
-- **Back end:** **Python 3.11+** (conventions.md §2), **FastAPI** for the REST/OpenAPI edge,
+- **Back end:** **Python 3.12+** (conventions.md §2), **FastAPI** for the REST/OpenAPI edge,
   **Pydantic v2** for request/response and config models (and for typed Core models generated
   from JSON Schema). `mypy`/`pyright` type-checked.
 - **Trade-study / DSE engine:** Python multi-objective optimization libraries behind a single

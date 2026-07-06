@@ -166,7 +166,7 @@ astro_mine.hub
 
 ## 4. Application programming & runtime platforms
 
-- **Languages.** Control/API/index/policy planes in **Python 3.11+** (conventions.md §2); the
+- **Languages.** Control/API/index/policy planes in **Python 3.12+** (conventions.md §2); the
   **registry data path** (high-throughput blob/manifest serving) uses a mature OCI registry
   implementation rather than re-implementing the Distribution Spec (see §11). Performance- and
   safety-sensitive client tooling (content-addressed verification, resolution) MAY use **Rust**

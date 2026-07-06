@@ -153,7 +153,7 @@ worker fleet with **NATS+JetStream** job lifecycle (conventions.md §4), deploye
 
 ## 4. Application programming & runtime platforms
 
-- **Language:** **Python 3.11+** for the API, orchestration, and most logic (conventions.md §2),
+- **Language:** **Python 3.12+** for the API, orchestration, and most logic (conventions.md §2),
   type-checked with `mypy`/`pyright`. The astrodynamics ecosystem (pykep, poliastro, Orekit-via-
   `orekit_jpype`, Basilisk) is Python-native or Python-bound; hot custom kernels (e.g., a bespoke
   collocation transcription) drop to **C++20** via pybind11 only where profiling justifies it.

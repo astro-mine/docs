@@ -156,7 +156,7 @@ a per-tick hot path.
 
 ## 4. Application programming & runtime platforms
 
-- **Languages.** **Python 3.11+** for authoring helpers, importers/exporters, the parameter
+- **Languages.** **Python 3.12+** for authoring helpers, importers/exporters, the parameter
   engine, lint, and CLI (conventions.md §2). A **Rust** path is recommended for the hot
   validation/linting kernel reused from Core's Rust validator (conventions.md §2) so that
   validating the full library and large parameter sweeps in CI is fast. No C++ is required —
