@@ -1,8 +1,9 @@
 # RFC 0004: `SafetySpec` — a Guard-owned, Core-catalogued safety contract
 
-- **Status:** proposed
+- **Status:** accepted
 - **Author(s):** djankov
 - **Created:** 2026-07-05
+- **Accepted:** 2026-07-05
 - **Affects Core:** no — the `SafetySpec` schema is **Guard-owned** and catalogued *through*
   the Core plugin registry (`astro_mine.core.registry.PluginManifest`); it makes **no** change to
   the `astro-mine-core` package — no new enum member, message, schema, or wire type, and
@@ -216,12 +217,16 @@ signal sources against Worlds/Fleet, and GUARD-05 adds signed loading.
 
 ## Decision
 
-**Proposed — pending ratification** by the steering group (the Phase-0 founding team). The
-constraint vocabulary, the fail-safe `OnUncertain` posture (no `passthrough`), the
-content-addressing primitive, and the additive-only / RFC-gated evolution rule are as specified in
-*Design*. Implementation is tracked as **RM-P1-GUARD-01**
-([astro-mine-guard#1](https://github.com/astro-mine/astro-mine-guard/pull/10)); the Core
-interfaces the manifest negotiates against stay frozen at `0.1.0`.
+**Accepted 2026-07-05** by the steering group (the Phase-0 founding team), as specified in
+*Design*: the constraint vocabulary (`keep_out` · `power_floor` / `energy_floor` ·
+`thermal_ceiling` / `thermal_floor` · `torque_ceiling` · `kinematic_limit` · `temporal`), the
+structured STL/MTL AST, the fail-safe `OnUncertain` posture (no `passthrough` member),
+content-addressing via canonical JSON, and the **additive-only / RFC-gated** evolution rule for the
+`SafetySpec` vocabulary. Implementation is tracked as **RM-P1-GUARD-01**
+([astro-mine-guard#1](https://github.com/astro-mine/astro-mine-guard/pull/10)); the `SafetySpec`
+schema stays **Guard-owned** and catalogued through the Core plugin registry, and the Core
+interfaces the manifest negotiates against stay frozen at `0.1.0` — **no `astro-mine-core`
+change**.
 
 ## Unresolved questions
 
