@@ -171,7 +171,7 @@ shadow twin's prediction; a flagged deviation re-enters the command path at `pro
 
 ## 4. Application programming & runtime platforms
 
-- **Languages.** Python 3.11+ for the orchestration engine, monitors, replanner orchestration,
+- **Languages.** Python 3.12+ for the orchestration engine, monitors, replanner orchestration,
   HITL logic, and console backend (conventions.md §2). The collaborative-SLAM/factor-graph
   estimator's hot inner loops are **C++20** behind Pybind11 (it sits on the live telemetry
   path). **Rust** is recommended for the command-dispatch / clearance-token path that touches

@@ -179,7 +179,7 @@ conditions, and exchanges terminal→initial state at the boundary — purely *m
 
 ## 4. Application programming & runtime platforms
 
-- **Languages.** **Python 3.11+** for the runtime, scheduler, coupler, adapters, and service
+- **Languages.** **Python 3.12+** for the runtime, scheduler, coupler, adapters, and service
   (the public surface is Python per conventions.md §2). **C++20** for hot inner loops and native
   engine integration (Drake, MuJoCo, Isaac, the DEM/MPM granular kernels) via pybind11. **CUDA**
   for GPU contact/granular kernels and parallel rollouts, behind device-agnostic interfaces.

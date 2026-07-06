@@ -124,7 +124,7 @@ stubs. Core exposes no network service of its own.
 - **Codegen:** `buf` for Protobuf (lint, breaking-change detection, multi-language generation:
   Python, C++, Rust, TypeScript); `datamodel-code-generator` for Pydantic models from JSON
   Schema.
-- **Runtime helpers:** Python 3.11+ (Pydantic v2 validators, loaders). A **Rust** core
+- **Runtime helpers:** Python 3.12+ (Pydantic v2 validators, loaders). A **Rust** core
   validation/codegen library is recommended for performance and for embedding in non-Python
   contexts (see conventions.md §2).
 - **Packaging:** Python wheel `astro-mine-core`; generated client libs per language published

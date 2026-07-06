@@ -175,7 +175,7 @@ reproduces exactly (see [mission-model](mission-model.md), conventions.md §5, �
 
 ## 4. Application programming & runtime platforms
 
-- **Languages:** **Python 3.11+** for the submission library, CLI, sweep/workflow compilation,
+- **Languages:** **Python 3.12+** for the submission library, CLI, sweep/workflow compilation,
   and control glue (conventions.md §2). Performance-sensitive controllers and CLIs MAY use
   **Rust** where it pays off (e.g. high-throughput artifact-staging tooling). YAML/Helm for
   declarative cluster config.

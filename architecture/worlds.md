@@ -169,7 +169,7 @@ Worlds is itself a host of plugins discovered through the [Core](core.md) regist
 
 Aligned with conventions.md §2:
 
-- **Language:** **Python 3.11+** for ingest, CRS/ephemeris, orchestration, and the public API
+- **Language:** **Python 3.12+** for ingest, CRS/ephemeris, orchestration, and the public API
   (type-hinted, `mypy`/`pyright`). **C++20** (Pybind11) for the hot geometric kernels —
   horizon/ray-cast illumination and mesh/tile generation. **CUDA** for the GPU illumination
   path. **Rust** is optional for the content-addressed world-bundle packing/verification tool.

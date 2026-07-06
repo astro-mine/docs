@@ -181,7 +181,7 @@ and replan triggers: a phase plan is invalid if it would miss its window. The jo
 
 ## 4. Application programming & runtime platforms
 
-- **Languages:** **Python 3.11+** for the framework, orchestration, composition, and most planner
+- **Languages:** **Python 3.12+** for the framework, orchestration, composition, and most planner
   glue (conventions.md §2). **C++20** for hot inner loops and for embedding **BehaviorTree.CPP**
   (the BT engine, exposed to Python via pybind11). Motion planning leans on C++ libraries (OMPL,
   Drake) behind Python bindings. **Rust** is optional and reserved for the deterministic executive

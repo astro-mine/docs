@@ -166,7 +166,7 @@ share one library (conventions.md §1.4).
 
 ## 4. Application programming & runtime platforms
 
-- **Language:** **Python 3.11+** for the control plane, model compilation, orchestration, and the
+- **Language:** **Python 3.12+** for the control plane, model compilation, orchestration, and the
   public API (conventions.md §2); type-checked with `mypy`/`pyright`. Hot inner loops in
   metaheuristics or custom propagators drop to **C++20** via pybind11 where profiling justifies
   it; OR-Tools' CP-SAT is itself a C++ engine driven from Python.

@@ -125,7 +125,7 @@ Transit consume the same primitives for ephemerides/frames.
 
 ## 4. Application programming & runtime platforms
 
-- **Language:** **Python 3.12** (conventions.md §2). The public surface is fully typed; `spiceypy`
+- **Language:** **Python 3.12+** (conventions.md §2). The public surface is fully typed; `spiceypy`
   ships no type information and is treated as an untyped boundary (per-consumer mypy override).
 - **Geometry/astrodynamics:** **SPICE/NAIF** via **SpiceyPy** (CSPICE); no other geometry backend in
   the default path. **NumPy** for array math.

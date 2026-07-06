@@ -157,7 +157,7 @@ rollouts; results flow back as Arrow/Parquet + MCAP and are ingested into the le
 
 ## 4. Application programming & runtime platforms
 
-- **Language:** Python 3.11+ for the harness, metric library, and service (conventions.md §2);
+- **Language:** Python 3.12+ for the harness, metric library, and service (conventions.md §2);
   type-checked with `mypy`/`pyright`. Hot metric kernels may drop to vectorized NumPy/Arrow or
   a small Rust extension where profiling justifies it.
 - **Web/API:** **FastAPI** + **REST/OpenAPI 3.1** for the public leaderboard and submission

@@ -140,7 +140,7 @@ distributed swarm sim shares one consistent posterior. A **Gymnasium/PettingZoo 
 
 ## 4. Application programming & runtime platforms
 
-- **Language:** **Python 3.11+** (conventions.md §2) — the geostatistics/Bayesian ecosystem is
+- **Language:** **Python 3.12+** (conventions.md §2) — the geostatistics/Bayesian ecosystem is
   Python-native. Type-hinted, `mypy`/`pyright`-checked.
 - **GP / Bayesian inference:** **GPyTorch** (recommended primary — GPU-accelerated, scalable
   variational/sparse GPs, exact GPs via blackbox matrix-multiply) on **PyTorch**

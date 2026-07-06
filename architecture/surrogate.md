@@ -160,7 +160,7 @@ latency.
 
 ## 4. Application programming & runtime platforms
 
-- **Languages:** Python 3.11+ for the whole control surface, training, and APIs
+- **Languages:** Python 3.12+ for the whole control surface, training, and APIs
   (conventions.md §2). Hot inference kernels and custom GNN ops drop to C++/CUDA behind pybind11
   where profiling demands it; the public API stays Python-reachable (conventions.md §2 rule).
 - **ML frameworks:** **PyTorch** as the primary training framework; **JAX** (with Brax/`jraph`)

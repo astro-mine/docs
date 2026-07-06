@@ -44,7 +44,7 @@ When this document says **MUST / SHOULD / MAY**, read them in the RFC-2119 sense
 
 | Use | Standard | Notes |
 |---|---|---|
-| Control plane, APIs, ML, orchestration glue, most component logic | **Python 3.11+** | The research community's lingua franca; PyTorch/JAX/Gymnasium ecosystem. Type-hinted, checked with `mypy`/`pyright`. |
+| Control plane, APIs, ML, orchestration glue, most component logic | **Python 3.12+** | The research community's lingua franca; PyTorch/JAX/Gymnasium ecosystem. Type-hinted, checked with `mypy`/`pyright`. |
 | Performance-critical kernels (physics, contact, granular, hot inner loops) | **C++20** | Pybind11 bindings exposed to Python. Integrates with Drake / MuJoCo / Isaac / BehaviorTree.CPP. |
 | High-assurance & safety-critical logic, schema/codegen tooling, CLIs | **Rust** | Recommended where memory safety + performance matter most: `Guard` runtime monitors, `Core` schema validation/codegen, content-addressed registry tooling. Optional elsewhere. |
 | GPU kernels | **CUDA** (+ vendor-neutral fallback) | Used inside Sim/Surrogate; abstracted behind device-agnostic interfaces where feasible. |
