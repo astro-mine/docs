@@ -4,6 +4,8 @@
 - **Author(s):** djankov
 - **Created:** 2026-07-05
 - **Accepted:** 2026-07-05
+- **Amended:** 2026-07-06 — Amendment 1 (`safe_pose` retreat target + distinct verified backup
+  behaviors; RM-P1-GUARD-04), accepted; see [Amendment 1](#amendment-1--safe_pose-retreat-target--distinct-verified-backup-behaviors-accepted-2026-07-06) below.
 - **Affects Core:** no — the `SafetySpec` schema is **Guard-owned** and catalogued *through*
   the Core plugin registry (`astro_mine.core.registry.PluginManifest`); it makes **no** change to
   the `astro-mine-core` package — no new enum member, message, schema, or wire type, and
@@ -106,7 +108,7 @@ no parser dependency and no Rust core — it expresses "SoC ≥ floor **until** 
 
 `on_uncertain` is an `OnUncertain` selector with **no `passthrough` member** — `fallback` (default;
 hand control to the simplex backup), `hold` (freeze/brake), or `safe_state` (retreat to a named safe
-state). "Let the policy's action through unchecked" is *not expressible* in the schema. The loader
+state). *([Amendment 1](#amendment-1--safe_pose-retreat-target--distinct-verified-backup-behaviors-accepted-2026-07-06) adds the authored `safe_pose` retreat target and gives these three selectors distinct, individually-verified backup control laws.)* "Let the policy's action through unchecked" is *not expressible* in the schema. The loader
 additionally **rejects any temporal operator lacking a finite interval**: an unbounded operator has
 no statically-bounded history window, so it cannot be certified and is refused at authoring time
 (guard.md §2 principle 4; §9.1). Absence of a positive certificate can only resolve to a verified
@@ -241,3 +243,87 @@ change**.
   supply chain (RM-P1-HUB-03).
 - **Surface syntax for STL/MTL** (sugar over the AST) — whether to add one, and which grammar, is
   deferred; if added it must lower to the ratified AST with no new expressive power.
+
+---
+
+## Amendment 1 — `safe_pose` retreat target + distinct verified backup behaviors (accepted 2026-07-06)
+
+- **Status:** accepted
+- **Accepted:** 2026-07-06
+- **Affects Core:** no (unchanged from the base RFC — no `astro-mine-core` change,
+  `CORE_INTERFACE_VERSIONS` stays `0.1.0`, `safety_version` stays `"0.1"`)
+- **Implementation:** **RM-P1-GUARD-04**
+  ([astro-mine-guard#4](https://github.com/astro-mine/astro-mine-guard/pull/14))
+
+### What changed
+
+The base RFC's fail-safe posture named three `OnUncertain` selectors — `fallback`, `hold`,
+`safe_state` — and defined `safe_state` as *"retreat to a **named** safe state,"* but v0.1 shipped
+no target for that retreat, and the initial trusted core (RM-P1-GUARD-02) conservatively collapsed
+all three selectors to the verified brake-to-stop. RM-P1-GUARD-04 realizes the distinction with two
+**additive** changes.
+
+**1. `safe_pose` — an additive `SafetySpec` field (the retreat target).** A new *optional*
+`SafePose{ frame, position_m }` on `SafetySpec` (`safe_pose: SafePose | None`): a body-fixed
+position in an explicitly named `frame` (SI metres; `conventions.md §5`, LUNAR-TR-001 — **no
+implicit Earth/WGS84 frame**), lowered by the compiler into the keep-out spatial frame as a
+`CompiledSafePose` on `CompiledSafetyModel`. The loader **rejects** a `safe_pose` whose frame is
+empty or does not match the keep-out geometry frame(s) — *the retreat target and the certified safe
+set must share a frame* — and the trusted-core decode is fail-closed (a non-finite coordinate or an
+arity below the model's spatial dimension rejects the whole model). This is an **append-only** schema
+addition under the base RFC's additive-only rule: no member is removed or changed, no required field
+is added to an existing kind, `safety_version` stays `"0.1"`, and the `buf breaking` /
+`check_model_drift` / append-only schema-compat CI guards stay green.
+
+**2. Three distinct, individually-verified backup control laws (in the trusted Rust core).** The
+`OnUncertain` selectors now map to three provably-fail-safe behaviors in the TCB (the RM-P1-GUARD-02
+arbiter + simplex library), replacing the collapse-to-brake placeholder:
+
+| selector | backup behavior | law |
+|---|---|---|
+| `fallback` | **BrakeToStop** — the ever-present safety floor | `u = −clamp(k_brake·v, u_max)`, anti-parallel to velocity ⇒ `d/dt‖v‖² ≤ 0`; dt-free, always available |
+| `hold` | **Hold** (station-keep / hold-attitude) | return to and hold the pose latched when the hold behavior engaged |
+| `safe_state` | **SafeState** (retreat-to-charging-pose) | steer toward the authored `safe_pose` (the lunar-night survival target) |
+
+**Fail-safe composition (the load-bearing invariant).** Hold and SafeState are *guarded* saturated-PD
+move-toward-target laws: each emits its command **only if** (a) the action is inside the control box
+(`|u| ≤ u_max`), (b) it does not increase the target Lyapunov energy
+`V = ½·k_p‖p − g‖² + ½‖v‖²`, and (c) the one-step-predicted position stays inside the **same**
+certified safe set the shield enforces (the shared keep-out barriers). If no such bounded action
+exists — the target is unreachable safely, the step would exit the safe set, no `safe_pose` is
+authored, or the model is non-spatial — the behavior **degrades to BrakeToStop**. There is
+deliberately no path that emits the untrusted proposal: the base RFC's *"absence of a positive
+certificate can only resolve to a verified safe action"* is preserved, now discharged by three
+distinct verified behaviors rather than one. (The per-step one-step-prediction in-set check is a
+documented, conservative first slice; an exact reach-avoid retreat filter is deferred — below.)
+
+### Why via (this) RFC
+
+Amendment 1 touches the **safety contract's authored surface** (a new `SafetySpec` field) and the
+**operational meaning of a fail-safe selector** (`safe_state` now carries a target and a distinct
+verified control law). The base RFC makes vocabulary evolution *"additive-only, RFC-gated"* precisely
+so a safety-relevant addition is reviewed rather than slipped in by commit. It remains a
+**Guard-owned, no-Core-change** amendment.
+
+### Impact on Core
+
+**None**, as in the base RFC. No enum member, message type, schema, or wire form changes on
+`astro-mine-core`; `CORE_INTERFACE_VERSIONS` stays `0.1.0`; the `PluginManifest` still negotiates
+`messages` / `sadf` / `registry` at `0.1.0`.
+
+### Deferred (updated)
+
+- The base RFC's open item *"retreat to a **named** safe state"* is now **resolved** — the retreat
+  target is the authored, shared-frame `safe_pose`.
+- An **exact reach-avoid retreat filter** (replacing the conservative one-step-prediction in-set
+  check) is deferred (P1-late/P2), alongside the HJ-reachability shields already deferred in the base
+  RFC.
+- A **multi-target / per-regime `safe_pose`** (e.g. the nearest charging pose from a set; RFC-0001
+  regime-scoped profiles) remains an additive future extension (P3).
+
+### Decision
+
+**Accepted 2026-07-06.** The additive `safe_pose` field and the three distinct verified backup
+behaviors (BrakeToStop / Hold / SafeState) with the guarded-move fail-safe composition are ratified
+as an **additive, Guard-owned** extension of the `SafetySpec` safety contract; `safety_version` stays
+`"0.1"` and there is **no `astro-mine-core` change**. Implemented and merged as **RM-P1-GUARD-04**.
