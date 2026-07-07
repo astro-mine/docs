@@ -119,6 +119,16 @@ singular across the platform. Spice resolves Core's vocabulary into positions/ro
 scalars and nothing more (window search stays in Link, terrain occlusion in Worlds via the Core
 `WorldProvider` contract); Core does not depend on it. See [spice.md](spice.md) and conventions.md §5.
 
+**Shared artifact-integrity foundation (RFC-0005).** Core owns the *shape* of integrity (the
+`Signature` envelope, the `Verifier` protocol, the `hashing` primitive) but ships **no crypto** —
+`cryptography` is another heavy dependency the waist must never carry (core.md §2.3). That crypto lives
+in **[Seal](seal.md)** (`astro_mine.seal`), a thin **Core companion** that every producer and verifier
+— [Fleet](fleet.md), [Hub](hub.md), [Guard](guard.md), later [Learn](learn.md)/[Worlds](worlds.md)/[Prospect](prospect.md)
+— depends on, so signing/verification/SLSA/SBOM is one byte-stable implementation instead of three
+hand-copied signers (conventions.md §9). Seal owns the *mechanism* of integrity and stops there (the
+production trust-root policy is decided with Hub); Core does not depend on it. See [seal.md](seal.md)
+and [guard.md](guard.md) §9.5.
+
 ---
 
 ## 4. Component catalog — role · runtime · data · talks-to
@@ -127,6 +137,7 @@ scalars and nothing more (window search stays in Link, terrain occlusion in Worl
 |---|---|---|---|---|---|
 | [Core](core.md) | Backbone | The narrow-waist contracts | In-process library, everywhere | Schemas only (SADF, messages, manifests) | (depended on by all) |
 | [Spice](spice.md) ‡ | Backbone | SPICE-backed frame/time/geometry resolution (Core companion) | In-process library; kernels furnished locally | NAIF kernels (SPK/PCK/FK/LSK) → positions/rotations | Worlds, Link, Sim, Transit; depends on Core |
+| [Seal](seal.md) ¶ | Backbone | Artifact integrity: signing, verification, SLSA, SBOM (Core companion) | In-process library; keys furnished by host | Content digests + keys → Signature / provenance / SBOM | Fleet, Hub, Guard (+ producer frontier); depends on Core |
 | [Worlds](worlds.md) | World | Celestial-body environments from real DEMs | Library; data prep on Cloud | COG/Zarr terrain, SPICE frames, 3D Tiles | Sim, Prospect, Link, View (Env API) |
 | [Prospect](prospect.md) | World | Probabilistic resource fields w/ uncertainty | Library; inference on Cloud | Zarr ground-truth + belief fields | Sim, Mind, Allocate, Bench (Env API) |
 | [Link](link.md) | World | Comms environment (LOS, windows, latency) | Library; precompute on Cloud | SPICE geometry, contact graphs, time-series | Sim, Allocate, Mind, Ops (Env API) |
@@ -152,6 +163,8 @@ scalars and nothing more (window search stays in Link, terrain occlusion in Worl
 † Added by [RFC-0001](../rfc/0001-multi-regime-missions.md) (accepted; implementation Phase 3). "Mission arch." = the **Mission architecture & logistics** layer. Existing components are also *extended* for multi-regime scope — see §13.
 
 ‡ Added by [RFC-0002](../rfc/0002-shared-spice-foundation.md) (accepted; implementation Phase 0). [Spice](spice.md) is a **Core companion** — the SPICE-backed realization of Core's frame/time vocabulary that Core cannot host (heavy deps; core.md §2.3). See §3 and [spice.md](spice.md).
+
+¶ Added by [RFC-0005](../rfc/0005-seal-supply-chain-companion.md) (accepted; implementation Phase 1). [Seal](seal.md) is a **Core companion** — the artifact-integrity (signing / verification / SLSA / SBOM) realization of Core's `Signature`/`Verifier` surface that Core cannot host (crypto deps; core.md §2.3). The single home for `cryptography`. See §3 and [seal.md](seal.md).
 
 ---
 

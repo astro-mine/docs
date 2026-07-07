@@ -28,7 +28,7 @@ exploration and in-situ resource utilization (ISRU).
 
 | Layer | Components |
 |---|---|
-| **Commons backbone** | [Core](core.md) · [Spice](spice.md) ‡ · [Bench](bench.md) · [Hub](hub.md) · [Cloud](cloud.md) |
+| **Commons backbone** | [Core](core.md) · [Spice](spice.md) ‡ · [Seal](seal.md) ¶ · [Bench](bench.md) · [Hub](hub.md) · [Cloud](cloud.md) |
 | **World & environment** | [Worlds](worlds.md) · [Prospect](prospect.md) · [Link](link.md) · [Transit](transit.md) † |
 | **Assets** | [Fleet](fleet.md) |
 | **Simulation** | [Sim](sim.md) · [Surrogate](surrogate.md) |
@@ -39,6 +39,8 @@ exploration and in-situ resource utilization (ISRU).
 † Added by [RFC-0001](../rfc/0001-multi-regime-missions.md) (accepted; implementation Phase 3). [Core](core.md) is the "narrow waist" — the single most important package; if only one thing is designed superbly, it must be Core.
 
 ‡ Added by [RFC-0002](../rfc/0002-shared-spice-foundation.md) (accepted; implementation Phase 0). [Spice](spice.md) is the SPICE-backed realization of [Core](core.md)'s frame/time vocabulary, factored out as a *Core companion* so Worlds, Link, Sim, and Transit share **one** SPICE implementation rather than re-deriving it per package.
+
+¶ Added by [RFC-0005](../rfc/0005-seal-supply-chain-companion.md) (accepted; implementation Phase 1). [Seal](seal.md) is the artifact-integrity realization of [Core](core.md)'s `Signature`/`Verifier` surface, factored out as a *Core companion* so Fleet, Hub, and Guard share **one** signing/verification/SLSA/SBOM implementation rather than re-copying it per package — the single home for the `cryptography` dependency Core deliberately never carries.
 
 ## Multi-regime missions (RFC-0001, accepted)
 
@@ -74,6 +76,23 @@ companion** on the Commons backbone: it turns Core's vocabulary into positions (
 engine, and later [Transit](transit.md)) depends on this one implementation, so frame/aberration
 conventions and oracle cross-checks are written once and trusted everywhere
 ([conventions.md](conventions.md) §5, §11).
+
+## Shared artifact-integrity foundation (RFC-0005, accepted)
+
+> **Status: Accepted** ([RFC-0005: A shared artifact-integrity (signing / provenance / SBOM) companion](../rfc/0005-seal-supply-chain-companion.md))
+> — implementation lands in **Phase 1**; additive and non-urgent, it must not gate the lunar MVP.
+
+[Core](core.md) owns the *shape* of integrity — the `Signature` envelope, the `Verifier` protocol, and
+the lightweight `hashing` primitive — but deliberately ships **no crypto** (`cryptography` is exactly
+the heavy dependency the narrow waist must never carry, [core.md](core.md) §2.3). [Seal](seal.md)
+(`astro-mine-seal`, import `astro_mine.seal`) is that crypto, factored into a thin **Core companion**
+on the Commons backbone: it owns the *single* implementation of signing, verification, SLSA provenance,
+SBOM, and verify-twice orchestration, built on Core's frozen `Signature`/`Verifier` surface. Every
+producer and verifier ([Fleet](fleet.md), [Hub](hub.md), [Guard](guard.md), and the growing publisher
+frontier) depends on this one implementation instead of re-copying the signer, so a `cryptography`
+upgrade or an encoding change can never silently reject a valid signature in a security-critical path
+([conventions.md](conventions.md) §9; [guard.md](guard.md) §9.5). It founds by **extracting** Hub's
+`supply_chain/` module and deleting the duplicated signer copies — Core stays crypto-free.
 
 ## Conventions for these docs
 
