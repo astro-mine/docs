@@ -252,6 +252,40 @@ mission-architecture artifact types + `operational_targeting`-aware gating.
 
 ---
 
+## Seal — the artifact-integrity companion
+
+> Architecture: [seal.md](../architecture/seal.md). A thin **Core companion** (the [Spice](../architecture/spice.md)
+> shape) added by [RFC-0005](../rfc/0005-seal-supply-chain-companion.md); the single home for
+> `cryptography` (Core stays crypto-free). **Additive and non-urgent — must not gate the lunar MVP.**
+
+**Scope & deliverables**
+
+- **RM-P1-SEAL-01** — **Package scaffold**: the importable `astro_mine.seal` library, Core-pinned
+  dependency wiring (and the one home for `cryptography`), and CI with a ≥95% coverage gate. The seed
+  for all `RM-P1-SEAL-*` feature work. *(trace: RFC-0005; conventions.md §2, §3)*
+- **RM-P1-SEAL-02** — **Signer + cross-package conformance test**: `generate_keypair` / `sign_digest`
+  / `verify_signature` / `make_verifier` (ECDSA **P-256**, `SIGSTORE_COSIGN` scheme) on Core's frozen
+  `Signature`/`Verifier` surface, with a conformance test that **pins the signature bytes** for a known
+  digest+key so any drift turns CI red. *(trace: RFC-0005 §"The package"; seal.md §3, §9; `LUNAR-SR-002`)*
+- **RM-P1-SEAL-03** — **SLSA / SBOM / verify-twice relocation**: move Hub's `_attest.py` /
+  `_supply_chain.py` (`build_slsa_provenance` / `build_cyclonedx_sbom` / `attest`; the verify-twice
+  `verify` with `DEFAULT_REQUIRED = (signature, slsa, sbom)`) into Seal; Hub imports them from there,
+  behavior-preserving. *(trace: RFC-0005 §Sequencing; seal.md §3; hub.md §9)*
+
+**Consumer migrations** — landing **signer-dedup first**, each adopts `astro_mine.seal` and **deletes
+its local signer copy**: [Guard](../architecture/guard.md) (`spec/signing.py`, from `RM-P1-GUARD-05`),
+[Fleet](../architecture/fleet.md) (`packaging/signing.py`), and [Hub](../architecture/hub.md)
+(`supply_chain/`, after SEAL-03).
+
+**Dependencies:** Core (`registry.Signature`/`Verifier`, `hashing`); founding content **extracted**
+from Hub's `supply_chain/` (`RM-P1-HUB-03`). **Exit criteria:** the signer + conformance test are green
+and Guard/Fleet/Hub consume Seal with their duplicated copies deleted; existing signatures still verify
+(byte-compatible). **Deferred → P2:** keyless cosign (Fulcio/Rekor) and the production **trust-root
+policy** (cosign identities, key distribution, rotation/revocation) — the mechanism lives in Seal, the
+org policy is decided with Hub.
+
+---
+
 ## Cloud — the hosted scale-out platform
 
 > Architecture: [cloud.md](../architecture/cloud.md). Infrastructure, not logic.
