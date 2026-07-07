@@ -1,8 +1,9 @@
 # RFC 0005: `astro-mine-seal` — a shared artifact-integrity (signing / provenance / SBOM) companion package
 
-- **Status:** proposed
+- **Status:** accepted
 - **Author(s):** djankov
 - **Created:** 2026-07-06
+- **Accepted:** 2026-07-06
 - **Affects Core:** no — factors the platform's artifact-integrity facilities into a thin **Core
   companion package** (`astro-mine-seal`, import `astro_mine.seal`), built on Core's already-frozen
   `registry.Signature` / `Verifier` surface and `hashing` primitive. It makes **no** change to
@@ -171,10 +172,16 @@ gate, plus Hub's `supply_chain/`, migrate to consume it.
 
 ## Decision
 
-**Proposed.** Pending steering-group acceptance per GOVERNANCE.md. On acceptance: create
-`astro-mine-seal` from `.repo-template`; port the shared signer + conformance test and migrate
-`guard` / `hub` / `fleet` off their copies (step 1); relocate Hub's SLSA/SBOM/verify-twice helpers
-(step 2); grow adoption along the producer frontier (step 3) — all as small, independent PRs.
+**Accepted 2026-07-06** by the steering group (the Phase-0 founding team), as specified in
+*Design*: the `astro-mine-seal` artifact-integrity companion (signing + verification + SLSA + SBOM +
+verify-twice orchestration), the **lightweight→Core / heavy-cohesive→companion** routing rule and
+the explicit rejection of a general-purpose utility package, and the **extract-from-Hub** founding
+content built on Core's frozen `Signature` / `Verifier` surface — with `astro-mine-core` unchanged
+(`CORE_INTERFACE_VERSIONS` stays `0.1.0`) and Core remaining crypto-free. Implementation is tracked
+as Phase-1 issues: the `astro-mine-seal` scaffold, the signer + cross-package conformance test, and
+the SLSA/SBOM/verify-twice relocation, plus the `guard` / `hub` / `fleet` consumer migrations — all
+small, independent PRs, landing signer-dedup first (§ *Sequencing*). Additive and non-urgent; it
+must not gate the lunar MVP.
 
 ## Unresolved questions
 
