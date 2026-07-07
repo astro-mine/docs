@@ -86,6 +86,7 @@ platform grows (system.md §11; charter §9).
 |---|---|:--:|:--:|:--:|:--:|
 | Backbone | [Core](../architecture/core.md) | ● v0.1 | ▲ Mission/Phase/Regime + ObjectiveSpec hooks | · | · |
 | | [Spice](../architecture/spice.md) ‡ | ● shared SPICE foundation | · | · | (○ Transit reuse) |
+| | [Seal](../architecture/seal.md) ¶ | · | ● artifact-integrity companion (sign/verify/SLSA/SBOM) | ▲ keyless (Fulcio/Rekor) + trust-root policy | · |
 | | [Bench](../architecture/bench.md) | ● anchor + repro harness | ▲ public leaderboards, Cloud eval | ▲ analog/twin scenarios | ▲ NEO/asteroid + mission metrics |
 | | [Hub](../architecture/hub.md) | · | ● registry, signing, gating | ▲ replication/mirrors | ▲ mission-arch artifact types |
 | | [Cloud](../architecture/cloud.md) | ● local/container-first | ● full K8s/Ray/Argo | ▲ stronger tenancy | ▲ mission-design sweep classes |
@@ -111,6 +112,10 @@ platform grows (system.md §11; charter §9).
 ‡ [Spice](../architecture/spice.md) added by [RFC-0002](../rfc/0002-shared-spice-foundation.md)
 (accepted) — the shared SPICE foundation; a Phase-0 deliverable sequenced before the Link MVP.
 
+¶ [Seal](../architecture/seal.md) added by [RFC-0005](../rfc/0005-seal-supply-chain-companion.md)
+(accepted) — the shared artifact-integrity companion (signing / verification / SLSA / SBOM); a Phase-1
+deliverable, additive and non-urgent, that must not gate the lunar MVP.
+
 ---
 
 ## Cross-cutting workstreams
@@ -126,7 +131,10 @@ not owned by one component, but they gate the phase exit.
   is the platform-wide reproducibility oracle (conventions.md §5, §11).
 - **CX-SEC — Security & supply chain.** Sigstore/cosign signing, SLSA provenance, SBOMs, OPA
   capability gating, org defaults (Dependabot/secret-scanning/push-protection); plugin isolation
-  (out-of-process/gVisor; WASM forward-looking) (conventions.md §9).
+  (out-of-process/gVisor; WASM forward-looking) (conventions.md §9). The signing / provenance / SBOM
+  implementation is consolidated in [Seal](../architecture/seal.md) ([RFC-0005](../rfc/0005-seal-supply-chain-companion.md),
+  Phase 1) — one shared companion, the single home for `cryptography`, rather than a signer copied per
+  producer.
 - **CX-GOV — Governance, license, export-control posture** established **up front**, before the
   community forms (charter §12): Apache-2.0, the RFC process in `astro-mine/.github`, and a
   documented EAR/ITAR posture and capability-tag taxonomy.
