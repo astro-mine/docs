@@ -44,10 +44,19 @@ this is the *only* phase where the mission-architecture track touches the critic
   the **descriptive `TrajectoryRef`/`ManeuverBudget`** message schemas, and the reserved
   **`operational_targeting`** capability tag — all **append-only minors**, proto3 unknown-field
   tolerant. *(trace: RFC-0001 R5, "Impact on Core"; mission-model §2, §3; [CX-RFC0001](README.md#cross-cutting-workstreams))*
+- **RM-P1-CORE-05** — *(RFC-0007)* **units / frames / time on the wire**: a canonical
+  `units.schema.json` (the missing authority layer for the `RM-P0-CORE-06` vocabulary), a
+  `units.proto` mirroring it, additive typed `ReferenceFrame`/`Epoch`/`EpochWindow`/`PlanetaryCRS`
+  fields on the message and mission catalogs, additive `PlanetaryCRS`/`EpochWindow` Cap'n Proto
+  structs, and the `require_frame`/`require_crs` guard semantics ratified as normative MUSTs backed
+  by shared conformance vectors. **Append-only**; `CORE_INTERFACE_VERSIONS` unchanged, no new entry.
+  *(trace: RFC-0007 "Impact on Core"; conventions.md §5; core.md §2 principles 5, 8; builds on
+  `RM-P0-CORE-06`, `RM-P0-CORE-07`)*
 
 **Dependencies:** `Core v0.1`. **Exit criteria:** autonomy + hub + studio run against the additions;
 a single-`surface`-phase mission validates as a one-phase `MissionSpec` with no author action;
-existing P0 consumers ignore `regime` and operate unchanged. **Deferred → P3:** all mission-architecture
+existing P0 consumers ignore `regime` and operate unchanged; every Core binding that resolves frames
+or epochs passes the shared `units` conformance vectors. **Deferred → P3:** all mission-architecture
 *implementations* (Transit/Trajectory/Sizing/Ledger).
 
 ---
