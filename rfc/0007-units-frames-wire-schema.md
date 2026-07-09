@@ -1,8 +1,12 @@
 # RFC 0007: Put the units / frames / time vocabulary on the wire
 
-- **Status:** draft
+- **Status:** accepted
 - **Author(s):** djankov
 - **Created:** 2026-07-08
+- **Accepted:** 2026-07-09
+- **Implemented in:** Phase 1 — `RM-P1-CORE-05` (Core), `RM-P1-VIEW-06` (View). Extends the Phase-0
+  units waist (`RM-P0-CORE-06`) onto the wire, using the codegen and contract-test machinery
+  `RM-P0-CORE-07` established.
 - **Affects Core:** yes — one **additive** interface (`units`) realized on Core's three-part schema
   stack: a canonical `units.schema.json`, the existing Pydantic models, and a new
   `units.proto` (`ReferenceFrame`, `PlanetaryCRS`, `Epoch`, `EpochWindow`), plus **additive** typed
@@ -286,7 +290,9 @@ The normative rules:
    `EPSG:4326`, `urn:ogc:def:crs:OGC`) MUST be rejected when `body` is not `EARTH`, because that
    combination can only be a defaulting bug. A component MAY additionally refuse Earth CRSs outright
    as a local policy — View does, correctly, because it renders planetary bodies only — but that is
-   **View's** rule, not Core's, and the conformance vectors must not conflate them.
+   **View's** rule, not Core's, and the conformance vectors MUST NOT conflate them: they assert
+   `body="EARTH"` + a WGS84 datum is *valid at the waist*, and a component-local refusal is out of
+   their scope.
 
 Rule 6 is the whole argument for this section in miniature: the two implementations of "the same"
 guard disagree on it today, and a proto file alone would not have surfaced that. The vectors are the
@@ -349,6 +355,24 @@ already use — not `.to_proto()` methods on the models. `astro-mine-view`'s `fr
 `time.ts` are Cesium-side math and stay. Its PROJ-string drift test is retired in favour of the
 conformance vectors.
 
+## Documentation impact
+
+Accepting this RFC obliges three doc changes, tracked with the implementation:
+
+- **`conventions.md §5`** gains the six normative guard rules of [Design §3](#3-guard-semantics-as-contract-not-generated-code)
+  as MUST requirements on any Core binding. §5 already describes `require_frame`/`require_crs`
+  normatively; today it describes them without saying what they check. The rules must live there, not
+  only in this RFC — a normative contract that lives only in an RFC is how `require_crs` and
+  `guards.ts` diverged in the first place.
+- **`core.md §3`** notes that the `units/` module now ships a canonical JSON Schema and a proto wire
+  form, like every other Core interface; **§4** is unchanged (the codegen already covers it).
+- **`architecture/view.md`** drops the "structural mirror rather than a private schema" caveat once
+  View consumes generated types.
+
+`core.md §2` is a flat list of architecture principles with no subsections and is deliberately *not*
+the home for the guard rules — principle 8 ("frame- and unit-explicit") states the intent, and §5 of
+`conventions.md` states the mechanism.
+
 ## Alternatives considered
 
 **Do nothing; let each binding mirror.** The status quo. It costs nothing today, and View's mirror is
@@ -384,6 +408,17 @@ writes the result into `world.json` as an unschema'd `model_dump()`. Generalized
 producer/consumer pair negotiates geometry bilaterally against an undocumented JSON shape, which is
 precisely the private side-channel the narrow waist exists to prevent.
 
+## Resolved decisions
+
+- **Guard rule 6 stays in Core, as a consistency rule.** Decided at acceptance. `require_crs` MUST
+  reject an Earth datum/projection marker when `body != EARTH`, and MUST accept one when
+  `body == EARTH`. The two rejected options were dropping the rule from Core entirely (leaving the
+  conformance vectors blind to the exact failure mode that motivated this RFC, and View/Core
+  divergent by design) and promoting View's blanket ban to the contract (which would make Earth CRSs
+  unrepresentable, colliding with Core's own `EARTH` NAIF-body constant and the Phase-2 Earth-analog
+  deployments). The consistency rule catches the defaulting bug — a lunar product carrying a WGS84
+  datum — without forbidding the legitimate case.
+
 ## Unresolved questions
 
 - **Distribution of the generated TypeScript client.** Un-private `codegen/ts` and publish to a
@@ -398,9 +433,5 @@ precisely the private side-channel the narrow waist exists to prevent.
   `KNOWN_UNITS`. Composite units (`kg·m⁻³`) are deliberately not enumerated (`enums.py`), so an enum
   would be wrong. Proposed: leave `unit` a string, define it in `units.schema.json`, and cover
   `require_si_unit` in the conformance vectors. Not blocking.
-- **Whether guard rule 6 belongs in Core at all.** The body/datum consistency check is the weakest of
-  the six — it is the only one that requires Core to know something about a *specific* body. An
-  alternative is to drop it from Core and leave Earth-marker policy entirely to consumers, at the
-  cost of the vectors no longer covering the exact failure mode that motivated the rule.
 - **Deprecation timeline for the primitive fields.** Explicitly out of scope; a follow-up RFC once
   every producer populates the typed fields.
