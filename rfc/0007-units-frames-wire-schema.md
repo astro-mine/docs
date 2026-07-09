@@ -4,7 +4,8 @@
 - **Author(s):** djankov
 - **Created:** 2026-07-08
 - **Accepted:** 2026-07-09
-- **Implemented in:** Phase 1 — `RM-P1-CORE-05` (Core), `RM-P1-VIEW-06` (View). Extends the Phase-0
+- **Implemented in:** Phase 1 — `RM-P1-CORE-06/07/08` (Core), `RM-P1-VIEW-06` (View), with adopter
+  deliverables in Worlds, Link, Prospect, Allocate, Guard, and Studio. Extends the Phase-0
   units waist (`RM-P0-CORE-06`) onto the wire, using the codegen and contract-test machinery
   `RM-P0-CORE-07` established.
 - **Affects Core:** yes — one **additive** interface (`units`) realized on Core's three-part schema
