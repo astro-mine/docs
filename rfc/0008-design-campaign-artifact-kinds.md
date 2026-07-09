@@ -1,8 +1,9 @@
 # RFC 0008: Core artifact kinds for published designs and campaigns
 
-- **Status:** draft
+- **Status:** accepted
 - **Author(s):** djankov
 - **Created:** 2026-07-09
+- **Accepted:** 2026-07-09
 - **Affects Core:** yes — two **append-only** members added to the `PluginKind` vocabulary
   (`design`, `campaign`). String-enum additions with **no wire change**;
   `CORE_INTERFACE_VERSIONS` stays frozen at `0.1.0` ([VERSIONING.md §4](../VERSIONING.md)). Goes
@@ -192,15 +193,41 @@ because `studio.md` §5 freezes and content-addresses *both* stages ("once a stu
 campaign is handed off"), and the STUDIO-06 criterion says "designs/campaigns", plural and distinct. A
 `TradeStudy` published as a `campaign` would be a lie about what it is. See "Unresolved questions".
 
+## Documentation impact
+
+Minimal. `studio.md` §6 already states the requirement this RFC makes satisfiable ("write back
+published designs/campaigns as content-addressed, signed artifacts"), and `hub.md` §3 already
+describes the artifact model these kinds slot into. No architecture or roadmap edit is required. On
+acceptance, `Astro-Mine-Core` gains the two enum members, `Astro-Mine-Hub` gains the two
+`ARTIFACT_KINDS` entries, and `Astro-Mine-Studio` (RM-P1-STUDIO-06) becomes the first publisher.
+
+## Decision
+
+**Accepted 2026-07-09** by the steering group (the Phase-0 founding team), both members as
+specified in *Design* — each the append-only change described there:
+
+- **`PluginKind.DESIGN = "design"`** — appended to the `PluginKind` enum in `registry/enums.py` and
+  mirrored in `$defs/PluginKind` of `registry/schema/manifest.schema.json`.
+- **`PluginKind.CAMPAIGN = "campaign"`** — the same two places.
+- **`ARTIFACT_KINDS`** in `astro_mine.hub.registry._oci` gains `"design"` and `"campaign"`, yielding
+  the OCI artifact types `application/vnd.astro-mine.design.v1` and `…campaign.v1`.
+
+Both members are accepted rather than `campaign` alone: `studio.md` §5 freezes and content-addresses
+*both* stages ("once a study runs **or** a campaign is handed off"), so a `TradeStudy` published
+under the name `campaign` would misdescribe itself.
+
+`CORE_INTERFACE_VERSIONS` stays frozen at `0.1.0` (no wire change;
+[VERSIONING.md §4](../VERSIONING.md)). Implementation is tracked with the Wave-15 issues: the Core
+additions and the Hub vocabulary entry, consumed by the Studio publish path
+([astro-mine-studio#6](https://github.com/astro-mine/astro-mine-studio/issues/6),
+RM-P1-STUDIO-06), which is blocked on this RFC.
+
 ## Unresolved questions
 
-- **Is `design` needed in Phase 1?** The publish path that Phase-1 Studio must demonstrate is the
-  campaign. `design` could be deferred to the first time someone actually shares a trade study.
-  Adding both now costs two enum members and avoids a second RFC; adding only `campaign` keeps the
-  vocabulary tighter. **Deferrable to implementation review.**
 - **Does a `TradeStudy` publish as one artifact, or as a `design` manifest whose `inputs` reference
   each `EvaluatedCandidate` published separately?** The latter is more content-addressed in spirit
   (candidates dedupe across studies) and more expensive. Phase-1 proposal: one artifact, one layer.
+  Deferred to implementation.
 - **Namespace and OPA gate.** `studio.md` §9 gates *who may publish to Hub* via OPA, and `hub.md`
   §5 partitions `open` / `verified` namespaces. Phase-1 tier-1 publishing is offline and
   accountless (`astro-mine-seal`'s keyed ECDSA path), so the gate is a Phase-2 concern tracked with
