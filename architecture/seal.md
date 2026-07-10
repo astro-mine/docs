@@ -14,7 +14,7 @@
 / `SignatureKind` enums, the `Verifier` protocol, and the lightweight `hashing` primitive
 (`content_hash` / `content_hash_json` / `canonical_json`) — but deliberately ships **no crypto**:
 `cryptography` is exactly the kind of heavy dependency the narrow waist must never carry (core.md
-§2.3). Seal is the crypto, factored into a thin package (`astro-mine-seal`, import `astro_mine.seal`)
+§2 principle 3). Seal is the crypto, factored into a thin package (`astro-mine-seal`, import `astro_mine.seal`)
 that every producer and verifier depends on. Every producer signs a **seal** on its artifacts and the
 intactness of that seal is what verification tests — hence the name.
 
@@ -173,7 +173,7 @@ Seal sits on the **Commons backbone** as a Core companion and integrates through
 dependencies (no service plane, no side-channels — conventions.md §1.1):
 
 - **← [Core](core.md).** Depends on `astro-mine-core` for the `Signature` / `Verifier` types and
-  `hashing`. Core does **not** depend on Seal; the narrow waist stays crypto-free (core.md §2.3).
+  `hashing`. Core does **not** depend on Seal; the narrow waist stays crypto-free (core.md §2 principle 3).
 - **→ [Fleet](fleet.md), [Hub](hub.md), [Guard](guard.md).** Each adopts `astro_mine.seal` and
   **deletes its local signer copy** — Fleet's `packaging/signing.py`, Hub's `supply_chain/_signing.py`,
   and Guard's `spec/signing.py` (RM-P1-GUARD-05). Hub additionally sources `_attest.py` /

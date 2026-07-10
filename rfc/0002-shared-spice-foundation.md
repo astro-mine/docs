@@ -22,11 +22,11 @@ the whole `Astro-Mine-Worlds` geospatial stack just to position a body.
 The platform has an unresolved seam around SPICE, and it surfaces concretely at the first
 non-Worlds SPICE consumer (RM-P0-LINK-01).
 
-**Core deliberately cannot host SPICE.** `core.md §2.3` mandates *zero heavy dependencies*:
+**Core deliberately cannot host SPICE.** `core.md §2 principle 3` mandates *zero heavy dependencies*:
 Core carries only the frame/time **types and conventions** — `Epoch`, `ReferenceFrame`,
 `PlanetaryCRS`, the `require_frame`/`require_crs` fail-loud guards — and explicitly **defers
 the name→geometry resolution** (kernels, `spkpos`, `pxform`) to elsewhere (`units` docstrings;
-`core.md §2.3`).
+`core.md §2 principle 3`).
 
 **Today that resolution lives in Worlds.** RM-P0-WORLDS-02 built `astro_mine.worlds.spice`
 and — intentionally — positions it as a shared service. Its own module docstrings say it is
@@ -156,7 +156,7 @@ to `roadmap/phase-0-commons-seed.md` sequenced before the Link MVP.
 ## Impact on Core
 
 **No Core schema change and no widening of the narrow waist.** `astro-mine-spice` *depends on*
-Core; Core does not depend on it, and Core stays free of heavy dependencies (`core.md §2.3`
+Core; Core does not depend on it, and Core stays free of heavy dependencies (`core.md §2 principle 3`
 intact). If anything this **strengthens** `conventions.md §1.1`: components stop reaching into a
 sibling edge's internals for SPICE and instead consume a declared shared foundation.
 
@@ -181,7 +181,7 @@ the one in-repo caller graph, so this is a single coordinated PR, not a deprecat
    component may still drive `spiceypy` directly for component-specific logic — e.g. Link's
    `gfposc` window search — *on top of* the shared primitives.)
 3. **Put SPICE in Core.** Rejected outright: `spiceypy`+`numpy` are exactly the heavy weight Core
-   must never carry (`core.md §2.3`); it would make Core un-importable in constrained/flight-adjacent
+   must never carry (`core.md §2 principle 3`); it would make Core un-importable in constrained/flight-adjacent
    contexts.
 4. **Split Worlds into `worlds-core` + `worlds-spice` without a new top-level package.** Same code
    motion, but a new top-level package is cleaner under the one-repo-per-package convention
