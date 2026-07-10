@@ -13,7 +13,7 @@
 the frame/time *vocabulary* — `Epoch`, `ReferenceFrame`, `PlanetaryCRS`, and the `require_frame`/
 `require_crs` fail-loud guards — but deliberately cannot host the *resolution* of those names into
 geometry: `spiceypy`/`numpy` are exactly the heavy dependencies the narrow waist must never carry
-([core.md](core.md) §2.3). Spice is that resolution, factored into a thin package
+([core.md](core.md) §2 principle 3). Spice is that resolution, factored into a thin package
 (`astro-mine-spice`, import `astro_mine.spice`) that every SPICE consumer depends on.
 
 Concretely, given furnished NAIF kernels, Spice:
@@ -160,7 +160,7 @@ Spice sits on the **Commons backbone** as a Core companion and integrates throug
 dependencies (no service plane, no side-channels — conventions.md §1.1):
 
 - **← [Core](core.md).** Depends on `astro-mine-core` for the frame/time types and `require_frame`
-  guard. Core does **not** depend on Spice; the narrow waist stays free of heavy deps (core.md §2.3).
+  guard. Core does **not** depend on Spice; the narrow waist stays free of heavy deps (core.md §2 principle 3).
 - **→ [Worlds](worlds.md).** Worlds resolves SPICE frames/epochs/Sun-Earth geometry through Spice
   (illumination/PSR, RM-P0-WORLDS-03); `worlds.crs` re-imports `MOON_RADIUS_M`. Replaces the former
   in-package `astro_mine.worlds.spice` (extracted on RFC-0002 acceptance).
