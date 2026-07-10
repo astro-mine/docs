@@ -110,13 +110,39 @@ single file carries heterogeneous, timestamped, schema-tagged channels.
 **Coordinate reference systems:** all spatial data is tagged with an explicit planetary CRS
 (body-fixed frame, datum, projection) resolved via SPICE/PROJ. No implicit Earth/WGS84
 assumptions. Frames and time are SPICE-backed (TDB/ET, body-fixed and inertial frames).
-[Core](core.md) defines the frame/time **types** (`Epoch`, `ReferenceFrame`, `PlanetaryCRS`) and the
-`require_frame`/`require_crs` fail-loud guards, but defers SPICE **resolution** — kernels, `spkpos`,
-`pxform`, topocentric geometry — to **[`astro-mine-spice`](../architecture/spice.md)**
+[Core](core.md) defines the frame/time **types** (`Epoch`, `ReferenceFrame`, `PlanetaryCRS`,
+`EpochWindow`) as a canonical interface — a JSON Schema authority layer, the Pydantic models it
+pins, and a Protobuf / Cap'n Proto wire form — so the vocabulary and its guards are enforceable in
+every language binding, not Python alone ([RFC-0007](../rfc/0007-units-frames-wire-schema.md)). Core
+defines the `require_frame`/`require_crs` fail-loud guards but defers SPICE **resolution** — kernels,
+`spkpos`, `pxform`, topocentric geometry — to **[`astro-mine-spice`](../architecture/spice.md)**
 (`astro_mine.spice`, [RFC-0002](../rfc/0002-shared-spice-foundation.md)), the single shared resolver
 every SPICE consumer (Worlds, Link, Sim, Transit) depends on. Core cannot host that resolution itself
-(`spiceypy`/`numpy` are heavy deps the narrow waist excludes — core.md §2.3); centralizing it in one
-package keeps frame/aberration conventions singular platform-wide.
+(`spiceypy`/`numpy` are heavy deps the narrow waist excludes — core.md §2 principle 3); centralizing
+it in one package keeps frame/aberration conventions singular platform-wide.
+
+**Frame/CRS/time guard rules (normative).** `require_frame`/`require_crs` and the epoch guards
+enforce the following as **MUST** requirements on **any** Core binding — Python is the reference
+implementation (core.md §8), and the rules are conformance-tested by a shared vector file Core
+ships ([RFC-0007](../rfc/0007-units-frames-wire-schema.md) Design §3):
+
+1. A reference frame MUST be present, and its `name` (and `center`, when given) MUST be non-empty,
+   whitespace-free tokens.
+2. `frame_class` MUST be a member of `FrameClass`; `scale` MUST be a member of `TimeScale`.
+3. `TimeScale.ET` and `TimeScale.TDB` denote the **same** scale (SPICE ET ≡ TDB). A consumer MUST
+   NOT reject or reinterpret an epoch on the grounds that its scale is spelled `et` rather than
+   `tdb`; a naive `scale == TDB` comparison is a bug.
+4. A planetary CRS MUST be present; `body` and `body_fixed_frame` MUST be tokens;
+   `reference_radius_m` MUST be finite and `> 0`.
+5. `EpochWindow.start` and `.end` MUST both be present, with `end` strictly after `start`.
+6. An Earth CRS is not forbidden, but an **implicit** one is. An Earth datum or projection marker
+   (`WGS84`, `EPSG:4326`, `urn:ogc:def:crs:OGC`) MUST be **rejected when `body` is not `EARTH`** —
+   that combination can only be a defaulting bug — and MUST be **accepted when `body` is `EARTH`**,
+   because Phase-2 Earth-analog deployments need Earth CRSs to be expressible. This is the **Core**
+   rule, a body/datum *consistency* check. A component MAY additionally refuse Earth CRSs outright
+   as a **component-local policy** — [View](view.md) does, because it renders planetary bodies only —
+   but that is View's rule, not Core's, and the conformance vectors MUST NOT conflate the two:
+   `body="EARTH"` with a WGS84 datum is valid at the waist.
 
 **Provenance:** every generated artifact records its inputs (content hashes), the producing
 code version, the environment lockfile, and the random seed. Datasets and policies are

@@ -82,7 +82,7 @@ astro_mine.core
 ├── messages/       # Canonical message schemas (proto + generated types)
 ├── objective/      # ObjectiveSpec + objective→metric binding (the shared objective contract)
 ├── registry/       # Plugin manifest schema, discovery, resolution, version negotiation
-├── units/          # SI units, frames, time (SPICE-backed) helpers and types
+├── units/          # SI units, frames, time (SPICE-backed): types + canonical JSON Schema + proto/Cap'n Proto wire form (RFC-0007)
 └── compat/         # Interface version negotiation & contract-test utilities
 ```
 

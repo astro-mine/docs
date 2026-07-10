@@ -111,7 +111,7 @@ interfaces; see [mission-model.md](mission-model.md) and §13.
 
 **Shared SPICE foundation (RFC-0002).** Core defines the frame/time *vocabulary* (`Epoch`,
 `ReferenceFrame`, `PlanetaryCRS`) but defers name→geometry *resolution* (kernels, `spkpos`, `pxform`)
-because `spiceypy`/`numpy` are the heavy dependencies the waist must never carry (core.md §2.3). That
+because `spiceypy`/`numpy` are the heavy dependencies the waist must never carry (core.md §2 principle 3). That
 resolution lives in **[Spice](spice.md)** (`astro_mine.spice`), a thin **Core companion** that every
 SPICE consumer — [Worlds](worlds.md), [Link](link.md), [Sim](sim.md)'s orbital engine, later
 [Transit](transit.md) — depends on, so the waist stays thin while frame/aberration conventions stay
@@ -121,7 +121,7 @@ scalars and nothing more (window search stays in Link, terrain occlusion in Worl
 
 **Shared artifact-integrity foundation (RFC-0005).** Core owns the *shape* of integrity (the
 `Signature` envelope, the `Verifier` protocol, the `hashing` primitive) but ships **no crypto** —
-`cryptography` is another heavy dependency the waist must never carry (core.md §2.3). That crypto lives
+`cryptography` is another heavy dependency the waist must never carry (core.md §2 principle 3). That crypto lives
 in **[Seal](seal.md)** (`astro_mine.seal`), a thin **Core companion** that every producer and verifier
 — [Fleet](fleet.md), [Hub](hub.md), [Guard](guard.md), later [Learn](learn.md)/[Worlds](worlds.md)/[Prospect](prospect.md)
 — depends on, so signing/verification/SLSA/SBOM is one byte-stable implementation instead of three
@@ -162,9 +162,9 @@ and [guard.md](guard.md) §9.5.
 
 † Added by [RFC-0001](../rfc/0001-multi-regime-missions.md) (accepted; implementation Phase 3). "Mission arch." = the **Mission architecture & logistics** layer. Existing components are also *extended* for multi-regime scope — see §13.
 
-‡ Added by [RFC-0002](../rfc/0002-shared-spice-foundation.md) (accepted; implementation Phase 0). [Spice](spice.md) is a **Core companion** — the SPICE-backed realization of Core's frame/time vocabulary that Core cannot host (heavy deps; core.md §2.3). See §3 and [spice.md](spice.md).
+‡ Added by [RFC-0002](../rfc/0002-shared-spice-foundation.md) (accepted; implementation Phase 0). [Spice](spice.md) is a **Core companion** — the SPICE-backed realization of Core's frame/time vocabulary that Core cannot host (heavy deps; core.md §2 principle 3). See §3 and [spice.md](spice.md).
 
-¶ Added by [RFC-0005](../rfc/0005-seal-supply-chain-companion.md) (accepted; implementation Phase 1). [Seal](seal.md) is a **Core companion** — the artifact-integrity (signing / verification / SLSA / SBOM) realization of Core's `Signature`/`Verifier` surface that Core cannot host (crypto deps; core.md §2.3). The single home for `cryptography`. See §3 and [seal.md](seal.md).
+¶ Added by [RFC-0005](../rfc/0005-seal-supply-chain-companion.md) (accepted; implementation Phase 1). [Seal](seal.md) is a **Core companion** — the artifact-integrity (signing / verification / SLSA / SBOM) realization of Core's `Signature`/`Verifier` surface that Core cannot host (crypto deps; core.md §2 principle 3). The single home for `cryptography`. See §3 and [seal.md](seal.md).
 
 ---
 
