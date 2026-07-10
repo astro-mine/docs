@@ -72,7 +72,7 @@ every interface**. No minor or major bump — even as the additive RFC-0001 sche
 land in Phase 1. The **first interface bump happens at or after Phase 3.**
 
 This is sound because the Core contract evolves under a strict **additive, append-only,
-never-break** rule (`core.md`; `conventions.md §6`): proto fields are append-only, new fields are
+never-break** rule (`core.md`; `conventions.md §3`): proto fields are append-only, new fields are
 additive (optional / default-valued), and `buf breaking` in Core CI **enforces** that every
 change is wire-compatible. An old consumer and a newer Core therefore interoperate even though
 both still report `0.1.0`.

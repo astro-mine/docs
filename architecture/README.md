@@ -67,7 +67,7 @@ exploration and in-situ resource utilization (ISRU).
 
 [Core](core.md) defines the frame/time *vocabulary* (`Epoch`, `ReferenceFrame`, `PlanetaryCRS`) but
 deliberately cannot host the *resolution* of names into geometry — `spiceypy`/`numpy` are exactly the
-heavy dependencies the narrow waist must never carry ([core.md](core.md) §2.3). [Spice](spice.md)
+heavy dependencies the narrow waist must never carry ([core.md](core.md) §2 principle 3). [Spice](spice.md)
 (`astro-mine-spice`, import `astro_mine.spice`) is that resolution, factored into a thin **Core
 companion** on the Commons backbone: it turns Core's vocabulary into positions (`spkpos`), rotations
 (`pxform`), and topocentric site geometry, and **stops there** — window search stays in
@@ -84,7 +84,7 @@ conventions and oracle cross-checks are written once and trusted everywhere
 
 [Core](core.md) owns the *shape* of integrity — the `Signature` envelope, the `Verifier` protocol, and
 the lightweight `hashing` primitive — but deliberately ships **no crypto** (`cryptography` is exactly
-the heavy dependency the narrow waist must never carry, [core.md](core.md) §2.3). [Seal](seal.md)
+the heavy dependency the narrow waist must never carry, [core.md](core.md) §2 principle 3). [Seal](seal.md)
 (`astro-mine-seal`, import `astro_mine.seal`) is that crypto, factored into a thin **Core companion**
 on the Commons backbone: it owns the *single* implementation of signing, verification, SLSA provenance,
 SBOM, and verify-twice orchestration, built on Core's frozen `Signature`/`Verifier` surface. Every
