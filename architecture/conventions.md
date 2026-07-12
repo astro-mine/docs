@@ -73,6 +73,64 @@ Breaking a Core contract requires a new major interface version and a deprecatio
 schemas are versioned with the package that owns them and published as generated client
 libraries.
 
+### 3.1 Referencing a Core schema from another package ([RFC-0009](../rfc/0009-cross-package-schema-resolution.md))
+
+Core owns schemas that other packages `$ref` across files — above all the shared units vocabulary
+([RFC-0007](../rfc/0007-units-frames-wire-schema.md)). Until RFC-0009 this document said nothing
+about **how**, so six packages invented five different techniques to name one schema — path
+arithmetic reconstructing Core's directory layout, `$id` squatting inside Core's namespace, a
+hardcoded copy of a private URI, runtime derivation, and a vendored byte-copy. Only one was
+correct. These rules are what was missing.
+
+**One name.**
+
+- A Core schema is referenced by its absolute **`$id`**. A package's schema **MUST** `$ref` it that
+  way — never by a relative path, never by a URI derived from Core's directory layout.
+
+  ```json
+  { "$ref": "https://schemas.astro-mine.org/core/units/v0.1/units.schema.json#/$defs/ReferenceFrame" }
+  ```
+
+- A published `$id` is **public, append-only API**. It **MUST NOT** be repurposed or removed; a new
+  schema minor takes a new `$id` (`…/v0.2/…`). Changing a Core schema's `$id`, or the set of URIs
+  its `$ref` graph resolves to, is a **breaking change**.
+
+**`$id` namespaces are owned.**
+
+- A package **MUST** declare `$id`s only under its own namespace
+  (`https://schemas.astro-mine.org/<package>/…`). It **MUST NOT** publish an `$id` under another
+  package's namespace, and two packages **MUST NOT** publish the same `$id`. A colliding or
+  squatted `$id` is a silent wrong-schema resolution.
+
+**One mechanism.**
+
+- These URIs are **nominal**: nothing serves them, and resolution **MUST** work offline (§11).
+  Resolution is therefore always by registry, **never over the network**.
+- A validator **MUST** be built with `astro_mine.core.schema_registry()`, which resolves every Core
+  schema by `$id`:
+
+  ```python
+  Draft202012Validator(my_schema, registry=schema_registry(my_schema))
+  ```
+
+- A package **MUST NOT** import Core modules that are underscore-private or absent from a package's
+  `__all__`. Correspondingly, **Core MUST provide a public, documented equivalent** for any
+  capability a consumer legitimately needs — the absence of one is what produced all five
+  workarounds, and a private API with five importers is a Core defect, not a consumer defect.
+
+**Cross-language and vendored consumers.**
+
+- A package that cannot import Core (a non-Python binding) **MUST** resolve Core schemas from the
+  **published bundle**, using its `schema_index` (`$id` → path).
+- A package that nonetheless **vendors** a copy of a Core schema **MUST** guard it against drift by
+  pinning `astro_mine.core.SCHEMA_DIGEST` (or the bundle's `schema_digest`) and **failing** CI when
+  the copy no longer matches. A hand-resynced copy guarded by a comment is drift with extra steps.
+
+**Compatibility is verified, not assumed.** Core CI **MUST** run the schema tests of its consumers
+against Core@HEAD (the *downstream canary*), so breaking a consumer fails the Core PR that breaks
+it. A green Core board that says nothing about downstream compatibility is worse than no check: the
+job this replaced resolved Core from a two-tags-old release and could not fail for any change.
+
 ---
 
 ## 4. Transport & messaging

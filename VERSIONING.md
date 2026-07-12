@@ -110,6 +110,10 @@ from astro_mine.core import SCHEMA_DIGEST   # "sha256:…"
 While the interface version is frozen, **this is the value that actually distinguishes one
 Core schema set from another** — `__version__` and `CORE_INTERFACE_VERSIONS` cannot.
 
+How a package *references* a Core schema — by absolute `$id`, resolved through
+`astro_mine.core.schema_registry()` — is normative in
+[`conventions.md` §3.1](architecture/conventions.md).
+
 > **Note.** It is a *generated, committed constant*, not a runtime recompute, because the
 > digest covers the `.proto` sources under `schemas/proto/` — which live at the Core repo root
 > and are **not** in the wheel. An installed Core cannot see them, so it could not reproduce
