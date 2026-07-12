@@ -84,14 +84,51 @@ Compatibility and reproducibility are therefore guaranteed by **other** mechanis
 version number:
 
 1. **Git-tag pin + `uv.lock`** — the exact Core commit a repo was built and tested against (§5).
-2. **Bench content-addressed schema hashes** — a `ScenarioSpec` pins the exact Core schema by
-   digest, so a benchmark reproduces byte-for-byte (`RM-P0-BENCH-01/02`, CX-REPRO).
+   *Implemented.*
+2. **Content-addressed schema digest** — the identity of the exact Core schema set, so a
+   benchmark reproduces byte-for-byte (`RM-P0-BENCH-01/02`, CX-REPRO). **Partially implemented
+   — see §4.1.**
 3. **`buf breaking` (proto) + the model-drift check (JSON Schema ↔ Pydantic)** — keep every
-   change additive, which is what makes the frozen version safe.
+   change additive, which is what makes the frozen version safe. *Implemented.*
 
 The `compat` machinery still earns its place: it rejects unknown / misspelled interface names,
 and it is the mechanism that will correctly refuse old consumers once the version is finally
 bumped at Phase 3.
+
+### 4.1 The schema digest — produced, not yet consumed
+
+**Core produces it.** `astro_mine.core.SCHEMA_DIGEST` is the content address of the exact
+schema set a given Core carries — a `sha256:` digest over the canonical sources (the JSON
+Schemas, the Cap'n Proto hot path, the units conformance vectors, and the `.proto` sources).
+It equals the published bundle's `schema_digest` for the same commit, and the bundle is
+pullable from GHCR by digest (§5; `RM-P0-CORE-08`):
+
+```python
+from astro_mine.core import SCHEMA_DIGEST   # "sha256:…"
+```
+
+While the interface version is frozen, **this is the value that actually distinguishes one
+Core schema set from another** — `__version__` and `CORE_INTERFACE_VERSIONS` cannot.
+
+> **Note.** It is a *generated, committed constant*, not a runtime recompute, because the
+> digest covers the `.proto` sources under `schemas/proto/` — which live at the Core repo root
+> and are **not** in the wheel. An installed Core cannot see them, so it could not reproduce
+> the digest from its own files; a filesystem walk relative to `__file__` would yield a
+> plausible-but-wrong value in a wheel while looking correct in a source checkout. Core's CI
+> fails if the constant goes stale, and the bundle builder refuses to publish a bundle whose
+> digest no package claims.
+
+**Nothing consumes it yet.** `ScenarioSpec` pins the Core *interface versions* (frozen, hence
+constant across every Core revision through Phase 3) and its content inputs by hash — but not
+the schema digest, and `resolve_scenario()` does not fold it into `scenario_hash`. So **today,
+two Core revisions with materially different schemas satisfy the same `ScenarioSpec`**, and
+mechanism 2 above is not yet doing the work this section credits it with. Reproducibility
+currently rests on mechanism 1 — the `uv.lock` digest transitively pins the Core git rev — which
+is real but is an *environment* pin, not a *contract* pin, and is unavailable to non-Python
+bindings.
+
+Closing that gap is tracked as **`astro-mine-bench#39`**. Until it lands, treat CX-REPRO's
+byte-for-byte guarantee as resting on the lockfile, not on the schema digest.
 
 ## 5. How components depend on Core (private incubation)
 
@@ -113,7 +150,10 @@ While repos are private and nothing is published to a public index:
   `astro-mine-core` repo with a **PAT** (read scope) exposed to the job; `origin` remotes stay on
   HTTPS (the PAT is only for `uv`'s fetch, and does not affect GitHub Desktop).
 - **OCI / schema-bundle artifacts** (e.g. the content-addressed schema bundle) publish to
-  **private GHCR**, not a public registry.
+  **private GHCR**, not a public registry. The bundle is self-describing: `bundle.json` carries
+  its `schema_digest` (§4.1) and a `schema_index` mapping each schema's `$id` to its path, so a
+  consumer can resolve the schemas' cross-file `$ref`s with a stock JSON Schema validator and
+  no Core-specific code — which is what makes it usable from a non-Python binding.
 
 This supersedes — *for the incubation period only* — the "Python wheels on an index" /
 `pip install astro-mine-core` end-state described in `conventions.md §7`, `core.md §7`, and
