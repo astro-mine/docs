@@ -86,8 +86,7 @@ version number:
 1. **Git-tag pin + `uv.lock`** — the exact Core commit a repo was built and tested against (§5).
    *Implemented.*
 2. **Content-addressed schema digest** — the identity of the exact Core schema set, so a
-   benchmark reproduces byte-for-byte (`RM-P0-BENCH-01/02`, CX-REPRO). **Partially implemented
-   — see §4.1.**
+   benchmark reproduces byte-for-byte (`RM-P0-BENCH-01/02`, CX-REPRO). *Implemented — see §4.1.*
 3. **`buf breaking` (proto) + the model-drift check (JSON Schema ↔ Pydantic)** — keep every
    change additive, which is what makes the frozen version safe. *Implemented.*
 
@@ -95,7 +94,7 @@ The `compat` machinery still earns its place: it rejects unknown / misspelled in
 and it is the mechanism that will correctly refuse old consumers once the version is finally
 bumped at Phase 3.
 
-### 4.1 The schema digest — produced, not yet consumed
+### 4.1 The schema digest — the contract pin
 
 **Core produces it.** `astro_mine.core.SCHEMA_DIGEST` is the content address of the exact
 schema set a given Core carries — a `sha256:` digest over the canonical sources (the JSON
@@ -122,17 +121,31 @@ How a package *references* a Core schema — by absolute `$id`, resolved through
 > fails if the constant goes stale, and the bundle builder refuses to publish a bundle whose
 > digest no package claims.
 
-**Nothing consumes it yet.** `ScenarioSpec` pins the Core *interface versions* (frozen, hence
-constant across every Core revision through Phase 3) and its content inputs by hash — but not
-the schema digest, and `resolve_scenario()` does not fold it into `scenario_hash`. So **today,
-two Core revisions with materially different schemas satisfy the same `ScenarioSpec`**, and
-mechanism 2 above is not yet doing the work this section credits it with. Reproducibility
-currently rests on mechanism 1 — the `uv.lock` digest transitively pins the Core git rev — which
-is real but is an *environment* pin, not a *contract* pin, and is unavailable to non-Python
-bindings.
+**Bench consumes it.** A `ScenarioSpec` pins the Core schema set by digest —
+`ScenarioSpec.core_schema_digest` — alongside the interface versions and its content inputs
+(`astro-mine-bench#39`). The pin is *declarative* and folded into `spec_hash`, hence into
+`scenario_hash`: a scenario resolved against a different Core contract is a **different task**,
+not silently the same one.
 
-Closing that gap is tracked as **`astro-mine-bench#39`**. Until it lands, treat CX-REPRO's
-byte-for-byte guarantee as resting on the lockfile, not on the schema digest.
+`resolve_scenario()` **verifies it and fails loud** — `IncompatibleCoreSchema` — when the pinned
+digest disagrees with the installed Core's `SCHEMA_DIGEST`. This is precisely the check
+`assert_core_compatible()` cannot perform: while the interface version is frozen it returns
+*compatible* for every Core revision, so it cannot tell two schema sets apart. The digest can.
+The resolved digest is recorded in run provenance (`Result`, `ProvenanceBundle`), so a leaderboard
+entry can be audited against the exact contract it validated under.
+
+The pin is **optional**, deliberately. A scenario may omit it — an older spec, or one authored
+against a non-Python binding — and then its reproducibility rests on mechanism 1 alone: the
+`uv.lock` digest transitively pins the Core git rev. That is real, but it is an *environment* pin
+rather than a *contract* pin, it is over-sensitive (any unrelated dependency bump changes the hash
+even when the Core contract is byte-identical), and it is unavailable to non-Python consumers —
+the Rust validator today, C++/TS later — which have no lockfile to appeal to but can assert they
+validated against a digest. **Pin the digest when you can.**
+
+**Re-pinning.** When Core's schemas change its `SCHEMA_DIGEST` changes, and every scenario pinning
+the old one stops resolving — loudly, by design. The fix is to re-author the scenario against the
+new schemas under a **new `spec_version`**, never to edit a published spec in place (`bench.md` §5:
+scenarios are immutable once published; old leaderboards remain valid for their pinned spec).
 
 ## 5. How components depend on Core (private incubation)
 
