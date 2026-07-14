@@ -6,6 +6,8 @@
 - **Accepted:** 2026-07-05
 - **Amended:** 2026-07-06 — Amendment 1 (`safe_pose` retreat target + distinct verified backup
   behaviors; RM-P1-GUARD-04), accepted; see [Amendment 1](#amendment-1--safe_pose-retreat-target--distinct-verified-backup-behaviors-accepted-2026-07-06) below.
+  · 2026-07-13 — Amendment 2 (`admissible_directives` — the MODE/TASK allowlist moves into the
+  reviewed contract; configuration may only narrow it), accepted; see [Amendment 2](#amendment-2--admissible_directives-the-modetask-allowlist-belongs-to-the-contract-accepted-2026-07-13) below.
 - **Affects Core:** no — the `SafetySpec` schema is **Guard-owned** and catalogued *through*
   the Core plugin registry (`astro_mine.core.registry.PluginManifest`); it makes **no** change to
   the `astro-mine-core` package — no new enum member, message, schema, or wire type, and
@@ -108,7 +110,7 @@ no parser dependency and no Rust core — it expresses "SoC ≥ floor **until** 
 
 `on_uncertain` is an `OnUncertain` selector with **no `passthrough` member** — `fallback` (default;
 hand control to the simplex backup), `hold` (freeze/brake), or `safe_state` (retreat to a named safe
-state). *([Amendment 1](#amendment-1--safe_pose-retreat-target--distinct-verified-backup-behaviors-accepted-2026-07-06) adds the authored `safe_pose` retreat target and gives these three selectors distinct, individually-verified backup control laws.)* "Let the policy's action through unchecked" is *not expressible* in the schema. The loader
+state). *([Amendment 1](#amendment-1--safe_pose-retreat-target--distinct-verified-backup-behaviors-accepted-2026-07-06) adds the authored `safe_pose` retreat target and gives these three selectors distinct, individually-verified backup control laws; [Amendment 2](#amendment-2--admissible_directives-the-modetask-allowlist-belongs-to-the-contract-accepted-2026-07-13) closes the one place a passthrough had become expressible again — an unreviewed **configuration** grant on the discrete-directive gate.)* "Let the policy's action through unchecked" is *not expressible* in the schema. The loader
 additionally **rejects any temporal operator lacking a finite interval**: an unbounded operator has
 no statically-bounded history window, so it cannot be certified and is refused at authoring time
 (guard.md §2 principle 4; §9.1). Absence of a positive certificate can only resolve to a verified
@@ -327,3 +329,188 @@ so a safety-relevant addition is reviewed rather than slipped in by commit. It r
 behaviors (BrakeToStop / Hold / SafeState) with the guarded-move fail-safe composition are ratified
 as an **additive, Guard-owned** extension of the `SafetySpec` safety contract; `safety_version` stays
 `"0.1"` and there is **no `astro-mine-core` change**. Implemented and merged as **RM-P1-GUARD-04**.
+
+---
+
+## Amendment 2 — `admissible_directives`: the MODE/TASK allowlist belongs to the contract (accepted 2026-07-13)
+
+- **Status:** accepted
+- **Accepted:** 2026-07-13
+- **Affects Core:** no (unchanged from the base RFC — no `astro-mine-core` change,
+  `CORE_INTERFACE_VERSIONS` stays `0.1.0`, `safety_version` stays `"0.1"`)
+- **Implementation:** **RM-P1-GUARD-03** (the action gate)
+  ([astro-mine-guard#25](https://github.com/astro-mine/astro-mine-guard/issues/25); raised by
+  astro-mine-guard#24)
+
+### What changed
+
+RM-P1-GUARD-03 gave the trusted core an **action gate**: a `MODE` or `TASK` proposal carries no
+continuous quantity to project, so the shield cannot *correct* it — it can only certify it by
+**enumeration** against an allowlist. That allowlist shipped in `CoreConfig.action_policy`
+(`certified_modes` / `certified_tasks`): local, unsigned deployment configuration. Amendment 2 moves
+the **grant** into the reviewed contract and demotes the configuration to a **narrowing-only** knob.
+
+**1. `admissible_directives` — an additive, optional `SafetySpec` field (the reviewed grant).**
+
+```yaml
+safety:
+  admissible_directives:          # optional; absent ⇒ the spec grants NOTHING
+    modes: [safe_hold]            # ModeCommand.mode names (free strings; SADF loads_by_mode)
+    tasks: [standby, charge]      # Core TaskKind values (closed vocabulary)
+```
+
+`AdmissibleDirectives{ modes: [str], tasks: [TaskKind] }` is a top-level optional field on
+`SafetySpec` — the same shape Amendment 1 established for `safe_pose`, and for the same reason (see
+*Alternatives*). The compiler lowers it to `CompiledSafetyModel.admissible_directives`; the trusted
+core decodes it fail-closed and rejects a malformed grant rather than enforcing against a bad one.
+`tasks` is typed as Core's `TaskKind`, so an unknown task is refused at authoring time.
+
+**2. The gate's effective allowlist is now `spec ∩ config`.** A directive is certifiable **iff the
+reviewed spec admits it *and* the configuration admits it**. `CoreConfig.action_policy` survives, but
+it can only ever **narrow** the reviewed grant — the legitimate "run this deployment stricter than
+the contract allows" case. It can no longer *create* a permission.
+
+Both changes are **append-only** under the base RFC's additive-only rule: no member is removed or
+changed, no required field is added to an existing kind, `safety_version` stays `"0.1"`, and the
+`buf breaking` / `check_model_drift` / append-only schema-compat CI guards stay green. An
+existing spec that authors no `admissible_directives` still loads — it now simply certifies **no**
+directive, which is the fail-closed reading and was already the default posture of an unconfigured
+Guard.
+
+### Merge semantics (load-bearing)
+
+```
+effective_modes = config.certified_modes ∩ spec.admissible_directives.modes
+effective_tasks = config.certified_tasks ∩ spec.admissible_directives.tasks
+
+spec silent (field absent)      ⇒ effective = ∅        (NOT "whatever config says")
+spec authors ∅                  ⇒ effective = ∅
+config silent (empty allowlist) ⇒ effective = ∅
+```
+
+The intersection is computed **once**, at trusted-core construction, so the hot path stays
+allocation-free (guard.md §2 principle 6).
+
+**The deliberate asymmetry with `tighten()`.** Amendment 2 introduces the *second* place where a
+reviewed spec value and a configured value must be merged, and it merges them the **other way round
+on silence**. That is not an inconsistency; it is the lattice being honest:
+
+| merged thing | greatest lower bound | identity ("no opinion") | spec silent ⇒ |
+|---|---|---|---|
+| a scalar **ceiling** (`kinematic_limit` → `ActionLimits`) | `min(config, authored)` | `+∞` | **config stands** |
+| a **permission set** (`admissible_directives`) | `config ∩ authored` | `∅` | **nothing is admitted** |
+
+Both are the greatest-lower-bound of the two inputs — "configuration may only tighten the reviewed
+contract" is one rule, not two. Only the *identity element* of the meet differs. For a ceiling, an
+unstated limit is `+∞` (no constraint), so `min(config, absent) = config` and the configured ceiling
+is safe to keep. For a permission set, an unstated grant is `∅` (no authority), so
+`config ∩ absent = ∅` — **silence must grant nothing**. Reading a silent spec as "config stands"
+would make the permission set fail *open* by silence, which is exactly the property this amendment
+exists to remove. This asymmetry is stated here explicitly because it is the load-bearing rule and
+must not be re-derived by analogy to `tighten()` at a later review.
+
+### Why via (this) RFC
+
+Amendment 2 touches the safety contract's authored surface and the operational meaning of the gate,
+so it is RFC-gated by the base RFC's own rule. The substantive arguments:
+
+**1. A config-granted MODE is an expressible `passthrough` — the one thing this RFC designed out of
+the schema.** The base RFC states that `OnUncertain` has no `passthrough` member and that "let the
+policy's action through unchecked" is *not expressible*. But an allowlisted directive resolves in the
+arbiter to `Intervention::None` / `Reason::Certified` with an **empty** `certified_action`, and the
+Python marshal layer then re-emits the wrapped policy's proposal **byte-for-byte, uncertified**. That
+is a passthrough by any operational definition, and the only thing standing between an untrusted
+policy and it is a dict of plugin `params`. The schema kept the door shut; configuration had cut a
+new one next to it.
+
+**2. A MODE transition is an actuation path with direct safety semantics.** `ModeCommand.mode` names
+a SADF `loads_by_mode` mode, and the simulator's engines switch behavior on it. `loads_by_mode` **is**
+the power/thermal load profile the anchor spec's survival floors are stated against — so a MODE
+switch is the most direct available way to invalidate the very constraints Guard is enforcing (e.g.
+leaving a survival-heater profile during lunar night). It is also the only *prospective* control on
+that path: the monitors are `ScalarBound`s over **measured** signals and observe the consequence one
+or more ticks *after* the load profile has already changed. A permission with that reach is a safety
+decision, and safety decisions belong in the reviewed, content-addressed artifact.
+
+**3. The hole was already open, with a wrong answer in it.** The Mind reference stack
+(`lunar_prospecting_anchor.yaml`) shipped `certified_modes: ["velocity"]`, justified in-file with
+"Sim's engine actuates VELOCITY setpoints, so VELOCITY is the mode this stack certifies." That
+rationale is **factually wrong**: `certified_modes` gates `ModeCommand.mode` *names*, not
+`ControlMode` values; an `ACTUATOR`/`VELOCITY` action is classified as a **numeric** command and is
+routed to the shield, where the allowlist is never consulted. So the entry was (a) inert for the
+actions the stack actually emits, and (b) a standing grant that *any* `MODE` directive happening to be
+named `"velocity"` would cross the TCB untouched. A safety-relevant permission, granted in a YAML, in
+a different repo, on a mistaken premise, caught by nothing. That is the failure mode the contract/config
+split exists to prevent, and it had already happened.
+
+**4. `SafetySpec` is the only artifact on this path with an integrity story.** It is
+content-addressed (`content_hash_json`), signed and fail-closed-verified before the trusted core sees
+it, re-derived *inside* the core, and stamped into every `SafetyVerdict` as `spec_content_hash`.
+`CoreConfig` has none of that: it is an unsigned `params` dict from a stack YAML and appears nowhere
+in the verdict record. Today, two runs can report the **same** `spec_content_hash` and enforce
+**different** action gates — which breaks the guarantee `guard.md` §5 and §9.3 are built on ("the
+property enforced is exactly the property reviewed", and an auditable record that says which). After
+this amendment the verdict's `spec_content_hash` bounds the grant: config can only have narrowed it.
+
+### Impact on Core
+
+**None**, as in the base RFC and Amendment 1. No enum member, message type, schema, or wire form
+changes on `astro-mine-core`; `CORE_INTERFACE_VERSIONS` stays `0.1.0`; the `PluginManifest` still
+negotiates `messages` / `sadf` / `registry` at `0.1.0`. Guard's schema `$ref`s Core's existing
+`TaskKind` by its published `$id` (RFC-0009 §1) — a *read* of Core's public vocabulary, not a change
+to it.
+
+### Alternatives considered
+
+- **(i) A new `ConstraintKind.directive_allowlist` member.** *Rejected.* A `Constraint` in this
+  vocabulary is a **predicate over a declared signal**, carrying an `on_uncertain` selector that names
+  the verified backup to run when it fires. A directive allowlist has no signal, no predicate, and no
+  meaningful `on_uncertain` (a rejected directive is not a fired constraint — it is an *absent*
+  certificate). Forcing it into the tagged union would pollute the constraint vocabulary and every
+  compiler/monitor path that consumes it with a member that is not a constraint. `safe_pose` faced the
+  identical question in Amendment 1 and answered it the same way: a spec-level fact that is neither a
+  predicate nor a geometry is a **top-level optional field**, not a constraint kind.
+- **(ii) Leave it in `CoreConfig`.** *Rejected* — that is the status quo whose four defects are
+  enumerated above. The honest counter-argument for it is recorded below.
+- **(iii) Keep the field, but read spec-silence as "config stands"** (i.e. mirror `tighten()`'s
+  absent-⇒-config default). *Rejected* as **fail-open-by-silence**: every spec authored before this
+  amendment is silent, so the rule would preserve exactly the unreviewed grant the amendment exists to
+  revoke, and would make "add a permission" achievable by *deleting* a line from the contract. See the
+  lattice argument above.
+
+**The counter-position, recorded honestly.** The MODE vocabulary is **open** — mode names are free
+strings drawn from a SADF asset's `loads_by_mode` — so an allowlist over them is asset- and
+deployment-specific, and pinning it inside a content-addressed spec means a **new spec hash and a
+re-sign for every fleet variant**. That is a real ergonomic cost and it is the strongest argument for
+leaving the allowlist in configuration. It does not carry: `SafetySpec` **already** carries
+fleet-specific content (the torque ceiling, the keep-out geometry, the `safe_pose`), `scenario_ref`
+exists precisely to bind a spec to the scenario it is stated against, and the narrowing-only knob
+preserves the legitimate "run stricter than the contract" use-case without a re-sign. The friction
+lands only on the operation that *should* be expensive: **granting a robot new authority**.
+
+### Deferred
+
+- **Validating MODE names against a SADF asset's `loads_by_mode`.** The spec would then reject a
+  grant for a mode the asset cannot enter. This needs a spec↔asset binding the loader does not have
+  today (the spec references signals abstractly by key); deferred, and not required for the
+  fail-closed property this amendment establishes.
+- **Per-regime directive profiles.** RFC-0001 multi-regime missions will want a grant scoped to a
+  `Phase`'s `regime` (a `MODE` admissible on the surface need not be admissible during transit);
+  deferred to **P3** as an additive, document-level extension, alongside the per-regime `SafetySpec`
+  profiles already deferred in the base RFC and Amendment 1.
+- **Whether `fallback_control_mode` / `fallback_target` should also move into the spec.**
+  **Recommendation: no.** They are not a *permission* — they name the actuation **channel** a rejected
+  proposal is answered in (a velocity-tracking plant must be answered with a velocity command, not an
+  `EFFORT` brake its actuator would ignore). That is a property of the plant and its wiring, not of the
+  safety contract, and it is already constrained to the control modes the TCB has a plant model for
+  (rejected at construction time otherwise). No configuration of it can widen what is certifiable —
+  the property this amendment is about — so it stays where it is.
+
+### Decision
+
+**Accepted 2026-07-13.** The additive, optional `SafetySpec.admissible_directives` field and the
+`effective = spec ∩ config` gate semantics — with **spec-silence granting nothing** — are ratified as
+an **additive, Guard-owned** extension of the `SafetySpec` safety contract. `CoreConfig.action_policy`
+is retained as a **narrowing-only** deployment knob and may never create a permission the reviewed
+contract does not already grant. `safety_version` stays `"0.1"` and there is **no `astro-mine-core`
+change**. Implemented under **RM-P1-GUARD-03** (astro-mine-guard#25).
