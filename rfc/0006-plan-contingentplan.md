@@ -99,10 +99,18 @@ no Mind dependency in their base package:
   stream (RM-P1-GUARD-06) into a `ShieldReport{ intervened, kind, clauses, certificate }`. The
   `mind → guard` edge exists **only** inside guard's optional extra; base Mind ships the reference
   `ConstraintShield` stand-in.
-- **Allocate.** An `astro-mine-allocate` `[mind]` optional extra ships a provider that wraps
-  `AllocationPlanner` as the `allocator`-role tier plugin, behind Mind's `AllocationAdapter`
-  (RM-P1-MIND-04). The adapter publishes its request under the shared `allocation.request`
-  `DecisionContext.extras` key that `AllocationPlanner.decide` already reads.
+- **Allocate.** An `astro-mine-allocate` `[mind]` optional extra registers a provider on the
+  `astro_mine.mind.tier_plugins` entry point that binds the CP-SAT solver as the `allocator`-role
+  tier plugin behind Mind's `AllocationAdapter` (RM-P1-MIND-04). The adapter publishes a
+  **Mind-owned** request DTO under the shared `allocation.request` `DecisionContext.extras` key — Mind
+  owns that type so it need not depend on Allocate's rich request. `AllocationPlanner.decide` itself
+  requires an Allocate-native `AllocationRequest` and **raises `TypeError`** on the Mind DTO, so the
+  real planner cannot be dropped in unmediated. The `[mind]` provider therefore ships a small
+  translation shim — `astro_mine.allocate.mind.MindAllocationSolver` (with `_as_allocation_request`) —
+  which reads the `allocation.request` key, translates the Mind DTO into Allocate's `AllocationRequest`,
+  solves, and maps the plan back to per-agent directives. The both-vocabulary knowledge lives only on
+  Allocate's side of the waist — the only side permitted to know both — so there is still no
+  `mind → allocate` dependency in either base package (astro-mine-allocate#21).
 
 This is the same "reference stand-in now, real sibling via the registry later" pattern the spine
 used for Sim (the toy env) and Guard (the pass-through shield) — the framework commits to the Core
