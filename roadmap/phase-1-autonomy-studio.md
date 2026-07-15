@@ -488,7 +488,8 @@ its error budget. **Deferred → P3:** microgravity/small-body regimes; multi-sp
 as plugins with no Core change; the EVPI objective is consumable by Allocate; the real-ingest prior
 reproduces from cited public inputs and is Hub-published while the offline parametric default still
 runs with no network. **Deferred → P2:** operational belief from real *mission* sensors (Ops/Bridge).
-**Deferred → P3:** small/irregular-body Worlds; asteroid volatile fields (Prospect reuse).
+**Deferred → P3:** small/irregular-body Worlds; asteroid volatile fields + **multi-species /
+depth-resolved Prospect fields** (contract-widening, RFC-gated) — both as `RM-P3-PROSPECT-30`.
 
 ---
 

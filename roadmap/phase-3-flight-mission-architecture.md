@@ -196,6 +196,12 @@ replaced* (RFC-0001 §4).
   models (not 2.5-D heightfields), polyhedral/mascon non-central gravity, body rotation/tumbling, and
   **cohesion-dominated microgravity regolith** fields for `surface`/`proximity_orbit`, as body packs.
   *(trace: worlds.md §11, §12; `AST-*` env)*
+- **RM-P3-PROSPECT-30 — Small-body volatile fields + multi-species / depth-resolved fields.** The
+  `ResourceField` contract reused for asteroid/small-body volatile inventories (paired with the
+  RM-P3-WORLDS-30 body packs), **plus** the multi-species and depth-resolved (3-D) field axes deferred
+  since P0. Both widen the Core `ResourceField`/`FieldMetadata` contract shape — the shipped field is
+  single-species, 2-D surface-only — so they are RFC-gated and land here with the other
+  contract-widening work. *(trace: prospect.md §11, §12; refines the P0 "P1+" deferral; `AST-*` env)*
 - **RM-P3-SIM-30 — Microgravity engine + multi-regime propagation + multi-phase sequencer.** A
   distinct cohesion-dominated low-g DEM contact domain (Project Chrono-class) behind the same waist;
   co-simulation coupling Transit free-space ↔ proximity ↔ surface; the thin **runtime sequencer**

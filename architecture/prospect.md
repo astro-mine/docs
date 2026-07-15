@@ -376,9 +376,14 @@ costly. Performance claims ship with reproducible benchmarks (conventions.md §8
   This is enough for `Sim + Worlds + Fleet + Bench` to run the reference loop end-to-end
   (charter §11, §13) — a researcher can prospect a synthetic crater on a workstation.
 - **Phase 1+ (later).** GMRF and deep-generative backends; richer active-perception objectives
-  (EVPI tied to ISRU yield) for [Learn](learn.md)/[Allocate](allocate.md); multi-species,
-  depth-resolved and Martian fields; the distributed field service; [Hub](hub.md)-published
-  community priors and prior-recipes.
+  (EVPI tied to ISRU yield) for [Learn](learn.md)/[Allocate](allocate.md); Martian fields; the
+  distributed field service; [Hub](hub.md)-published community priors and prior-recipes.
 - **Phase 2+ (operations).** The same belief updater fed by **real sensor returns** through
   [Ops](ops.md)/[Bridge](bridge.md), so the operational resource posterior is computed by
   identical, validated code to the simulated one — closing the design-to-operations loop.
+- **Deferred → Phase 3 (contract-widening).** **Multi-species and depth-resolved (3-D) resource
+  fields.** The shipped `ResourceField` is single-species and 2-D surface-only
+  (`FieldMetadata.species` is scalar; `FieldGrid` carries no depth axis), so adding a species/depth
+  axis changes the Core `ResourceField`/`FieldMetadata` **contract shape** — it is RFC-gated and
+  scheduled with the other contract-widening Prospect work as `RM-P3-PROSPECT-30`. Deferred from P0 as
+  "P1+"; Phase 1 shipped without it.
