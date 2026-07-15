@@ -73,8 +73,9 @@ or epochs passes the shared `units` conformance vectors. **Deferred → P3:** al
 
 **Scope & deliverables**
 
-- **RM-P1-SURR-01** — **`SurrogateModel` + `ErrorReport` + `SurrogateManifest`** behind the Core
-  physics-step contract; `predict → (next_state, uncertainty, in_domain)`. *(trace: surrogate.md §3)*
+- **RM-P1-SURR-01** — **`SurrogateModel` Protocol + `ErrorReport` + `build_surrogate_manifest()`**
+  behind the Core physics-step contract; `predict(state, action=None) → Prediction` (channels +
+  calibrated uncertainty + `in_domain`/`ood_margin`). *(trace: surrogate.md §3)*
 - **RM-P1-SURR-02** — **Granular/excavation GNN particle simulator** with **deep-ensemble + conformal**
   calibrated error bounds and enforced trust regions. *(trace: surrogate.md §11, §12; charter §8, §9; `LUNAR-TR-002`)*
 - **RM-P1-SURR-03** — **`datagen` from high-fidelity Sim** (Sobol/LHS + active learning) and the

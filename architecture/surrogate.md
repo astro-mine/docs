@@ -96,34 +96,43 @@ Gaussian processes), frameworks (PyTorch, JAX), and the portable artifact format
 
 Surrogate is a **library + training/serving toolkit**, not a monolithic service. Per
 conventions.md §1.4 it is importable on a workstation first; the cloud trainer is a deployment
-of the same code. Modules:
+of the same code. Modules (library-only — there is no CLI):
 
 ```
 astro_mine.surrogate
-├── datagen/        # high-fidelity sampling: query Sim, design experiments, label, archive
-├── models/         # surrogate families: GNN particle sim, neural operators, GP emulators, PINN
-├── train/          # training loops (PyTorch/JAX), losses, curricula, distributed harness
-├── uncertainty/    # ensembles, conformal prediction, GP residuals, calibration & metrics
-├── eval/           # validation against ground truth, error budgets, golden/regression tests
+├── model.py        # SurrogateModel Protocol + the Prediction dataclass (the runtime seam)
+├── report.py       # ErrorReport + its sub-models (the calibrated error bound)
+├── manifest.py     # SurrogateAttributes + build_surrogate_manifest() (Core PluginManifest builder)
+├── enums.py        # closed vocabularies (ChannelKind, PhysicsDomain, ServedBackend)
+├── wire.py         # ErrorReport <-> Protobuf canonical wire form
+├── datagen/        # high-fidelity sampling: design experiments, query Sim, label, archive
+├── models/         # surrogate families + their training & uncertainty: GNN particle sim, losses,
+│                   #   curricula, deep ensembles, split-conformal, trust regions
+├── eval/           # validation against ground truth, error budgets, the promotion gate
+├── retrain/        # offline retrain + gated-promotion harness
 ├── drift/          # OOD detection, drift monitors, re-validation & resampling triggers
-├── serve/          # ONNX export, inference runtime, Core-tier adapter for Sim
-├── registry/       # surrogate manifest (extends Core plugin manifest), versioning, provenance
-└── cli/            # `astro-mine-surrogate` train / eval / export / validate / serve
+└── serve/          # ONNX export, inference runtime, Core-tier adapter for Sim, signed Hub publish/load
 ```
 
 ### Key abstractions exposed
 
-- **`SurrogateModel`** — a model implementing the [Core](core.md) physics-step sub-interface for
-  its domain. Its `predict(state, action) -> (next_state, uncertainty)` returns *both* a
-  prediction and a calibrated uncertainty for every output channel, plus an `in_domain` flag.
+- **`SurrogateModel`** — a `@runtime_checkable` Protocol for the physics-step of its domain (a
+  Surrogate-owned contract, since Core has no single-transition `predict` seam). Its
+  `predict(state, action=None) -> Prediction` returns a frozen `Prediction`: per-channel `channels`
+  + calibrated `uncertainty`, an `in_domain` flag and a signed `ood_margin`, plus optional
+  per-particle `fields` / `field_uncertainty` for the learned-DEM extension. `action` is optional —
+  a field-query surrogate has none.
 - **`ErrorReport`** — the machine-readable artifact a surrogate carries: per-channel error
   distribution vs. ground truth (RMSE, calibration/coverage, tail behavior), the validation
   dataset hash, the declared trust region, and a recommended fidelity-substitution policy. This
   is what [Sim](sim.md)'s multi-fidelity scheduler *consumes* to decide whether the surrogate is
   acceptable for a given task tolerance (conventions.md §8).
-- **`SurrogateManifest`** — extends the [Core](core.md) plugin manifest: physics domain, input
-  state space, trust-region bounds, Core interface versions, the `ErrorReport` reference, and
-  provenance/signature.
+- **`SurrogateAttributes` + `build_surrogate_manifest()`** — Core's `PluginManifest` is
+  `extra="forbid"` and cannot be subclassed, so there is **no** `SurrogateManifest` type. Instead
+  `build_surrogate_manifest()` constructs a plain Core `PluginManifest` and folds the surrogate
+  facets — physics domain, input/output channels, trust-region bounds, recommended error budget,
+  served backend, and the `ErrorReport` digest — into its open `attributes` map via a
+  `SurrogateAttributes` model.
 - **`SamplingPolicy`** — declarative spec for how `datagen` queries [Sim](sim.md) (e.g.,
   Latin-hypercube / Sobol over excavation parameters, active-learning acquisition over residual
   uncertainty).
@@ -131,7 +140,7 @@ astro_mine.surrogate
 ### Key abstractions consumed
 
 - [Core](core.md) Environment / physics-step contracts (the interface a surrogate must satisfy),
-  the SADF/state schemas, and the plugin manifest/registry it extends.
+  the SADF/state schemas, and the plugin manifest/registry it publishes into (via `attributes`).
 - [Sim](sim.md)'s high-fidelity runner (as a data source) and its fidelity-tier loading
   mechanism (as the deploy target).
 
@@ -148,8 +157,9 @@ astro_mine.surrogate
 
 ### Interaction patterns
 
-Two loops. **Offline (build):** `datagen` drives [Sim](sim.md) → `train` → `uncertainty` →
-`eval` (validation gate) → `serve.export` (ONNX) → `registry` → published to [Hub](hub.md).
+Two loops. **Offline (build):** `datagen` drives [Sim](sim.md) → `models` (train + calibrated
+uncertainty) → `eval` (validation gate) → `serve.export` (ONNX) → `manifest` → `serve.publish` to
+[Hub](hub.md); `retrain` re-runs the loop on a gated schedule.
 **Inline (use):** [Sim](sim.md) loads the surrogate as a fidelity tier and calls `predict`
 in-process per tick; `drift` monitors live queries for OOD/drift and, on trigger, schedules a
 ground-truth re-validation and resample. Surrogate exposes a gRPC training/serving service
