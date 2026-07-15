@@ -163,8 +163,12 @@ joint asset↔target↔window↔trajectory assignment.
 
 - **RM-P1-MIND-01** — **Three-tier hierarchy over the Core Policy/Planner API** (mission planner →
   per-agent TAMP → local controller) composed from a declarative **stack spec**. *(trace: mind.md §3, §12)*
-- **RM-P1-MIND-02** — **BehaviorTree.CPP execution scaffold** (Groot-compatible XML) with
-  selector/decorator fallbacks. *(trace: mind.md §4, §11)*
+- **RM-P1-MIND-02** — **Groot-compatible behavior-tree execution scaffold** (BehaviorTree.CPP v4 XML
+  dialect) with selector/decorator fallbacks — shipped as a **pure-Python** parse/validate/round-trip
+  layer + reactive tick engine. The native BehaviorTree.CPP/pybind11 engine is deliberately out of
+  scope: no Python binding is distributed, and vendoring a CMake+pybind11 build into a pure-Python
+  wheel would breach the tier-1 local-install rule (conventions.md §7; astro-mine-mind#17).
+  *(trace: mind.md §4, §11)*
 - **RM-P1-MIND-03** — **PDDL/temporal mission backend** (unified-planning) + **OMPL-based TAMP** +
   **classical (MPC/PID) and ONNX controllers**, all pluggable. *(trace: mind.md §4, §11; `LUNAR-FR-005`)*
 - **RM-P1-MIND-04** — **Delegation to Allocate** for assignment (Mind owns decomposition/execution,
