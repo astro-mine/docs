@@ -96,8 +96,8 @@ is no service wrapper — it is a dependency, not a process. Internal modules mi
 ```
 astro_mine.seal
 ├── _signing.py        # generate_keypair / sign_digest / verify_signature / make_verifier ; ECDSA P-256, cosign scheme
-├── _attest.py         # build_slsa_provenance / build_cyclonedx_sbom / attest
-├── _supply_chain.py   # verify-twice: verify(...) ; DEFAULT_REQUIRED = (signature, slsa, sbom)
+├── _attest.py         # build_slsa_provenance / build_cyclonedx_sbom / attest ; AttestationStore + AttestationSet + the OCI referrer constants
+├── _supply_chain.py   # verify-twice: verify(...) + verify_slsa_document / verify_sbom_document ; DEFAULT_REQUIRED = (signature, slsa, sbom)
 └── __init__.py        # facade: re-exports the public surface (and __version__)
 ```
 
@@ -106,8 +106,8 @@ astro_mine.seal
 | Group | Names |
 |---|---|
 | Signing / verification | `generate_keypair`, `sign_digest`, `verify_signature` (fail-closed), `make_verifier` |
-| Attestation | `build_slsa_provenance`, `build_cyclonedx_sbom`, `attest` |
-| Verify-twice orchestration | `verify` (required-evidence policy), `DEFAULT_REQUIRED = (signature, slsa, sbom)` |
+| Attestation | `build_slsa_provenance`, `build_cyclonedx_sbom`, `attest`; the `AttestationStore` / `AttestationSet` interchange (and the OCI referrer media-/artifact-type constants) |
+| Verify-twice orchestration | `verify` (required-evidence policy) + the per-document `verify_slsa_document` / `verify_sbom_document` shape checks, `DEFAULT_REQUIRED = (signature, slsa, sbom)` |
 
 Digests are `sha256:<hex>` strings; keys are PEM; signatures are Core `Signature` envelopes
 (`scheme = SIGSTORE_COSIGN`, ECDSA P-256).
