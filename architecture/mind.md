@@ -115,7 +115,7 @@ astro_mine.mind
 │   └── motion/      #   sampling-based & optimization-based motion planners (OMPL, TrajOpt)
 ├── control/         # Local-controller tier: closed-loop execution backends
 │   └── policy/      #   learned-policy adapter (ONNX Runtime) + classical controllers (MPC/PID)
-├── bt/              # Behavior-tree engine: execution glue across tiers (BehaviorTree.CPP binding)
+├── bt/              # Behavior-tree engine: execution glue across tiers (pure-Python Groot-v4 XML)
 ├── compose/         # The composer: builds/validates a hierarchy graph from a stack spec
 ├── exec/            # The executive: ticking, plan-validity tracking, replan triggers, fallbacks
 ├── belief/          # Belief-state assembly: fuses observations + comms state into tier inputs
@@ -182,13 +182,17 @@ and replan triggers: a phase plan is invalid if it would miss its window. The jo
 ## 4. Application programming & runtime platforms
 
 - **Languages:** **Python 3.12+** for the framework, orchestration, composition, and most planner
-  glue (conventions.md §2). **C++20** for hot inner loops and for embedding **BehaviorTree.CPP**
-  (the BT engine, exposed to Python via pybind11). Motion planning leans on C++ libraries (OMPL,
-  Drake) behind Python bindings. **Rust** is optional and reserved for the deterministic executive
+  glue (conventions.md §2), including the **pure-Python** behavior-tree engine. **C++20** enters only
+  behind Python bindings for the native motion-planning libraries (OMPL, Drake, FCL). **Rust** is
+  optional and reserved for the deterministic executive
   core where it abuts the [Guard](guard.md) boundary, if profiling justifies it.
 - **Planning frameworks:**
-  - *Behavior trees:* **BehaviorTree.CPP** (the charter's named BT library, §7) for the execution
-    layer; Groot-compatible XML for authoring/inspection.
+  - *Behavior trees:* a **pure-Python** execution engine for the **Groot v4 XML dialect**
+    (BehaviorTree.CPP's authoring format, charter §7) — parse / validate / round-trip plus a
+    deterministic reactive tick engine. The native **BehaviorTree.CPP**/pybind11 runtime is
+    deliberately **not** vendored: no Python binding is distributed, and a CMake+pybind11 build would
+    breach the tier-1 local-install rule (conventions.md §7) for no gain over the XML dialect the
+    engine already round-trips (astro-mine-mind#17).
   - *Symbolic / temporal planning:* PDDL2.1+ via the **unified-planning** library (a backend-
     agnostic façade over **Fast Downward**, **OPTIC**, **ENHSP**, etc.); HTN via **pyhop/SHOP**-
     style backends. These satisfy the "temporal/PDDL planners" requirement (charter §7).
@@ -205,8 +209,9 @@ and replan triggers: a phase plan is invalid if it would miss its window. The jo
   queues, and back-pressure (conventions.md §8). Library-first; the same code runs as a long-lived
   gRPC service in [Ops](ops.md) (one Mind instance per agent or per agent-group, plus a mission-
   tier coordinator).
-- **Build/packaging:** Python wheel `astro-mine-mind`; native deps (BehaviorTree.CPP, OMPL, FCL)
-  shipped as manylinux wheels / vendored in the OCI image; SemVer; OCI image for the ops service
+- **Build/packaging:** Python wheel `astro-mine-mind` (the behavior-tree engine is pure Python, no
+  native build); the optional native planner deps (OMPL, FCL) ship as manylinux wheels / vendored in
+  the OCI image behind extras; SemVer; OCI image for the ops service
   (conventions.md §7). Declares the [Core](core.md) Policy/Planner interface major versions it
   supports (conventions.md §13).
 
@@ -405,7 +410,7 @@ multi-agent benchmarks whose results are reproducible (conventions.md §8).
 | Decision | Options | Recommendation |
 |---|---|---|
 | **Coordination paradigm** | Centralized (one global planner); fully decentralized/distributed; hierarchical-hybrid | **Hierarchical-hybrid.** Centralized mission tier for global coherence + decentralized neighbor coordination at the agent tier for comms-robustness. Pure-central collapses under comms loss; pure-decentral can't reason globally about coupled ISRU goals. Hybrid degrades gracefully (charter §8/§9). |
-| **Plan representation / execution** | Behavior trees; hierarchical state machines (HSM); HTN | **Behavior trees (BehaviorTree.CPP)** as the execution scaffold (charter §7) for reactive fallbacks and composability; **HTN available as a pluggable mission/TAMP backend** where hierarchical decomposition fits better than reactive BTs. HSMs are a weaker default (state explosion). |
+| **Plan representation / execution** | Behavior trees; hierarchical state machines (HSM); HTN | **Behavior trees** as the execution scaffold (charter §7) for reactive fallbacks and composability — a **pure-Python engine for the Groot v4 XML dialect** (BehaviorTree.CPP's authoring format), the native BehaviorTree.CPP/pybind11 runtime re-scoped out to hold the tier-1 local-install rule (conventions.md §7; astro-mine-mind#17); **HTN available as a pluggable mission/TAMP backend** where hierarchical decomposition fits better than reactive BTs. HSMs are a weaker default (state explosion). |
 | **Mission-planner backend** | PDDL/temporal; HTN; learned policy; scripted | **Pluggable, PDDL/temporal default** via unified-planning; HTN and learned backends as drop-in alternatives. The framework commits to *none* — it commits to the interface. |
 | **TAMP backend** | Classical PDDL+motion (PDDLStream-style); sampling-based motion only; learned end-to-end; hybrid | **Hybrid:** symbolic task planning over **OMPL** sampling-based motion, with learned samplers/heuristics from [Learn](learn.md) slotted in. Pure-learned lacks guarantees; pure-classical is too slow at swarm scale. |
 | **Controller backend** | Classical (MPC/PID); learned (ONNX); hybrid | **Pluggable per asset class:** classical MPC/PID baselines that always work + learned ONNX controllers where they win — all behind one Core Controller contract, all Guard-wrapped. |
@@ -437,8 +442,9 @@ multi-agent benchmarks whose results are reproducible (conventions.md §8).
 - **Phase 1 (this component, charter §11):** ship Mind alongside [Learn](learn.md),
   [Allocate](allocate.md), [Guard](guard.md), [Studio](studio.md), and [Hub](hub.md) to "become
   the MARL and planning commons for planetary swarms."
-- **MVP:** the three-tier hierarchy over the [Core](core.md) Policy/Planner API; **BehaviorTree.CPP**
-  execution; a **PDDL/temporal mission backend**; an **OMPL-based TAMP**; **classical + ONNX
+- **MVP:** the three-tier hierarchy over the [Core](core.md) Policy/Planner API; a **pure-Python
+  Groot-v4 behavior-tree execution** scaffold (BehaviorTree.CPP re-scoped out, astro-mine-mind#17); a
+  **PDDL/temporal mission backend** (unified-planning → Fast Downward); an **OMPL/FCL-based TAMP**; **classical + ONNX
   controllers**; mandatory [Guard](guard.md) wrapping; delegation to [Allocate](allocate.md);
   running against [Sim](sim.md) on the lunar-polar-prospecting reference scenario, scored on
   [Bench](bench.md), with the degrade-not-collapse fallback path validated under injected comms

@@ -73,8 +73,9 @@ or epochs passes the shared `units` conformance vectors. **Deferred → P3:** al
 
 **Scope & deliverables**
 
-- **RM-P1-SURR-01** — **`SurrogateModel` + `ErrorReport` + `SurrogateManifest`** behind the Core
-  physics-step contract; `predict → (next_state, uncertainty, in_domain)`. *(trace: surrogate.md §3)*
+- **RM-P1-SURR-01** — **`SurrogateModel` Protocol + `ErrorReport` + `build_surrogate_manifest()`**
+  behind the Core physics-step contract; `predict(state, action=None) → Prediction` (channels +
+  calibrated uncertainty + `in_domain`/`ood_margin`). *(trace: surrogate.md §3)*
 - **RM-P1-SURR-02** — **Granular/excavation GNN particle simulator** with **deep-ensemble + conformal**
   calibrated error bounds and enforced trust regions. *(trace: surrogate.md §11, §12; charter §8, §9; `LUNAR-TR-002`)*
 - **RM-P1-SURR-03** — **`datagen` from high-fidelity Sim** (Sobol/LHS + active learning) and the
@@ -139,6 +140,12 @@ heuristics for Allocate, sim-to-real-aware training validated on analogs.
   **IIS** on infeasibility ("which window/power floor bound the result"). *(trace: allocate.md §10; `LUNAR-UX-004`)*
 - **RM-P1-ALLOC-07** — **Determinism** (recorded seeds + pinned solver) so a Bench score reproduces.
   *(trace: allocate.md §8; conventions §11)*
+- **RM-P1-ALLOC-08** — **Canonical Core `Epoch`/`ReferenceFrame`/`Volume` on Allocate's contract
+  surfaces**: `CommsPolicy.epoch0_tdb_s` becomes a required `epoch0: Epoch` (no silent J2000 anchor),
+  `ConstraintConfig.comms` becomes optional (`None` ⇒ no relay gating), and the exported
+  `allocation_request.schema.json` `$ref`s Core's `Volume`/`ReferenceFrame` instead of inlining a
+  private copy — removing two re-derivations of Core message types. The IR proto and CP-SAT goldens
+  are unchanged. *(trace: allocate.md §5; RFC-0007; conventions.md §1, §5)*
 
 **Dependencies:** Core (`RM-P1-CORE-01`), Link (full), Worlds, Fleet, Prospect. **Exit criteria:**
 tens-of-robots / hundreds-of-tasks solved to a few-% gap within a deadline on the anchor scenario,
@@ -157,8 +164,12 @@ joint asset↔target↔window↔trajectory assignment.
 
 - **RM-P1-MIND-01** — **Three-tier hierarchy over the Core Policy/Planner API** (mission planner →
   per-agent TAMP → local controller) composed from a declarative **stack spec**. *(trace: mind.md §3, §12)*
-- **RM-P1-MIND-02** — **BehaviorTree.CPP execution scaffold** (Groot-compatible XML) with
-  selector/decorator fallbacks. *(trace: mind.md §4, §11)*
+- **RM-P1-MIND-02** — **Groot-compatible behavior-tree execution scaffold** (BehaviorTree.CPP v4 XML
+  dialect) with selector/decorator fallbacks — shipped as a **pure-Python** parse/validate/round-trip
+  layer + reactive tick engine. The native BehaviorTree.CPP/pybind11 engine is deliberately out of
+  scope: no Python binding is distributed, and vendoring a CMake+pybind11 build into a pure-Python
+  wheel would breach the tier-1 local-install rule (conventions.md §7; astro-mine-mind#17).
+  *(trace: mind.md §4, §11)*
 - **RM-P1-MIND-03** — **PDDL/temporal mission backend** (unified-planning) + **OMPL-based TAMP** +
   **classical (MPC/PID) and ONNX controllers**, all pluggable. *(trace: mind.md §4, §11; `LUNAR-FR-005`)*
 - **RM-P1-MIND-04** — **Delegation to Allocate** for assignment (Mind owns decomposition/execution,
@@ -199,6 +210,12 @@ Ops, the ground/edge split. **Deferred → P3:** window-gated cross-phase compos
 - **RM-P1-GUARD-06** — **`SafetyVerdict` stream (MCAP)** with spec-clause/cert provenance, for
   Bench scoring ("violations per scenario", "performance cost of shielding") and View overlays.
   *(trace: guard.md §5, §6)*
+- **RM-P1-GUARD-07** — **Typed `SafetySpec` frames**: replace the free-form `frame: str` in all four
+  Guard contract formats (Python / proto / JSON-Schema / Rust) with a typed Core `ReferenceFrame`
+  sibling `frame_ref`, and add a fail-closed `require_frame` guard inside the Rust TCB that validates
+  frame name / `frame_class` / center tokens against Core's shared conformance vectors — so a keep-out
+  volume in an unknown frame is rejected at compile time before it reaches the trusted core. The TCB
+  dependency surface is not grown. *(trace: guard.md §3; RFC-0007; conventions.md §5; `LUNAR-TR-001`)*
 
 **Dependencies:** Core (`RM-P1-CORE-01`), Worlds (keep-out/slope), Fleet (limits), Sim (dynamics).
 **Exit criteria:** a Learn policy runs **shielded** in Sim on the anchor scenario; zero hard-constraint
@@ -231,6 +248,17 @@ one-shot assurance.
   inspection and sharing. *(trace: studio.md §6, §12)*
 - **RM-P1-STUDIO-07** — **Reproducibility-by-construction** (every candidate records inputs/seeds/
   versions; a re-run reproduces the Pareto front). *(trace: studio.md §5, §10)*
+- **RM-P1-STUDIO-08** — **Validate the content-addressed `PlanetaryCRS`**: pin the CRS dict Studio
+  content-addresses (`GeoRegion.crs` on an `IntentDraft`, carried into a `Campaign`) to Core's
+  canonical `units.schema.json` `PlanetaryCRS` at the point it enters the hashed artifact — resolving
+  the cross-file `$ref` offline via Core's `schema_registry`, recording the units-schema digest as
+  sidecar provenance (never inside the hashed payload). *(trace: studio.md §5; RFC-0007; RFC-0009;
+  conventions.md §5)*
+- **RM-P1-STUDIO-09** — **Selectable robot menu + asset geometry preview**: project the Hub catalog
+  into `MenuEntry` rows (kind + display name from the Core manifest, capability-filtered) and a
+  Hub-asset preview materializer (resolve → verify-before-trust pull → content-addressed cache) that
+  feeds the embedded [View](../architecture/view.md) `AssetPreview` widget — a pure Core/Hub consumer,
+  no `astro_mine.fleet` import. *(trace: studio.md §3, §6; pairs with `RM-P1-VIEW-03`)*
 
 **Dependencies:** the full autonomy stack + Bench + Hub + Cloud. **Exit criteria:** goal-in →
 scored-design-out end-to-end on the anchor scenario, producing a `Campaign` (M1.1). **Deferred → P2:**
@@ -317,6 +345,13 @@ org policy is decided with Hub.
 - **RM-P1-CLOUD-05** — **MLflow + content-addressed artifact I/O** (`RunContext` provenance);
   **namespace-per-tenant isolation** (RBAC/OPA, NetworkPolicies); admission of cosign-verified images
   only. *(trace: cloud.md §5, §9)*
+- **RM-P1-CLOUD-06** — **NATS+JetStream eventing substrate + Redis job-status store**: a durable,
+  replayable JetStream stream with a durable pull consumer (at-least-once, explicit-ack,
+  replay-from-cursor, resume-across-restart) behind the `EventPublisher` seam, plus a Redis-backed
+  **ephemeral** job-status read model, with `emit_completion` wired into the run lifecycle
+  (`submitted`/`started`/`completed`/`failed`). The local/dev tier stays broker-free (`NullPublisher`
+  + in-memory status defaults), so a laptop `submit()` needs no NATS or Redis. *(trace: cloud.md §4,
+  §5, §6; conventions.md §4, §5, §7)*
 
 **Dependencies:** Core (interface-version declaration), Sim/Learn/Allocate/Bench images. **Exit
 criteria:** the design/training loop runs "at scale on Cloud" — Studio heavy jobs + first public Bench
@@ -341,6 +376,11 @@ workload classes (no new primitive).
   *(trace: link.md §6, §11)*
 - **RM-P1-LINK-13** — **Earth-link windows delivered to Ops (forward-looking)** + ground-station
   catalog beyond DSN (ESTRACK/custom). *(trace: link.md §6, §12)*
+- **RM-P1-LINK-14** — **Core time vocabulary on Link's contract surfaces**: the CGR contact graph, the
+  store-and-forward `DeliveryModel`, the Earth-link Ops products, and the latency/bandwidth
+  time-series carry typed `Epoch`/`EpochWindow` and record a `TimeScale` instead of scale-by-naming
+  `*_tdb_s` floats; raw float columns stay only inside the numeric kernels. A representation change,
+  not a numerics change (the oracle path is untouched). *(trace: link.md §5; RFC-0007; conventions.md §5)*
 
 **Dependencies:** Link MVP (P0), Fleet relay assets. **Exit criteria:** a multi-relay constellation's
 time-varying coverage of the PSR work is modeled, masks/windows drive Allocate/Mind, and a Studio
@@ -370,6 +410,12 @@ live-mission link prediction (capability-gated). **Deferred → P3:** deep-space
 - **RM-P1-SIM-05** — **Richer sensor models**: extend the `RM-P0-SIM-06` sensor suite with additional
   / higher-fidelity models, still rendering observations *of* Prospect fields (never a point guess).
   *(trace: sim.md §3; prospect.md §6)*
+- **RM-P1-SIM-06** — **DEM granular-excavation high-fidelity engine**: a soft-sphere discrete-element
+  granular-contact engine as a `RegimeEngine` plugin behind the reduced-order `GranularEngine` seam
+  (a blade sweeps a settled particle bed → tool-reaction/draft force, excavated mass, per-particle
+  kinematics) — the high-fidelity ground-truth oracle the [Surrogate](../architecture/surrogate.md)
+  tier trains and validates against and escalates back to on drift. *(trace: sim.md §3, §8, §11;
+  surrogate.md §3; `LUNAR-TR-002`)*
 
 **Dependencies:** `RM-P0-SIM-11`, Hub (publish/discover), the Hub-published Worlds/Fleet/Prospect
 bundles (`RM-P0-WORLDS-07` / `RM-P0-FLEET-06` / `RM-P0-PROSPECT-04`); `RM-P1-SIM-02` additionally a
@@ -401,6 +447,19 @@ its error budget. **Deferred → P3:** microgravity/small-body regimes; multi-sp
   LEND epithermal-neutron (WEH), and M³ OH/H₂O rasters as world layers on the Shackleton–de Gerlache
   CRS/grid, so [Prospect](../architecture/prospect.md) can condition real priors on them (unblocks
   `RM-P1-PROSPECT-12`). *(trace: worlds.md §6, §12; prospect.md §6; `LUNAR-DR-001`)*
+- **RM-P1-WORLDS-15** — **Hub-publish the world bundle + Core `world_provider` manifest**: emit the
+  built bundle as a signed, content-addressed `world` OCI artifact (each product carries its own
+  `manifest.json` so a pulled bundle is self-describing and re-openable offline), fold the
+  SPICE-derived PSR mask into `world_hash`, and add the `worlds` publish/keygen CLI + a repeatable
+  Shackleton anchor build recipe. *(trace: worlds.md §5; hub.md §3)*
+- **RM-P1-WORLDS-16** — **Publish the tileset-to-body transform**: the 3D-Tiles `root.transform` + a
+  `tiles_anchor` on `world.json`, so [View](../architecture/view.md) reads where a tileset's local
+  frame sits on the body instead of applying its own `modelMatrix` (no double-transform).
+  *(trace: worlds.md §5; view.md §3)*
+- **RM-P1-WORLDS-17** — **Pin `world.json` `crs` / `tiles_anchor.frame` to Core's units schema**:
+  emit-time validation of the serialized CRS/frame objects against Core's canonical
+  `units.schema.json`, typing the anchor frame as a Core `ReferenceFrame` and adopting `require_crs`
+  at the authoring boundary. *(trace: worlds.md §5; refines `RM-P1-CORE-08`; RFC-0007)*
 
 **Prospect**
 
@@ -412,13 +471,25 @@ its error budget. **Deferred → P3:** microgravity/small-body regimes; multi-sp
   with a real public-dataset (LOLA / Diviner / LEND / M³) raster-ingest recipe, reprojected onto the
   Worlds Shackleton CRS/grid with per-product content-addressed provenance and Hub-published; the
   parametric prior stays the offline default. *(trace: prospect.md §2.4, §3, §4, §6, §12; defers from `RM-P0-PROSPECT-03`)*
+- **RM-P1-PROSPECT-13** — **Hub-publish the parametric belief prior + import-light `from_bundle`
+  loader**: serialize the P0 parametric prior (`shackleton_water_ice_v1`) into a content-addressed
+  bundle, emit a Core `resource_field_backend` manifest, and publish it signed; a consumer rebuilds a
+  live `ResourceField` via `from_bundle` using only NumPy + Core, never importing `astro_mine.prospect`.
+  Publishes the **public belief prior only** — the sealed `GroundTruthField` is never serialized
+  (`RM-P0-PROSPECT-05` invariant). *(trace: prospect.md §3, §4, §6; hub.md §3, §9)*
+- **RM-P1-PROSPECT-14** — **`PlanetaryCRS`/`ReferenceFrame` on the wire + schema-guarded ingest CRS**:
+  add typed `ReferenceFrame`/`PlanetaryCRS` to `field_service.proto` (importing Core's `units.proto`)
+  so a gRPC-served `ResourceField` carries its georeference, and replace the hand-rolled ingest
+  CRS-presence check with Core's `require_crs` guard. *(trace: prospect.md §6; RFC-0007; refines
+  `RM-P1-CORE-08`)*
 
 **Dependencies:** P0 Worlds/Prospect, Surrogate, Cloud; `RM-P1-PROSPECT-12` on `RM-P1-WORLDS-14`
 (conditioning layers) + Hub. **Exit criteria:** a second body (Mars) and a second field backend ship
 as plugins with no Core change; the EVPI objective is consumable by Allocate; the real-ingest prior
 reproduces from cited public inputs and is Hub-published while the offline parametric default still
 runs with no network. **Deferred → P2:** operational belief from real *mission* sensors (Ops/Bridge).
-**Deferred → P3:** small/irregular-body Worlds; asteroid volatile fields (Prospect reuse).
+**Deferred → P3:** small/irregular-body Worlds; asteroid volatile fields + **multi-species /
+depth-resolved Prospect fields** (contract-widening, RFC-gated) — both as `RM-P3-PROSPECT-30`.
 
 ---
 
@@ -432,6 +503,11 @@ runs with no network. **Deferred → P2:** operational belief from real *mission
 - **RM-P1-BENCH-12** — **Pluggable community metrics** (Core-registry plugins via Hub) + richer
   scenario zoo + **[View](../architecture/view.md) leaderboard/replay UI** + **Studio scoring
   integration**. *(trace: bench.md §3, §12; `LUNAR-UX-005,006`)*
+- **RM-P1-BENCH-13** — **Anchor pins → real Hub digests**: replace the anchor scenario's *provisional*
+  content pins with the real Hub artifact digests the producers publish (world / fleet / prospect),
+  which Sim's `ContentResolver` resolves into a runnable `Scenario` — the capstone of the
+  content-pinning chain. *(trace: bench.md §5, §6.)* *(Numbering note: this shipped ahead of
+  `RM-P1-BENCH-10..12`; append-only IDs record registration order, not delivery order.)*
 
 **Dependencies:** Hub, Cloud, View (thin slice), Studio. **Exit criteria:** an external lab beats a
 baseline on the public leaderboard, reproducibly (M1.2). **Deferred → P2:** analog/digital-twin
@@ -450,6 +526,42 @@ scenarios + metrics.
 **Dependencies:** `RM-P1-FLEET-10` on Hub; `RM-P1-FLEET-11` on Studio + Mind/Allocate. **Exit
 criteria:** new vehicle types arrive as Hub packages and appear in Studio's menu with no Fleet code change. **Deferred → P2:** Bridge hardware
 mapping. **Deferred → P3:** launch/return vehicle kinds + propulsion content.
+
+---
+
+## View — thin-slice reuse (View formally ships in Phase 2)
+
+> Architecture: [view.md](../architecture/view.md). The roadmap-sanctioned **Phase-0/1 thin-slice
+> reuse** ([resolved sequencing #4](README.md#resolved-sequencing-decisions); view.md §12): a
+> **front-end-only, embeddable component library** — no gateway, no live-ops plane — whose purpose is
+> to unblock [Studio](../architecture/studio.md) candidate inspection and [Bench](../architecture/bench.md)
+> replay. The full operations viewer (live Ops telemetry, OpenMCT dashboards, plan-explanation, the
+> View Gateway) remains View's Phase-2 MVP (`RM-P2-VIEW-01..06`).
+
+**Scope & deliverables**
+
+- **RM-P1-VIEW-01** — **Repo scaffold**: the `@astro-mine/view` embeddable TS+React component-library
+  workspace (Vite / pnpm / Vitest / Playwright) + CI + a reference widget proving library consumption
+  without a renderer. *(trace: view.md §3, §12)*
+- **RM-P1-VIEW-02** — **Embeddable Cesium globe** (`GlobeScene`) over Worlds 3D-Tiles terrain, with
+  `frames/` CRS/SPICE-time helpers — never assuming WGS84. *(trace: view.md §3, §5)*
+- **RM-P1-VIEW-03** — **Asset & candidate-swarm geometry**: an `AssetModel` / `SwarmLayer` entity
+  layer placing Fleet glTF geometry at supplied poses — the widget Studio's `AssetPreview` mounts
+  (`RM-P1-STUDIO-09`). *(trace: view.md §3, §6)*
+- **RM-P1-VIEW-04** — **MCAP replay + shared timeline**: read a pinned Sim MCAP episode in the browser
+  (opened **by content hash**, verified fail-closed before decode) driven by a shared scrub `Clock`.
+  *(trace: view.md §3, §5, §6; conventions.md §4)*
+- **RM-P1-VIEW-05** — **Package publish**: `@astro-mine/view` to the org's **private GitHub Packages**
+  registry (never npmjs.com) + the Cesium asset-staging bin, tag-driven release. *(trace: view.md §3, §7, §12)*
+- **RM-P1-VIEW-06** — **Retire the `frames/` mirror**: alias Core's **generated** `TimeScale`/
+  `FrameClass` types from `units.schema.json` (`satisfies`-tied, so a schema change breaks the build)
+  + run Core's units conformance vectors. *(trace: view.md §5, §3; refines `RM-P1-CORE-08`; RFC-0007)*
+
+**Dependencies:** Worlds (tiles + `tiles_anchor`, `RM-P1-WORLDS-16`), Fleet (glTF geometry), Sim
+(MCAP), Core (generated units types, `RM-P1-CORE-08`). **Exit criteria:** Studio embeds the globe +
+asset preview and a Bench recording replays by digest, all from the published library. **Deferred → P2:**
+the full ops viewer — live telemetry, OpenMCT dashboards, plan-&-assignment explanation, and the View
+Gateway (`RM-P2-VIEW-01..06`).
 
 ---
 
