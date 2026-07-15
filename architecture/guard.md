@@ -182,9 +182,12 @@ run their own assurance posture.
     crate implementing robust-semantics STL/MTL (drawing on the RTAMT / MoonLight / Reelay lineage);
     online, incremental, bounded-memory evaluation.
   - *CBF shielding:* a quadratic-program (QP) safety filter — minimally perturb the proposed action
-    subject to control-barrier-function constraints. Solver: **OSQP** (or Clarabel, Rust-native) for
-    a small, fast, deterministic QP per tick. Aligns with [Allocate](allocate.md)'s optimization stack
-    conceptually but is a separate, tiny, deterministic solve.
+    subject to control-barrier-function constraints. The shipped TCB solves it with a **bespoke,
+    allocation-free Dykstra alternating projection** (Guard ADR-0001), not by linking OSQP/Clarabel:
+    the program is tiny and fixed-shape and the shield hard-certifies its own output, so a
+    dependency-free kernel keeps the TCB small and Kani-verifiable, with **Clarabel** kept as a
+    dev-only cross-check oracle. A separate, tiny, deterministic solve, distinct from
+    [Allocate](allocate.md)'s optimization stack.
   - *Reachability filters:* Hamilton-Jacobi reachability safe sets precomputed offline (toolboxes such
     as `hj_reachability` / Level-Set / BEACLS) and looked up online; the online path is a fast,
     bounded value/gradient query, **not** an online PDE solve.
@@ -301,9 +304,10 @@ Guard integrates **entirely through [Core](core.md)** contracts — it adds no p
 - **Bottlenecks.** (1) The per-tick QP / reachability query; (2) multi-agent coupling, where the safe
   set depends on neighbor state; (3) staleness of neighbor information under comms delay.
 - **Mitigations.**
-  - *QP/query speed:* small, warm-started, deterministic solves (OSQP/Clarabel); HJ reachability is a
-    table/value lookup at runtime, with the expensive PDE solve done **offline**; pre-allocated
-    buffers and no hot-path allocation in the Rust core.
+  - *QP/query speed:* a small, deterministic, allocation-free projection solve (bespoke Dykstra
+    alternating projection, Guard ADR-0001; Clarabel kept as a dev-only cross-check oracle); HJ
+    reachability is a table/value lookup at runtime, with the expensive PDE solve done **offline**;
+    pre-allocated buffers and no hot-path allocation in the Rust core.
   - *Multi-agent coupling:* **responsibility partitioning** — decompose pairwise safety so each agent
     is responsible for its own half of a separation constraint, turning a joint problem into
     per-agent local solves (decentralized CBFs / reciprocal collision avoidance).
@@ -440,7 +444,7 @@ monitor or an infeasible/uncertifiable filter forces the backup.
 | Implementation language / assurance level | Pure Python; pure Rust; Rust core + Python orchestration | **Rust verified core + Python orchestration** (conventions.md §2): tiny deterministic TCB for the guarantee, ergonomic Python wrapper for integration. |
 | Constraint specification | Constraints in code; declarative safety-spec DSL/schema | **Declarative `SafetySpec`** (JSON Schema + Pydantic + Protobuf wire, conventions.md §3) compiled to monitors/shields — review the property once, enforce it everywhere; code is too easy to get subtly wrong for a safety contract. |
 | Multi-agent latency handling | Assume fresh state; worst-case staleness margins + responsibility partitioning; central arbitration | **Worst-case staleness margins + decentralized responsibility partitioning** — guarantees hold against the delayed-information adversary and degrade gracefully (charter §9). |
-| QP / reachability runtime | Online PDE/optimization; offline precompute + online lookup/solve | **Offline precompute (HJ value functions) + small online QP** (OSQP/Clarabel) — keeps the safety path within the tick budget. |
+| QP / reachability runtime | Online PDE/optimization; offline precompute + online lookup/solve | **Offline precompute (HJ value functions) + a small online projection.** The CBF-QP is solved in the TCB by a bespoke allocation-free Dykstra alternating projection (Guard ADR-0001) rather than by linking OSQP/Clarabel: the program is tiny and fixed-shape, the shield hard-certifies its own output (so solver error can only cause a *fallback*, never an unsafe action), and keeping the kernel dependency-free is what preserves the small, allocation-free, **Kani-verifiable** TCB §9.1/§9.3 call for. **Clarabel** remains the reference optimizer the in-TCB solver is cross-validated against in CI. |
 | Hot-path message encoding | Protobuf; FlatBuffers/Cap'n Proto | **FlatBuffers/Cap'n Proto** for per-tick state/action/verdict (conventions.md §3); Protobuf for everything else. |
 | STL/MTL monitor engine | RTAMT; MoonLight; Reelay; custom Rust | **Rust monitor in the TCB** (RTAMT/MoonLight/Reelay-inspired), online robust semantics, bounded memory. |
 
