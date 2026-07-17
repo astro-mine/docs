@@ -14,6 +14,7 @@ exploration and in-situ resource utilization (ISRU).
 - **[Charter](charter/Swarm_Exploration_ISRU_Orchestrator_OSS_Project.md)** — product envisioning & vision (source of truth).
 - **[RFCs](rfc/)** — accepted and proposed design changes.
 - **[Versioning & releases](VERSIONING.md)** — per-package SemVer, Git-tag versions, and the private-incubation distribution policy (no public PyPI yet).
+- **[TPM](tpm/README.md)** — technical program-management working documents (planning & analysis, point-in-time).
 
 ## See also
 
