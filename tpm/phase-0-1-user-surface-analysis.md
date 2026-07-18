@@ -105,6 +105,52 @@ first draft hedged that "a longer episode or a real Mind-composed policy may sco
 `"prospect"` is not in that set, so **`water_mass` is structurally pinned at 0.0** — no horizon,
 seed, or episode length changes it. G1.3 is therefore a **decision**, not an investigation.
 
+### G1.3 resolved (2026-07-18) — and this diagnosis was wrong
+
+Recorded here because the reasoning above was confidently stated and is not what was happening.
+Shipped in astro-mine-sim#61 / astro-mine-bench#65.
+
+**The mode gate is real. The conclusion drawn from it was not.** `water_mass` never read the ISRU
+tank at all, so it could not have been "pinned at 0.0" by the mode gate. Two stacked defects:
+
+1. **The gauge was bypassed.** `render_sensor` dispatched on `sensor.resource` *before* `sensor.kind`,
+   and a `resource_storage` gauge declares a `ResourceTarget` to say *what the tank holds*. So the
+   plant's tank rendered a noisy draw of the **Prospect ice field**, tagged `unit="kg"` /
+   `species="water"` — exactly the pair Bench's `water_mass` filters on. Measured: `0.0848`, the ice
+   mass fraction under the plant, reported as kilograms of stored water. The metric moved with the
+   terrain, not with anything the swarm did.
+2. **The channel index was wrong.** The gauge emits `[stored_water_kg, extraction_energy_j]`;
+   `_total_stored_water` read `values[-1]` — joules, labelled kg.
+
+The test that should have caught this (`test_the_scored_trace_carries_real_isru_telemetry`) was green
+and asserted "water really accumulated": it was comparing two field samples that had drifted apart
+under the kinematic engine's ±0.01 m jitter.
+
+**"Six of seven metrics `None`" was also mis-attributed.** That measurement was taken in an
+environment with no producer packages installed, so `astro_mine.providers` registered **no factories**
+and the world / ice field / contact plan silently failed to reconstruct — content resolves by digest,
+providers do not. With them installed the same run scores `nights_survived`, `comms_robustness`
+(0.205) and `discovery_latency`. The silent degradation is now astro-mine-sim#67.
+
+**The answer to the open question was neither option offered.** A Mind-composed stack emits
+`ActionKind.ACTUATOR` / `VELOCITY` exclusively — its `TASK` actions are internal tier plumbing,
+replaced by the control tier before egress — so it sets no mode and would have scored zero water too.
+What shipped is a **capability-aware mode policy**: one mode per agent derived from that asset's own
+SADF capability tags and declared `loads_by_mode`, reaching Bench through a new optional
+`DefaultPolicyProvider` seam.
+
+**`water_mass` scores `0.0` — deliberately, and now measurably.** `IsruModel` is uncoupled from
+excavation (no dig target, no delivered feedstock, no proximity check), so commanding the plant into
+`extract` would manufacture water that no digging and no haulage earned. Zero is the true stored mass
+of a swarm that has delivered nothing. Coupling extraction to delivered material is
+astro-mine-sim#64.
+
+**Lesson for this report's method.** §10 records that findings were "executed rather than inferred",
+and the G1.3 root cause was presented as verified in source. It was read in source and not executed —
+running it would have shown `0.0848`, not `0.0`, and the whole diagnosis would have gone differently.
+Reading a gate and concluding what a metric reports skips the step where the metric is actually
+computed.
+
 ---
 
 ## 3. Personas
@@ -399,7 +445,7 @@ Severity: **G1** = blocks a phase objective · **G2** = major friction/credibili
 |---|---|---|---|
 | **G1.1** | **`bench score` scores a fixture, and says so only in the last line of output.** No `--runner` flag. | `cli.py:66` hardcodes `run(spec, BaselinePolicy(), seeds=seeds)`; `sim/bench/__init__.py` documents the missing flag | Phase-0 promise is **nominally** met, substantively not. A researcher reasonably believes they ran a simulation |
 | **G1.2** | **Anchor content is never published.** 9 pins resolve only from a hand-built local registry. | No published registry; no `ghcr.io`/`oci://` reference in any README or zoo file; the workspace registry is a local convention | **Nobody outside this workspace can run the anchor for real.** Root blocker for J1, J2, J6 |
-| **G1.3** | **The real Sim path yields an empty scorecard** — and it is structural, not incidental. | `BaselinePolicy` emits only `MODE("prospect")`; Sim's `DEFAULT_EXTRACTION_MODES` excludes it ⇒ `water_mass` pinned at 0.0 at any horizon | Even past G1.2, no artifact proves the loop produces meaning. **A decision, not an investigation** |
+| **G1.3** | **The real Sim path yields an empty scorecard.** ~~Structural, not incidental.~~ **Resolved 2026-07-18 — the stated cause was wrong** (§2). `water_mass` never read the ISRU tank: a dispatch bug routed the storage gauge to the ice-field sampler, so it scored a mass *fraction* as kilograms. | Measured `0.0848` (the ice under the plant), not `0.0`. Six `None`s were a missing-provider-package artifact | Fixed in astro-mine-sim#61 / astro-mine-bench#65; baseline is a capability-aware mode policy |
 | **G1.8** | **A fixture scorecard and a Sim scorecard are indistinguishable by provenance.** `Scorecard` carries only `scenario_id` + `metrics`; `content_hash` digests exactly those. No `runner` field exists. | `metrics/_score.py:86-88`; verified — my two scorecards differ only because the *values* differ | **The integrity hole under G1.1.** Two runs claiming the same score cannot be told apart by what produced them. `--json` omits the fixture disclaimer entirely, so **the machine-readable path that feeds leaderboards and papers is the least honest one.** Fixing it re-hashes every existing scorecard (version bump) |
 | **G1.4** | **`astro-mine-train` discards the PolicyExport.** | `run.py`: `report, _export = train(...)`; `export_policy_package` never imported in `train/` | **The Phase-1 flywheel's unit of exchange cannot be produced from the CLI** |
 | **G1.5** | **No GUI front door.** Studio unreachable via 5 gates; private npm hard-blocks outsiders. | `.npmrc` requires `read:packages`; `app.py` mounts no `ui/dist`; `main.tsx` reads `?study=` | **P5 and P6 cannot use the platform at all** |
@@ -792,8 +838,9 @@ Ordered by *unblocking power per unit effort*.
 **Open questions for the team:**
 - **G2.15** — Should Prospect gain a file-authored prior format, or is "priors are Python" the
   intended design? This decides whether P3 is a CLI persona or a Python persona.
-- **G1.3** — Is `BaselinePolicy` meant to be Sim-runnable at all, or is a Mind-composed stack the
-  only honest anchor baseline? Determines Wave 1 item 3's shape.
+- ~~**G1.3** — Is `BaselinePolicy` meant to be Sim-runnable at all, or is a Mind-composed stack the
+  only honest anchor baseline? Determines Wave 1 item 3's shape.~~ **Closed 2026-07-18 — neither,
+  and the diagnosis in this report was wrong. See "G1.3 resolved" below.**
 - **Distribution** — does `@astro-mine/view` go public at the flip, or does Studio vendor it?
   Blocks P5/P6 either way, and now blocks the console too.
 - **Umbrella CLI** — one package (`astro-mine`) depending on all, or a thin dispatcher that shells
