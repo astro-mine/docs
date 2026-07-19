@@ -75,13 +75,20 @@ leaderboards + Hub are the growth engine), and §10.5 (interop-first; honest abo
 3. **Verify before you trust — twice.** Signature, provenance, and SBOM are checked at
    **publish** (admission) *and* at **pull** (the client re-verifies). A compromised registry
    must not be able to serve an artifact a client accepts. Unsigned content is never promoted to
-   a verified namespace.
+   a verified namespace — indeed it is never **admitted**: §9's tiers describe *open* as
+   self-published and *signed*, so there is no tier for unsigned content and admission refuses
+   it outright. Admission is **one gate** shared by the client library, the publish endpoint, and
+   curation: three routes to the index is how a check ends up present on one path and missing
+   from another, and a partially-admitted artifact — bytes stored, evidence absent, entry
+   queryable — is the state the gate exists to prevent, so a failed check indexes nothing.
 4. **Discovery is capability negotiation, not string matching.** Consumers ask "what satisfies
    *this* contract" (Core interface versions + capability tags + SADF/world constraints), and
    Hub answers from manifests — mirroring how Core itself negotiates at load time.
 5. **Open to read, governed to write.** Anonymous discovery and pull of public, non-gated
    artifacts is frictionless; *publishing*, *verified-publisher* status, and *gated* downloads
-   are authenticated and policy-controlled.
+   are authenticated and policy-controlled. **Shipped today:** download gating (OPA) and
+   admission verification, which constrain *what* may be published regardless of who asks.
+   **Deferred:** caller **authentication** on the write path — see §9.
 6. **Standards in, standards out.** Hub speaks the **OCI Distribution Spec** so any
    `oci`/`oras`/`docker`/`cosign` client interoperates; there is no proprietary push/pull
    protocol. The value is in the *index and policy*, not in lock-in.
@@ -337,15 +344,33 @@ want to enter and the place reproducibility lives or dies. This section is centr
   **content-addressed** (sha256) and **signed with Sigstore/cosign** (keyless, OIDC-bound, or
   KMS keys), carries **SLSA provenance** (which builder/CI produced it, from which inputs), and
   ships an **SBOM** (Syft → CycloneDX/SPDX) — exactly the supply-chain stack mandated by
-  conventions.md §9. Verification happens **at admission** (publish is rejected without valid
-  signature/provenance for verified/curated namespaces) **and at pull** (the client
+  conventions.md §9. Verification happens **at admission** and **at pull** (the client
   re-verifies before [Core](core.md) loads the plugin — defense in depth: a compromised Hub
   cannot make a client accept tampered bytes). Attestations are stored via the OCI Referrers
   API and are independently fetchable/auditable.
+  **Admission applies to every publish, not only the curated tiers**: it proves the digest exists
+  and its bytes are its content address, that the manifest offered for indexing is the one
+  actually stored (otherwise the index describes something other than what a consumer pulls),
+  that the artifact is signed at all, and that the signature/SLSA/SBOM chain verifies. A trust
+  tier above `open` is granted only by an **audited promotion that re-runs those checks** — never
+  claimed by the publisher, and never inherited from publish time.
+  **Shipped today:** the keyed **ECDSA (`sigstore_cosign` scheme)** path, which works offline with
+  no account — the local tier's default. **Deferred:** keyless Sigstore (Fulcio/Rekor, OIDC-bound)
+  and KMS keys, additive behind the same scheme, decided with the trust-root policy
+  ([astro-mine-hub#14](https://github.com/astro-mine/astro-mine-hub/issues/14), Phase 2).
 - **AuthN/AuthZ.** **OIDC** (Keycloak self-host or cloud IdP); **RBAC enforced via OPA**
   (conventions.md §9). Anonymous read of public, non-gated artifacts; authenticated publish;
   namespace-scoped write; **verified-publisher** is a granted, audited role. Service-to-service
   is **mTLS** (conventions.md §9).
+  **Status — read this as design intent, not shipped behaviour.** What ships today is the **OPA
+  download gate** and **admission verification**. The write path has **no caller authentication**:
+  `POST /publish` identifies nobody, and `publisher` is a self-declared label, not an
+  authenticated identity. That is tolerable only because admission constrains *what* may be
+  indexed regardless of who asks — a caller cannot forge content provenance, claim a trust tier,
+  or index an artifact it did not store — but it is **not** the "governed to write" posture
+  principle 5 describes, and the gap is deliberate and tracked, not an oversight. Whether writes
+  are fronted by a gateway or gain in-process authn is an open Phase-2 question alongside the
+  trust-root policy (astro-mine-hub#14).
 - **Curation & moderation (trust model).** Tiered namespaces: **open** (community,
   self-published, signed but unreviewed) and **curated/verified** (reviewed, verified-publisher,
   promoted only after admission checks pass). The trust tier is a first-class facet so consumers
