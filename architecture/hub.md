@@ -72,6 +72,16 @@ leaderboards + Hub are the growth engine), and §10.5 (interop-first; honest abo
    [Core](core.md) plugin manifest and refuses to invent its own parallel metadata schema for
    anything Core already describes. If discovery needs a field, the field belongs in the Core
    manifest (via RFC), not as a Hub-private extension.
+   **The one thing Core does not describe is container shape**, and that is Hub's to name. An
+   artifact's `artifact_kind` — the payload shape behind its `application/vnd.astro-mine.<kind>.v1`
+   media type — is a *packaging* fact, whereas `PluginKind` enumerates the *interfaces* a plugin
+   implements. The two overlap on four names and diverge elsewhere, and they cannot be collapsed:
+   a served surrogate's Core kind is `field_model` or `regime_engine` depending on its physics
+   domain, so no total map from container to interface exists. Widening Core to absorb container
+   names would put a packaging concern in the narrow waist (core.md §2 principle 1). A catalog
+   entry therefore carries **both, as separate queryable facets** — never one field holding two
+   vocabularies — and Hub derives the container kind from the stored OCI `artifactType` rather
+   than from a publisher's claim, so it cannot drift from the bytes.
 3. **Verify before you trust — twice.** Signature, provenance, and SBOM are checked at
    **publish** (admission) *and* at **pull** (the client re-verifies). A compromised registry
    must not be able to serve an artifact a client accepts. Unsigned content is never promoted to
@@ -133,11 +143,14 @@ astro_mine.hub
   **(RFC-0001)** The mission-architecture types add `…mission.v1` (a `MissionSpec`),
   `…trajectory.v1` (a descriptive `TrajectoryRef`/`ManeuverBudget`), `…asset.v1` for *sized* SADF
   designs, and `…economics.v1` (a [Ledger](ledger.md) value model) — each indexed by the same Core
-  manifest, with the same content-addressing and attestations.
+  manifest, with the same content-addressing and attestations. Those are **container** kinds, so
+  adding them is a Hub change (an append to its vocabulary) and not automatically a Core RFC —
+  a Core RFC is needed only if they also introduce a new *interface* (principle 2).
 - **Catalog record** — the indexed projection of an artifact's Core manifest into Postgres:
   `kind`, `core_interface_versions[]`, `capability_tags[]`, `inputs/outputs`, `license`,
-  `provenance`, `signatures[]`, plus Hub-side facets (downloads, publisher, namespace, semantic
-  embedding vector).
+  `provenance`, `signatures[]`, plus Hub-side facets (downloads, publisher, namespace, the
+  container `artifact_kind`, semantic embedding vector). `kind` and `artifact_kind` are separate
+  axes — the Core interface and the payload shape — and are queried independently.
 - **Reference / attestation graph** — via the **OCI Referrers API**, signatures, SLSA
   provenance, and SBOMs attach to an artifact by digest; Hub exposes the full attestation set
   for any artifact.
