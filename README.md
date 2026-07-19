@@ -8,6 +8,7 @@ exploration and in-situ resource utilization (ISRU).
 
 ## Contents
 
+- **[Guide](guide/README.md)** — task-oriented how-tos: how to *do* things with the platform, as opposed to how it is designed.
 - **[Architecture](architecture/README.md)** — technology architecture for every component.
 - **[Scenarios](scenarios/README.md)** — flagship use scenarios that drive requirements (lunar polar ice; asteroid mining).
 - **[Roadmap](roadmap/README.md)** — detailed per-phase, per-component scope & requirements (planner-ready), derived from charter §10.
