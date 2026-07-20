@@ -191,7 +191,8 @@ astro_mine.hub
   implementation rather than re-implementing the Distribution Spec (see §11). Performance- and
   safety-sensitive client tooling (content-addressed verification, resolution) MAY use **Rust**
   per conventions.md §2 ("content-addressed registry tooling"). The web UI is
-  **TypeScript + React** (conventions.md §2).
+  the platform front-end baseline (conventions.md §2.1). It is the last front end still on its own
+  styling (Pico CSS); it retires onto `@astro-mine/ui` with the Wave-24 surface conversion.
 - **Frameworks & libraries.** **FastAPI** + **Pydantic v2** for the REST/OpenAPI 3.1 façade
   (conventions.md §3); **ORAS** (OCI Registry As Storage) libraries for artifact push/pull of
   non-image content; **Sigstore `cosign`/`sigstore-python`** for signing/verification;

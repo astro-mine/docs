@@ -167,12 +167,14 @@ Results stream back to the UI (SSE/WebSocket) as candidates are evaluated. Studi
 
 ## 4. Application programming & runtime platforms
 
-- **Front end:** **TypeScript + React** (conventions.md §2) — Vite build; component library and a
-  charting stack (e.g., Plotly/D3/visx) for Pareto fronts and trade-off scatter/parallel-coordinate
-  plots; embeds [View](view.md) for 3D scene/terrain visualization. State via TanStack Query over
-  the OpenAPI client; types generated from the FastAPI OpenAPI 3.1 schema. (Deviation note: the
-  charts and Pareto-exploration views are GraphQL candidates per conventions.md §3 — REST is the
-  default, GraphQL only where a view's query shape demands it.)
+- **Front end:** the platform front-end baseline (conventions.md §2.1) — TypeScript + React, Vite,
+  `@astro-mine/ui` for the design system and **visx** for Pareto fronts and trade-off
+  scatter/parallel-coordinate plots; embeds [View](view.md) for 3D scene/terrain visualization.
+  Parallel coordinates is hand-built — `visx` has no such mark. Server state is plain `fetch` plus
+  the design system's `AsyncState` primitive; the platform ships **no** data-fetching library
+  (conventions.md §2.1). (Deviation note: the charts and Pareto-exploration views are GraphQL
+  candidates per conventions.md §3 — REST is the default, GraphQL only where a view's query shape
+  demands it.)
 - **Back end:** **Python 3.12+** (conventions.md §2), **FastAPI** for the REST/OpenAPI edge,
   **Pydantic v2** for request/response and config models (and for typed Core models generated
   from JSON Schema). `mypy`/`pyright` type-checked.
@@ -377,7 +379,7 @@ Studio is a **pure consumer** of Core contracts — it integrates with nearly ev
 
 | Decision | Options | Recommendation |
 |---|---|---|
-| Front-end framework | **React + TypeScript**; Vue; Svelte | **React + TypeScript** — mandated by conventions.md §2; shared component/charting stack with [View](view.md)/[Hub](hub.md) UI |
+| Front-end framework | **React + TypeScript**; Vue; Svelte | **React + TypeScript** — mandated by conventions.md §2.1, whose baseline also supplies the shared design system (`@astro-mine/ui`) and chart layer this UI was already assuming |
 | Back-end API | **FastAPI (REST/OpenAPI 3.1)**; Flask; Django; Node | **FastAPI** — conventions.md §3; Pydantic v2 reuse, auto OpenAPI client gen; GraphQL only for query-heavy comparison views |
 | Trade-study engine | **Optuna**; **Ax/BoTorch** (Bayesian); **pymoo/NSGA-II** (evolutionary); **Ray Tune** | **Pluggable, multi-backend**: Ax/BoTorch as the default for *expensive* candidate evaluation (sample-efficient Bayesian MO), Optuna/pymoo (NSGA-II) for cheaper/large-population evolutionary MO, **Ray Tune** when the search itself must scale across [Cloud](cloud.md). One internal interface; pick per study. |
 | DoE / seeding | LHS; Sobol; random | **Sobol/LHS** space-filling to seed the optimizer |

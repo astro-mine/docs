@@ -48,10 +48,55 @@ When this document says **MUST / SHOULD / MAY**, read them in the RFC-2119 sense
 | Performance-critical kernels (physics, contact, granular, hot inner loops) | **C++20** | Pybind11 bindings exposed to Python. Integrates with Drake / MuJoCo / Isaac / BehaviorTree.CPP. |
 | High-assurance & safety-critical logic, schema/codegen tooling, CLIs | **Rust** | Recommended where memory safety + performance matter most: `Guard` runtime monitors, `Core` schema validation/codegen, content-addressed registry tooling. Optional elsewhere. |
 | GPU kernels | **CUDA** (+ vendor-neutral fallback) | Used inside Sim/Surrogate; abstracted behind device-agnostic interfaces where feasible. |
-| Web front-ends | **TypeScript + React** | Studio, View, Hub web UI. |
+| Web front-ends | **TypeScript + React** | Console, Studio, View, Hub, Bench. The full baseline is §2.1. |
 
 **Rule:** the *public* API surface of any component MUST be reachable from Python. Native code
 sits behind Python bindings or a gRPC service.
+
+**Scope of that rule.** It binds *components* — the Python packages that own platform capability.
+It does **not** bind the **front-end packages** of §2.1 (`@astro-mine/surface`, `@astro-mine/ui`,
+`@astro-mine/console`, `@astro-mine/view`, and the per-component surfaces), which are TypeScript
+and have no Python surface at all. That is not an exemption from the rule but a consequence of it:
+a front-end package renders capability that a component already exposes from Python, and adds none
+of its own. A front-end package that needed its own Python API would be a component wearing the
+wrong clothes.
+
+### 2.1 The front-end baseline
+
+Normative for every front-end package. This is the **only** place it is stated; a component doc
+cites it rather than restating it, and documents only where it deviates and why (§13).
+
+| Concern | Standard |
+|---|---|
+| Language / framework | **TypeScript 5.5** · **React 18.3** |
+| Runtime | **Node >= 20.19** (Vite 8 and Vitest 4 require it) |
+| Package manager | **pnpm 11.10.0**, pinned per repo via `package.json` `packageManager` |
+| Build | **Vite 8** — library mode for published packages, app mode for the console |
+| Unit tests | **Vitest 4** + Testing Library, `jsdom` environment |
+| Browser tests | **Playwright** against the built artifact, not the dev server |
+| Lint / format | **ESLint 8** (classic config) + `typescript-eslint` 7 · **Prettier 3** |
+| Routing | **react-router** — nested routes map onto the console's surface namespaces |
+| Server state | **None.** `fetch` plus the design system's `AsyncState` primitive |
+| Charts | **visx** + `d3-scale` |
+
+**On the package manager.** One pinned version, everywhere. Three managers across four trees is how
+a cold clone acquires three ways to fail, and `--frozen-lockfile` turns any drift into a red build
+rather than a silent one — which is the point. The pin is a floor for reproducibility, not a
+statement that newer is unusable; move it deliberately, in one sweep, not per repo.
+
+**On server state.** The platform deliberately ships **no** data-fetching or client-cache library.
+Every front end already uses bare `fetch`, and the loading / error / empty discipline lives in a
+shared `AsyncState` component instead — which is where it belongs, because the discipline is about
+what the user is shown when a request is in flight or has failed, not about how the request was
+made. Adding a cache layer is a real dependency in every surface and buys little for screens that
+are read-mostly and human-paced. Revisit it when a surface has a concrete need (optimistic writes,
+polling, cross-surface cache invalidation) — as an RFC, not as an import.
+
+**On charts.** `visx` composes D3 primitives as React components, so the chart discipline is
+enforced by the API rather than by care: `@astro-mine/ui` owns the chart layer, a second y-axis is
+unrepresentable, and a value with no uncertainty bound renders as an open mark by construction
+rather than as a zero-length error bar. Parallel coordinates is the one form `visx` does not
+provide and is hand-built.
 
 ---
 
@@ -234,8 +279,9 @@ code version, the environment lockfile, and the random seed. Datasets and polici
      `Bench` leaderboard eval).
   3. **Operations / ground** — `Ops` + `Bridge` + `View` near operators; ROS 2/DDS data plane.
   4. **Flight-adjacent** (Phase 3, mostly out of open scope) — `Bridge` adapters to cFS/F´.
-- **Packaging & releases:** Python wheels on an index; OCI artifacts for content; **SemVer**
-  for all packages. Multi-repo (one repo per package per charter) with `Core` published as a
+- **Packaging & releases:** Python wheels on an index; **npm packages under the `@astro-mine`
+  scope** for front-end libraries (§2.1, §13); OCI artifacts for content; **SemVer** for all
+  packages. Multi-repo (one repo per package per charter) with `Core` published as a
   versioned dependency. *(This is the public end-state; during private incubation it is deferred —
   see [VERSIONING.md](../VERSIONING.md) §5–7: a source-pinned `uv` Git dependency + PAT, no public
   index yet.)*
@@ -301,6 +347,14 @@ code version, the environment lockfile, and the random seed. Datasets and polici
   signed on release.
 - **Contract tests:** every component proves it honors the Core interface versions it claims
   (consumer-driven contract tests against `Core`).
+- **Front-end lanes** (§2.1): **Vitest + Testing Library** (`jsdom`) for logic and components;
+  **Playwright** against the **built** artifact, so the test exercises what actually ships; and an
+  **automated accessibility lane** that fails the build. The two lanes stay separate — WebGL has no
+  `jsdom` context, so anything touching a canvas belongs in Playwright, not Vitest.
+- **Design-system gates.** Where a repo ships design tokens, the properties asserted about them are
+  **checked, not claimed**: colour-contrast conformance across every theme and mode, colour-vision
+  separation for chart palettes, and generated artifacts matching their source. An accessibility
+  claim nobody runs is an accessibility claim that quietly stops being true.
 
 ---
 
@@ -324,6 +378,12 @@ code version, the environment lockfile, and the random seed. Datasets and polici
 
 - Packages: `Astro-Mine-<Name>` (PyPI/dist name lowercase `astro-mine-<name>`; import
   `astro_mine.<name>`).
+- **Front-end packages** (§2.1) are npm packages under the **`@astro-mine`** scope:
+  `@astro-mine/<name>`, lowercase and hyphenated. A per-component *surface* is named for its
+  component with a `-ui` suffix — `@astro-mine/bench-ui`, `@astro-mine/studio-ui`,
+  `@astro-mine/hub-ui` — which is also what the console's layering check keys on to tell a surface
+  from a library. A repo's workspace root is private and unpublished; only the packages it ships
+  carry the scope.
 - Every component repo carries an `ARCHITECTURE.md` that links back to this directory.
 - Interface versions are independent of implementation versions; a component declares the Core
   interface major versions it supports.
