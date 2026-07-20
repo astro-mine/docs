@@ -1,6 +1,6 @@
 # Astro-Mine-Console — Technology Architecture
 
-> Layer: **Design & operations (the single GUI front door)** · Phase: **1** · Added by [RFC-0010](../rfc/0010-console-surface-contract.md)
+> Layer: **Design & operations (the single GUI front door)** · Phase: **1** · Added by [RFC-0010](../rfc/0010-console-surface-contract.md) (+ Amendment 1)
 > One GUI, not an app per component — a thin, stable contract with thick, swappable edges.
 > Cross-cutting standards: see [conventions.md](conventions.md).
 
@@ -125,14 +125,32 @@ astro-mine-console/                 (pnpm workspace; the repo root is private/un
     id: string;                      // "hub" | "studio" | "bench"
     title: string;
     nav?: NavEntry[];                // where it appears in the shell
-    routes: SurfaceRoute[];          // path → component
-    capabilities?: string[];         // backends it needs; the shell degrades honestly if absent
+    routes?: SurfaceRoute[];         // path → component (optional: a contribution-only package)
+    capabilities?: CapabilityId[];   // backends it needs; the shell degrades honestly if absent
     contributions?: Contribution[];  // the extensibility hinge
   }
   ```
 
   Every type here is a type every surface must live with, so the package stays small on purpose:
   when in doubt, leave it out.
+
+- **`SurfaceProps`** — what the shell injects into every route component: the resolved endpoint,
+  capability status, and surface id. This is the channel a surface reaches its own backend through;
+  it is a *type*, so the zero-dependency rule holds, and it keeps `createConsole` unchanged. The
+  standalone dev lane each component repo keeps green passes the same props by hand.
+
+- **`CapabilityStatus`** — `{ id, met, reason?, remediation? }`. Capability is a **runtime status
+  with a cause**, not a name on a list: Studio's asset menu degrades because it was built without
+  the `[hub]` extra, and the surface must say so. Declarable per surface **and per route**, and
+  testable per control — Hub reads account-free while its publish action sits behind a capability.
+
+- **`NavEntry`** — `label`, `path`, `group`, `order`, `shortcut`. The label is independent of
+  `title` (surface `bench`, title *Bench*, nav label *Leaderboard*), and groups are a shared
+  taxonomy the shell merges across surfaces, so adding a surface never edits the shell.
+
+- **`ArtifactSubject`** — the structural type `InspectorSlot` resolves against: `manifest.kind`, the
+  nullable container kind, `manifest.attributes`, plus identity/digest/size for the honest
+  no-match fallback. Structural because `surface` cannot import Hub's Python `CatalogEntry`.
 
 - **`Contribution`** — a required Core interface kind plus optional discriminators:
 

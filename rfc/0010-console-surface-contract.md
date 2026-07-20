@@ -4,6 +4,11 @@
 - **Author(s):** djankov
 - **Created:** 2026-07-19
 - **Accepted:** 2026-07-19
+- **Amended:** 2026-07-20 — Amendment 1 (the `Surface` contract as the Wave-24 surfaces require it:
+  a typed injection channel, capability *status* rather than capability *names*, a nav entry
+  independent of the surface title, and a structural inspector subject), accepted; see
+  [Amendment 1](#amendment-1--the-surface-contract-the-surfaces-actually-need-accepted-2026-07-20)
+  below.
 - **Affects Core:** no — introduces three **front-end packages** (`@astro-mine/surface`,
   `@astro-mine/ui`, `@astro-mine/console`) in a new repo `astro-mine-console`, and a cross-cutting
   layering convention for the platform's GUI. It makes **no** change to `astro-mine-core`: the
@@ -391,9 +396,12 @@ Wave-23 issues (the contract, the design pass, the design system, the shell) and
 - **Should Hub publish `ARTIFACT_KINDS` at a stable `$id`?** It would put the container mirror under
   the same §3.1 bundle mechanism as `PluginKind` and retire a bespoke drift check. A Hub concern, not
   a blocker for this RFC.
-- **`capabilities` string semantics** — free-form, or a closed set tied to endpoint keys? Free-form
-  is assumed for Phase 1; a closed set can be adopted additively once three surfaces exist and the
-  real vocabulary is observable rather than guessed.
+- **`capabilities` string semantics — RESOLVED by [Amendment 1](#amendment-1--the-surface-contract-the-surfaces-actually-need-accepted-2026-07-20).**
+  The question was posed as *free-form ids, or a closed set tied to endpoint keys?* and deferred until
+  "three surfaces exist and the real vocabulary is observable rather than guessed." Three surfaces now
+  exist as specified issues, and they answer a question this RFC did not think to ask: the id was never
+  the hard part. **Capability is a runtime *status* with a reason, scoped to a route or an action —
+  not a name on a list.** Ids stay free-form; the status type is the contract. See Amendment 1.
 - **`@astro-mine/view`'s distribution block.** View publishes to private GitHub Packages behind a
   `read:packages` token, so an outsider cannot install the console at all — the same open question
   [RFC-0007](0007-units-frames-wire-schema.md) left for the generated TypeScript client. The console
@@ -402,3 +410,137 @@ Wave-23 issues (the contract, the design pass, the design system, the shell) and
   records it as a precondition for external adoption.
 - **Where the design system's chart discipline lands** — whether the console standardizes on Plotly
   (Studio's incumbent) is settled by the design pass, not here.
+
+---
+
+## Amendment 1 — the `Surface` contract the surfaces actually need (accepted 2026-07-20)
+
+The *Design* section above sketches `Surface` as six fields and says, correctly, that the package
+stays small on purpose. Writing the Wave-24 surface issues against that sketch — and then reading
+them back — showed that four of the six cannot carry what the surfaces require, and that one thing
+every surface needs has no field at all.
+
+**This is the RFC's own acceptance test firing, and firing at the right time.** *Design* states it:
+*"if a Wave-24 surface needs a console change beyond its registry line, the contract is wrong and
+this RFC needs amending."* That was found **before** any surface was written, which is precisely
+what landing the contract first was supposed to buy.
+
+### What changed
+
+Seven elaborations. Each is additive to the accepted design; none reverses a decision.
+
+1. **A typed injection channel — `SurfaceProps`.** The gap: every surface is specified as receiving
+   "its own injected API client" ([bench#57], [hub#31]) at "its own base URL" ([studio#31]), and the
+   shell owns "per-surface endpoint config injection" ([console#5]) — but `Surface` had no
+   `endpoints`, no config, and `routes: path → component` gave a component no channel to reach one.
+   **No surface could call its backend.** The shell now injects `SurfaceProps` — the resolved
+   endpoint, capability status, and surface id — into every route component. It is a *type*, so the
+   zero-dependency rule is untouched, and `createConsole({ surfaces, endpoints })` keeps the exact
+   signature *Backends* specifies. It also preserves the standalone dev lane that [hub#31] and
+   [studio#31] both require stay green: that entry passes the same props by hand.
+
+2. **Capability becomes a status, not a name.** The gap: `capabilities?: string[]` is whole-surface,
+   static and boolean. Studio is none of those — it *"503s 5 of 9 routes without the `[hub]` extra"*,
+   the degraded state applies to the asset menu and 3D pane rather than the surface, it is detected
+   at runtime from the backend's own 503 detail, and it must **say why** ([studio#31]). A surface
+   now declares free-form capability ids and receives `CapabilityStatus { id, met, reason?,
+   remediation? }`. `reason` is what the degraded banner renders; `remediation` is what the design
+   pass already mocked up naming the config key to set.
+
+3. **Capability scopes to a route and to an action.** The gap: [hub#31] requires reads to be
+   *"account-free"* — *"browsing and searching a local registry must never prompt for a login"* —
+   while `POST /publish` sits *"behind an explicit capability"*, in **one surface**. A flat
+   surface-level array forces gating everything (breaking account-free read) or gating nothing
+   (shipping a button that lies, which [hub#31] explicitly forbids). `SurfaceRoute` may now declare
+   its own `capabilities`, and a component may test one for an individual control.
+
+4. **`NavEntry` is independent of `title`, and groups are shared.** The gap: the surface `id` is
+   `bench`, its `title` is `Bench`, and its nav label is **`Leaderboard`** — three strings, where the
+   sketch had one. Worse, the design pass's "Compare" group holds entries from **two different
+   surfaces**, so no surface can own the group definition; had the shell hardcoded membership,
+   adding a fourth surface would have become a console change — the exact failure this RFC's
+   acceptance test names. `NavEntry` carries `label`, `path`, `group`, `order`, and `shortcut`. The
+   shortcut is a field because the design pass reserves `g` then `l` for the leaderboard, and a
+   shell that hardcoded that binding would know a surface by name.
+
+5. **The inspector subject is a structural type — `ArtifactSubject`.** The gap: resolution reads
+   `manifest.kind`, the nullable container kind, *and* `manifest.attributes`, and the honest
+   no-match fallback must render identity, digest, size and kind ([hub#31]) — but `@astro-mine/surface`
+   cannot import Hub's `CatalogEntry`, which is Python behind a zero-dependency waist. The subject
+   is therefore defined structurally, in this package, carrying exactly what resolution and the
+   fallback need and nothing more.
+
+6. **`routes` becomes optional.** A package that ships only an inspector contribution — no nav, no
+   pages — is a real and intended case ([hub#31] names Worlds, Fleet and Bench contributions as
+   independently ownable). Requiring `routes: []` of it taught the wrong thing about the model.
+
+7. **`SurfaceRoute` gains `title` and `errorElement`.** The shell announces the route title in a
+   polite live region **before** the surface renders, so a static surface `title` cannot supply it.
+   And [studio#32] requires that a malformed `?study=` *"renders a labelled error state — a test
+   asserts the page is not blank"*; today an unguarded `JSON.parse` blanks the page before
+   `createRoot`. A route needs somewhere to put its own failure.
+
+`ContributionRenderer`'s props are specified here too: a contribution rendered inside another
+surface receives the subject **and the contributing surface's own** endpoint and capability status.
+Bench's scorecard rendered inside Hub calls *Bench's* API, and Bench may be unconfigured while Hub
+is fine — without this, that contribution has no honest degraded path and would render blank inside
+Hub's inspector, which *Degrade visibly, never blank* forbids.
+
+### Why via (this) RFC
+
+The changes are confined to the front-end packages this RFC introduced; they touch no other
+component and no other RFC's decision. But they alter the **shape of a cross-cutting contract** that
+every future surface implements — the same double trigger (new top-level surface + cross-cutting
+convention) that sent the original through [GOVERNANCE.md]. Recording them as an amendment rather
+than as implementation detail keeps the contract's authority in one readable place, which is the
+argument *Mirroring the vocabularies* makes about vocabularies and applies equally here.
+
+Two of the seven — items 2 and 3 — close an **unresolved question this RFC left open**, which is on
+its own sufficient reason to amend rather than absorb.
+
+### Impact on Core
+
+**None, unchanged.** No enum member, message, schema, or wire form changes; `CORE_INTERFACE_VERSIONS`
+stays `0.1.0`. The contribution model still *reads* Core's `PluginKind` by its published `$id`.
+`ArtifactSubject` mirrors the *shape* Hub's catalog already exposes; it introduces no vocabulary and
+no new facet.
+
+### Deferred (updated)
+
+Still explicitly not Phase 1, and unchanged by this amendment: runtime surface federation; the
+unified REST gateway; the ops console and live telemetry; accounts and authentication.
+
+Newly deferred, and named so they are not mistaken for oversights:
+
+- **An imperative shell → surface handle.** The design pass reserves `/` to *"focus the surface's
+  primary search field, if it has one."* That needs a callable handle, not a declaration, and the
+  right shape is not yet observable from two examples. `NavEntry.shortcut` covers the declarative
+  half; the imperative half waits.
+- **A general `commands` concept.** Same reasoning — a command palette is a plausible Phase-2 want,
+  and inventing its vocabulary now would violate this RFC's own *when in doubt, leave it out*.
+- **A closed `capabilities` vocabulary.** Ids stay free-form. With the status type carrying the
+  weight, a closed set buys less than it did when the id was the whole contract, and three surfaces
+  is still a thin basis for closing a vocabulary.
+
+### Decision
+
+**Accepted 2026-07-20** by the steering group (the founding team), as specified in *What changed*:
+the `SurfaceProps` injection channel; `CapabilityStatus` with `reason`/`remediation` and
+route/action scoping; `NavEntry` with `label`/`group`/`order`/`shortcut`; the structural
+`ArtifactSubject`; optional `routes`; `SurfaceRoute.title` and `errorElement`; and the
+`ContributionRenderer` props contract — with `astro-mine-core` unchanged and
+`CORE_INTERFACE_VERSIONS` staying `0.1.0`. Implementation is
+[astro-mine-console#3](https://github.com/astro-mine/astro-mine-console/issues/3).
+
+**One follow-up this amendment creates:** [hub#31] and [studio#31] were written against the original
+sketch and still specify `<InspectorSlot kind={…} />`, which cannot implement the resolution rule —
+a bare kind carries neither the container facet nor `attributes`. Both bodies need correcting to
+`subject={…}` before Wave 24 starts, the same correction already applied to
+[astro-mine-console#3](https://github.com/astro-mine/astro-mine-console/issues/3) and [console#5].
+
+[bench#57]: https://github.com/astro-mine/astro-mine-bench/issues/57
+[hub#31]: https://github.com/astro-mine/astro-mine-hub/issues/31
+[studio#31]: https://github.com/astro-mine/astro-mine-studio/issues/31
+[studio#32]: https://github.com/astro-mine/astro-mine-studio/issues/32
+[console#5]: https://github.com/astro-mine/astro-mine-console/issues/5
+[GOVERNANCE.md]: https://github.com/astro-mine/.github/blob/main/GOVERNANCE.md
