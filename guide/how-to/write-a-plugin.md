@@ -17,6 +17,7 @@ code; the group names and constants are quoted from source, with the file that d
 |---|---|---|
 | planner, controller, allocator, or safety shield for an autonomy stack | `astro_mine.mind.tier_plugins` | entry point |
 | world, resource field, observation model, or comms model that must rebuild from a pulled bundle | `astro_mine.providers` | entry point |
+| illumination backend answering Sun visibility over a terrain | `astro_mine.field_models` | entry point |
 | execution backend that scores a Bench scenario | `astro_mine.bench.runners` | entry point |
 | solver backend for task allocation | `astro_mine.allocate.solvers` | entry point |
 | MARL algorithm | `astro_mine.learn.algorithms` | entry point |
@@ -220,6 +221,73 @@ def from_bundle(manifest, layers):
 >>> sorted(_discover_factories())
 ['body_pack', ...]
 ```
+
+---
+
+## Recipe: an illumination field model (`astro_mine.field_models`)
+
+**The swappable-fidelity pattern.** Which backend answers "is the Sun visible at this cell, at this
+epoch?" is a `WorldSpec` choice, not a code path ([worlds.md §3](../../architecture/worlds.md)):
+precomputed horizon maps by default, ray casting for the fine on-demand path, a learned surrogate
+for swarm-scale queries. Your backend joins that set without a PR to Worlds.
+
+**Contract.** A factory `(terrain, **kwargs) -> SunVisibilityModel` — the structural query surface
+in
+[`worlds/illumination/_backend.py`](https://github.com/astro-mine/astro-mine-worlds/blob/main/src/astro_mine/worlds/illumination/_backend.py):
+`sun_visible` / `illumination_at` / `illuminated_mask` / `psr_mask`, plus the attributes a provider
+reads through the model (most importantly the per-azimuth `horizon` map, the always-present product
+Link queries for line of sight). It is a `Protocol`, so **you inherit nothing from Worlds** — match
+the shape. Resolved by
+[`worlds/illumination/_registry.py`](https://github.com/astro-mine/astro-mine-worlds/blob/main/src/astro_mine/worlds/illumination/_registry.py)
+(`FIELD_MODEL_ENTRY_POINT_GROUP`).
+
+**`field_model` is a Core `PluginKind`** — unlike `bench.runners` or `allocate.solvers`, this
+extension point *does* cross the narrow waist, so your backend is a first-class platform contract
+and should carry a `field_model` manifest (see [The manifest side](#the-manifest-side)).
+
+```toml
+[project.entry-points."astro_mine.field_models"]
+acme-illum = "acme_illum.plugin:build"             # the name IS the backend id
+```
+
+```python
+# acme_illum/plugin.py
+from astro_mine.worlds.illumination import IlluminationModel
+
+
+class AcmeIlluminationModel(IlluminationModel):
+    """Subclassing is one option — the contract only asks for the shape."""
+
+    def sun_visible(self, x, y, epoch):
+        ...
+
+
+def build(terrain, **kwargs):
+    return AcmeIlluminationModel(terrain, **kwargs)
+```
+
+```python
+>>> from astro_mine.worlds.illumination import build_illumination_model, known_backends
+>>> known_backends()
+('acme-illum', 'horizon', 'raycast_cpu', 'raycast_gpu', 'surrogate')
+>>> model = build_illumination_model(terrain, backend="acme-illum", max_radius_m=8000.0)
+```
+
+Your id is also selectable from a `WorldSpec`'s `layers.illumination_backend`, which is how a whole
+world bundle picks up your backend.
+
+Three things this group guarantees:
+
+- **Listing never imports.** `known_backends()` reads entry-point *names*; your dependency is
+  imported only when someone resolves your id. `available_backends()` is the narrower list that
+  actually resolves here — a plugin that fails to load is excluded from it rather than breaking
+  discovery for everyone else.
+- **You may not shadow a built-in.** Advertising `horizon`, `raycast_cpu`, `raycast_gpu`, or
+  `surrogate` is a hard error naming both claimants. A backend id is *provenance*: it is folded into
+  `illumination_hash` and stamped into the published `field_model` manifest, so an ambiguous id
+  would mis-attribute which model produced an illumination product. Pick your own id.
+- **The horizon map stays.** A finer Sun-visibility backend does not remove the per-azimuth skyline
+  Link queries for occlusion ([worlds.md §6](../../architecture/worlds.md)); serve it or inherit it.
 
 ---
 
@@ -480,6 +548,14 @@ plugin = advertised[PLUGIN_NAME].load()()
 Use both: the patched form for behaviour, the installed form for packaging. A monkeypatch cannot
 catch a typo in your entry-point declaration.
 
+**If you are the *host* opening a group**, go one step further and plant a throwaway distribution:
+write a module plus a `.dist-info` (`METADATA` + `entry_points.txt`) into `tmp_path`, put it on
+`sys.path`, and call `importlib.invalidate_caches()`. That exercises the same `importlib.metadata`
+scan a `pip install` would, with nothing patched — which is the only way to prove *discovery* works
+rather than that your registry reads whatever you handed it. Worlds'
+[`tests/test_field_model_entry_points.py`](https://github.com/astro-mine/astro-mine-worlds/blob/main/tests/test_field_model_entry_points.py)
+is the in-tree example.
+
 ---
 
 ## Publishing
@@ -507,22 +583,6 @@ astro-mine-hub publish --registry <registry> --name acme.my-plugin --version 1.0
 Everything up to this point works offline with no account
 ([conventions.md §7](../../architecture/conventions.md), tier 1). Publication is the last step, not
 a prerequisite.
-
----
-
-## Known gap: `astro_mine.field_models`
-
-Worlds declares four entry points under `astro_mine.field_models`
-(`horizon`, `raycast_cpu`, `raycast_gpu`, `surrogate`) — but **nothing reads that group**.
-Illumination backends are selected by a string switch in `build_illumination_model`
-(`worlds/illumination/_registry.py`), so a third-party field model advertised there would never be
-discovered.
-
-**Do not write a plugin against this group yet.** It is documented here rather than omitted so that
-nobody spends an afternoon on an extension point that cannot load — the same failure mode that
-[astro-mine-allocate#31](https://github.com/astro-mine/astro-mine-allocate/issues/31) fixed for
-solver backends. Tracked in
-[astro-mine-worlds#52](https://github.com/astro-mine/astro-mine-worlds/issues/52).
 
 ---
 
