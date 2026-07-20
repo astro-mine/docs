@@ -69,9 +69,12 @@ supervisory autonomy; trust models), §11 (Phase 2, with [Ops](ops.md)/[Bridge](
 3. **Render the explanation, don't invent it.** Explanations are decision traces authored upstream
    ([Mind](mind.md)/[Allocate](allocate.md)/[Guard](guard.md)). View is a faithful renderer; it
    must never synthesize a plausible-but-wrong rationale. Honesty about provenance over polish.
-4. **Embeddable first, app second.** Every capability ships as a framed, dependency-light React
-   component before it is a hosted application. The standalone app is one consumer of the library;
-   [Studio](studio.md) and [Ops](ops.md) are peers (library-first, conventions.md §1.4).
+4. **Embeddable first, app second — and, since [RFC-0010](../rfc/0010-console-surface-contract.md),
+   embeddable only.** Every capability ships as a framed, dependency-light React component;
+   [Studio](studio.md) and [Ops](ops.md) are peer consumers (library-first, conventions.md §1.4).
+   View hosts no application of its own: the platform's standalone GUI is
+   [`@astro-mine/console`](console.md), which sits above every surface, and View is the leaf those
+   surfaces depend on (§3).
 5. **Degrade, don't blank.** Tiles, telemetry, and traces arrive over flaky links and at scale.
    The client level-of-details, decimates, and back-pressures (conventions.md §8) — a stale or
    partial view is labelled stale, never a frozen or empty screen.
@@ -92,9 +95,14 @@ View is a **TypeScript + React** front end (conventions.md §2) plus a thin **st
 ("View Gateway") that fans telemetry and tiles into the browser and adapts upstream protocols. The
 gateway holds no authoritative state — it is a translation and aggregation layer.
 
+> **"Gateway" names two different things — this is View's.** The **View Gateway** below is View's
+> *own* telemetry/tile fan-out backend. A **platform API gateway** — one unified REST edge in front
+> of every component — is a separate idea, deferred to Phase 2 at the earliest and deliberately not
+> built by the [console](console.md) ([RFC-0010](../rfc/0010-console-surface-contract.md)). Neither
+> exists in Phase 1, and they are not the same future thing.
+
 ```
 astro_mine.view
-├── app/                # standalone hosted application (routing, layout, session shell)
 ├── lib/                # embeddable component library (published npm package)
 │   ├── globe/          # CesiumJS scene: terrain (3D Tiles), assets, trajectories, overlays
 │   ├── dashboards/     # OpenMCT plugin + telemetry widgets, plots, alarm/event tables
@@ -109,6 +117,22 @@ astro_mine.view
     ├── traces/         #   decision-trace ingest (MCAP) → explanation channels
     └── bff/            #   REST/GraphQL backend-for-frontend (session, layout, catalog)
 ```
+
+> **There is no `app/`, by decision.** Earlier drafts reserved `app/` for a *"standalone hosted
+> application (routing, layout, session shell)"*. [RFC-0010](../rfc/0010-console-surface-contract.md)
+> **descopes it.** §6 below establishes that View's component library is embedded in
+> [Studio](studio.md), and principle 4 makes Studio and [Ops](ops.md) peers consuming it — so
+> `studio-ui → view` holds by View's own design, and a shell inside View that hosts Studio's surface
+> closes the cycle `view → studio-ui → view`. The shell must sit **above** every surface, and every
+> surface may use `view`, so it is a separate leaf package in a separate repo:
+> [`@astro-mine/console`](console.md). **View stays a leaf that surfaces depend on — never the
+> reverse.**
+>
+> The `lib/` demo harness is therefore a **developer component gallery** and a WebGL test surface:
+> every scene is a committed fixture, and nothing loads user data. It is *not* the console, not an
+> application, and not a way to view your own run — and it must not present itself as one. That it
+> is currently the most immediately runnable front end in the platform is exactly why the
+> distinction is worth stating.
 
 ### Key abstractions
 
@@ -184,8 +208,9 @@ shape genuinely demands it (conventions.md §3).
   stateless, horizontally scalable service. No server-side application state — all session state is
   serialized client-side and (optionally) persisted via the BFF to Postgres.
 - **Build/packaging:** the **`@astro-mine/view`** npm component library (SemVer, conventions.md §7,
-  §13); an OCI image for the gateway; the standalone app as static assets in an OCI image or object
-  bucket. Generated [Core](core.md) TS client libraries are a pinned dependency.
+  §13) and an OCI image for the gateway. There is no View-owned application artifact — the hosted
+  GUI is [`@astro-mine/console`](console.md), which consumes this library (§3). Generated
+  [Core](core.md) TS client libraries are a pinned dependency.
 
 ---
 
@@ -259,15 +284,17 @@ transport: **WebSocket/Foxglove** for high-rate channels, **SSE** for low-rate, 
 ## 7. Infrastructure & deployment
 
 - **Deployment tiers** (conventions.md §7):
-  1. **Local/dev** — `docker compose` (gateway + Sim/Ops mock) or the static app pointed at a local
-     Sim; a researcher watches a scenario in the browser with no cluster. *This tier MUST work.*
+  1. **Local/dev** — `docker compose` (gateway + Sim/Ops mock), or a consuming static front end
+     ([console](console.md), [Studio](studio.md)) pointed at a local Sim; a researcher watches a
+     scenario in the browser with no cluster. *This tier MUST work.*
   2. **Operations / ground** — co-located near operators with [Ops](ops.md)/[Bridge](bridge.md);
      gateway on the ground K8s, static assets on a local CDN; consumes the ROS 2/DDS data plane via
      the bridge. This is View's home tier (Phase 2).
   3. **Cloud** — gateway behind an ingress/load balancer for demos, hosted replay, and embedding in
      a hosted [Studio](studio.md); tiles/overlays served from object storage + CDN.
-- **Containerization:** OCI images for the gateway and the standalone app; static front-end assets
-  are content-hashed and CDN-cached. Pinned, reproducible builds (conventions.md §7).
+- **Containerization:** an OCI image for the gateway; the front-end assets that embed this library
+  are content-hashed and CDN-cached by whoever hosts them ([console](console.md),
+  [Studio](studio.md), [Ops](ops.md)). Pinned, reproducible builds (conventions.md §7).
 - **Orchestration:** **Kubernetes**; gateway runs as a stateless `Deployment` with an HPA;
   WebSocket/SSE connections handled by a sticky ingress (or NATS-fanned, see §8). No GPU on the
   server — rendering is in the client's GPU.
@@ -353,13 +380,16 @@ option for cinematic demos — explicitly not the default (see §11). Measure be
   per-view SLOs (e.g., telemetry-staleness budget).
 - **Testing & validation:**
   - **Unit/component:** `pytest` for the gateway; **Vitest** + **React Testing Library** for the
-    front end; **Storybook** + visual-regression snapshots for widgets.
+    front end. **No Storybook** — see §4; the `lib/` developer gallery plus the Playwright lane
+    serve widget documentation and visual checks instead.
   - **Replay-as-golden-test:** a pinned MCAP fixture renders to a stored snapshot; CI fails on
     regression — the same determinism discipline as the rest of the platform (conventions.md §11).
   - **Contract tests:** View asserts it renders the [Core](core.md) message and decision-trace
     interface versions it claims (consumer-driven, conventions.md §11, §13).
-  - **End-to-end:** **Playwright** drives the standalone app against a mock gateway feeding a known
-    scenario, checking globe entities, dashboard values, and explanation contents.
+  - **End-to-end:** **Playwright** drives the `lib/` developer gallery against a mock gateway
+    feeding a known scenario, checking globe entities, dashboard values, and explanation contents.
+    (A consuming application's own shell is tested by that application — see
+    [console.md](console.md) §10.)
   - **Performance:** scripted scene benchmarks (N assets × M channels) with frame-budget and
     latency assertions, run in CI on representative hardware.
 

@@ -31,31 +31,51 @@ Both modes drive the **same** simulation core and the **same** autonomy componen
 ## 2. System context (who interacts, and how)
 
 ```
-        Researchers   Mission designers   ISRU/NewSpace   Educators/    Operators
-        (MARL,        (agencies,          startups        students      (later)
-         planning,     primes)                                          
-         science)         │                   │              │              │
-            │             │                   │              │              │
-            ▼             ▼                   ▼              ▼              ▼
-   ┌─────────────────────────────────────────┐   ┌───────────────────────────┐
+     Researchers     Mission        ISRU/      Educators/   Operators
+       (MARL,       designers     NewSpace      students     (later)
+      planning,    (agencies,     startups
+       science)      primes)
+          │             │             │             │           │
+          ▼             ▼             ▼             ▼           │
+   ┌──────────────────────────────────────────┐                 │
+   │  CONSOLE — the single GUI front door     │                 │
+   │  (static SPA, Phase 1) composing         │                 │
+   │  bench-ui · studio-ui · hub-ui · …       │                 │
+   └───────────────────┬──────────────────────┘                 │
+                       │ surfaces call their own REST edges     │
+                       ▼                                        ▼
+   ┌──────────────────────────────────────────┐   ┌────────────────────────────┐
    │  DESIGN MODE                             │   │  OPERATE MODE              │
-   │  Studio (web)  ·  Bench (leaderboards)   │   │  Ops console  ·  View      │
+   │  Studio (web) · Bench (leaderboards)     │   │  Ops console · View        │
    │  Hub (registry) · View (embedded)        │   │  (3D + dashboards)         │
-   └───────────────────┬─────────────────────┘   └────────────┬──────────────┘
-                       │  Core contracts (SADF, Env API, Policy API, messages)   │
-                       ▼                                          ▼
-   ┌──────────────────────────────────────────────────────────────────────────┐
-   │  SHARED SUBSTRATE                                                          │
-   │  Sim (+Surrogate)  ·  Mind · Learn · Allocate · Guard                      │
-   │  Worlds · Prospect · Link · Fleet                                          │
+   └───────────────────┬──────────────────────┘   └─────────────┬──────────────┘
+                       │  Core contracts (SADF, Env/Policy API) │
+                       ▼                                        ▼
+   ┌───────────────────────────────────────────────────────────────────────────┐
+   │  SHARED SUBSTRATE                                                         │
+   │  Sim (+Surrogate)  ·  Mind · Learn · Allocate · Guard                     │
+   │  Worlds · Prospect · Link · Fleet                                         │
    │  run at scale on Cloud · artifacts in Hub · scored by Bench               │
-   └──────────────────────────────────────────────────────────────────────────┘
-                                          │ Bridge (ROS 2 / cFS / F´ / CCSDS)
-                                          ▼
-                               Simulator today  →  real flight hardware (Phase 3)
+   └───────────────────────────────────────────────────────────────────────────┘
+                                        │ Bridge (ROS 2 / cFS / F´ / CCSDS)
+                                        ▼
+                             Simulator today  →  real flight hardware (Phase 3)
 ```
 
-Each audience enters through a different surface but everything below the surface is shared:
+Two clarifications on that picture. First, the two "console"s are different things:
+**[Console](console.md)** is the platform's single GUI front door, added by
+[RFC-0010](../rfc/0010-console-surface-contract.md) and shipping in Phase 1; the **Ops console** is
+the operations supervisory surface in [Ops](ops.md), Phase 2. Second, the console is the **GUI**
+front door, not the only door — every capability it surfaces is reachable from the CLI and from
+Python, and for several audiences that remains the primary path. The arrows show where a *human
+without a terminal* enters.
+
+Each audience enters through a different *surface* but everything below it is shared. The table
+below names the surface each audience ultimately drives — but note what it also shows: **before the
+console, every row named a different entry point and there was no shared one at all.** Two audiences
+the charter names explicitly (mission designers, educators/students) could not reach the platform
+without one, which is the gap RFC-0010 exists to close. The console does not replace these surfaces;
+it is the one door that leads to all of them.
 
 | Audience | Primary surface | What they ultimately drive |
 |---|---|---|
@@ -155,7 +175,8 @@ and [guard.md](guard.md) §9.5.
 | [Studio](studio.md) | Design | Goal-in/design-out authoring + trade studies | Web app (React + FastAPI) on Cloud | ObjectiveSpec, DesignCandidate, Campaign | orchestrates Sim/Learn/Mind/Allocate/Guard; Hub, Bench, View |
 | [Ops](ops.md) | Operations | Online orchestration + digital-twin shadow | Stateful service; ground + edge | Event-sourced state, telemetry, SLAM map | Sim (shadow), Mind/Allocate/Guard, Bridge, View |
 | [Bridge](bridge.md) | Operations | Hardware/flight-software abstraction | Adapters: ground + flight-adjacent | Core msgs ↔ ROS 2/cFS/F´/CCSDS | Ops; targets Sim or real hardware |
-| [View](view.md) | Operations | Visualization, telemetry, plan explanation | Web app (React + Cesium/OpenMCT) | Telemetry, 3D Tiles, MCAP replays | Ops, Sim, Worlds, embedded in Studio |
+| [View](view.md) | Operations | Visualization, telemetry, plan explanation | Embeddable React library (Cesium/OpenMCT) + stateless gateway | Telemetry, 3D Tiles, MCAP replays | Ops, Sim, Worlds; embedded in Studio and Console |
+| [Console](console.md) ◊ | Design & ops | The single GUI front door: composes per-component surfaces | Static SPA (TypeScript + React); no server | None owned — renders other components' REST edges | Studio, Hub, Bench (their own REST APIs); embeds View |
 | [Bench](bench.md) | Backbone | Benchmarks, scenario zoo, leaderboards | FastAPI + Postgres; eval on Cloud | Scenario specs, metrics, results | pins Core; runs Sim; Hub submissions; Cloud |
 | [Hub](hub.md) | Backbone | Registry for policies/worlds/assets/plugins | OCI registry + Postgres on Cloud | OCI artifacts, manifests, provenance | indexed by Core manifest; all producers/consumers |
 | [Cloud](cloud.md) | Backbone | Distributed sim/training orchestration | Kubernetes + Ray + Argo | Content-addressed datasets/artifacts | runs Sim/Learn/Allocate/Surrogate/Bench |
@@ -165,6 +186,8 @@ and [guard.md](guard.md) §9.5.
 ‡ Added by [RFC-0002](../rfc/0002-shared-spice-foundation.md) (accepted; implementation Phase 0). [Spice](spice.md) is a **Core companion** — the SPICE-backed realization of Core's frame/time vocabulary that Core cannot host (heavy deps; core.md §2 principle 3). See §3 and [spice.md](spice.md).
 
 ¶ Added by [RFC-0005](../rfc/0005-seal-supply-chain-companion.md) (accepted; implementation Phase 1). [Seal](seal.md) is a **Core companion** — the artifact-integrity (signing / verification / SLSA / SBOM) realization of Core's `Signature`/`Verifier` surface that Core cannot host (crypto deps; core.md §2 principle 3). The single home for `cryptography`. See §3 and [seal.md](seal.md).
+
+◊ Added by [RFC-0010](../rfc/0010-console-surface-contract.md) (accepted; implementation Phase 1). [Console](console.md) is a **front-end package set** (TypeScript, repo `astro-mine-console`), not a Python component — `conventions.md` §2's Python-reachability rule binds components, and a front-end package renders capability a component already exposes rather than adding its own. It creates **no** platform capability, **no** REST surface, and **no** change to [Core](core.md): contributions are keyed by Core's existing `PluginKind` vocabulary, read by its published `$id` rather than extended. See [console.md](console.md).
 
 ---
 
@@ -179,6 +202,15 @@ Service-to-service calls (Studio→Sim, Ops→Mind, Bench→Sim, etc.) use **gRP
 Protobuf contracts generated from Core schemas. Browser- and tool-facing edges
 ([Studio](studio.md), [Hub](hub.md), [Bench](bench.md), [View](view.md)) expose **REST +
 OpenAPI 3.1** via FastAPI. mTLS between services; OIDC + OPA for authz.
+
+**The GUI adds no edge of its own.** [Console](console.md) is a **static SPA configured with
+per-surface base URLs**: each surface it composes receives its own injected client and calls its own
+component's existing FastAPI directly. There is **no unified REST gateway and no
+backend-for-frontend in front of the platform** — a gateway is Phase 2 at the earliest, if it is
+ever justified ([RFC-0010](../rfc/0010-console-surface-contract.md)). Endpoint configuration is
+loaded at boot rather than compiled in, so one build is deployable by someone other than its
+builder. Note that [View](view.md)'s own `gateway/` is View's telemetry/tile fan-out backend, not a
+platform API gateway; the two are unrelated and neither exists in Phase 1.
 
 ### 5.2 Eventing / orchestration plane — asynchronous (NATS / Kafka)
 Job lifecycles, hub events, bench-result ingestion, and Studio's long-running design jobs flow
