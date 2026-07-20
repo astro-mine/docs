@@ -164,8 +164,11 @@ shape genuinely demands it (conventions.md §3).
 
 ## 4. Application programming & runtime platforms
 
-- **Front end:** **TypeScript + React** (conventions.md §2). Build/bundle with **Vite**; package
-  manager **pnpm**; component docs/visual tests in **Storybook**.
+- **Front end:** the platform front-end baseline (conventions.md §2.1) — TypeScript + React, Vite,
+  pnpm, Vitest + Playwright.
+  **Deviation: no Storybook.** Storybook caps at Vite <= 6 and Vite-version parity across the
+  front ends was prioritized, so component docs and visual checks are served by the Playwright lane
+  over the `lib/` demo harness until Storybook supports Vite 8.
 - **3D geospatial:** **CesiumJS** + **3D Tiles** (charter §7) for planetary terrain and entities.
   **three.js / raw WebGL/WebGPU** is used *inside* Cesium (custom primitives / instanced draw) only
   where Cesium's entity API is too slow for very large swarms — not as a parallel renderer.

@@ -162,8 +162,11 @@ rollouts; results flow back as Arrow/Parquet + MCAP and are ingested into the le
   a small Rust extension where profiling justifies it.
 - **Web/API:** **FastAPI** + **REST/OpenAPI 3.1** for the public leaderboard and submission
   API (conventions.md §3); internal service-to-service over **gRPC** where streaming/typed
-  efficiency matters. Web UI in **TypeScript + React** (conventions.md §2), with rich
-  scenario/replay views delegated to [View](view.md).
+  efficiency matters. The leaderboard's web UI follows the platform front-end baseline
+  (conventions.md §2.1) and ships as the `@astro-mine/bench-ui` **surface** composed by the console
+  (RFC-0010) — greenfield work, since Bench ships no front-end code today. Rich scenario/replay
+  views are delegated to [View](view.md): Bench owns the surface, View owns the globe and replay
+  primitives it embeds.
 - **Schemas:** ScenarioSpec, Submission manifest, and Result as **JSON Schema + Pydantic v2**
   (conventions.md §3); wire/result messages share the [Core](core.md) Protobuf catalog.
 - **Eval orchestration:** **Argo Workflows** for DAG-style evaluation sweeps and **Ray** for

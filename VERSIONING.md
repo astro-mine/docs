@@ -38,6 +38,22 @@ independent of implementation versions").
   integration milestone (M0.2, M1.1, …); bump the **patch** for fixes within a milestone. Do
   **not** churn versions between milestones.
 
+### 2.0 Front-end packages (npm)
+
+`conventions.md` §2.1's front-end packages are npm packages, not wheels, so §2's mechanics need a
+second expression:
+
+- The version lives in **`package.json` `version`**, and follows the same SemVer and
+  pre-1.0 rules as every other package above.
+- The **`packageManager`** field pins pnpm (`conventions.md` §2.1). It is a toolchain pin, not a
+  package version, and it moves in one deliberate sweep across all repos rather than per repo.
+- A workspace **root** is `private: true` and unpublished; it carries `0.0.0` permanently and is
+  not a package in the sense of this document. Only the packages it ships are versioned.
+- §2.1's Git-tag rule below applies to Python packages. Front-end versions are hand-set in
+  `package.json` — there is no `hatch-vcs` equivalent wired up — so a release **MUST** tag and bump
+  in the same commit. This is the weaker half of the scheme and is the reason to keep front-end
+  releases infrequent and deliberate.
+
 ### 2.1 Single source of truth: the Git tag
 
 Because downstream repos install Core from source by Git ref (§5), the **Git tag is the real
