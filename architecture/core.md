@@ -98,7 +98,38 @@ astro_mine.core
   actions/assignments," with sub-interfaces for mission planners, task-and-motion planners,
   allocators, and controllers, so layers compose (charter §5.4).
 - **Plugin manifest** — declares a plugin's kind, the Core interface versions it implements,
-  its inputs/outputs, resource needs, capability tags, and provenance/signature.
+  its inputs/outputs, resource needs, capability tags, and provenance/signature. The manifest is
+  `extra="forbid"` and is not subclassable; `attributes` is the sanctioned extension point for
+  component-specific facets.
+- **`PluginKind`** — the **closed, Core-owned vocabulary** of content kinds resolved through the
+  registry, and the single answer to *"what interface does this implement?"*. Members map to the
+  extension surfaces named across the component backlogs: [Sim](sim.md)
+  (`regime_engine`/`sensor_model`/`coupling_scheme`), [Worlds](worlds.md)
+  (`world_provider`/`body_pack`/`field_model`), [Prospect](prospect.md)
+  (`resource_field_backend`/`observation_model`/`prior_recipe`/`info_gain_objective`),
+  [Link](link.md) (`comms_model`), [Fleet](fleet.md) (`asset`), [Bench](bench.md)
+  (`policy`/`metric`), and [Studio](studio.md) (`design`/`campaign`).
+
+  Some members are **packaging metadata** for content nobody loads as code — an `asset` manifest
+  describes a SADF document instantiated by Sim's loader, and `design`/`campaign` describe frozen
+  Studio artifacts whose bytes Core never parses ([RFC-0008](../rfc/0008-design-campaign-artifact-kinds.md)).
+  The vocabulary names what Core *describes for discovery*, not only what it executes.
+
+  It is **published as a schema** at `$defs/PluginKind` under the manifest's absolute `$id`, so
+  cross-language consumers resolve it rather than transcribe it (conventions.md §3.1). It is
+  **append-only, and widening it is a Core RFC** — the rule that makes it safe for other components
+  to key on. Three accepted RFCs turn on that: [RFC-0004](../rfc/0004-safetyspec-safety-contract.md)
+  reuses `POLICY` rather than adding a kind, RFC-0008 appended `design`/`campaign` through the RFC
+  process, and [RFC-0010](../rfc/0010-console-surface-contract.md) keys the console's contribution
+  model on the vocabulary without changing it.
+
+  **What a kind does *not* answer is "what am I looking at."** A [Worlds](worlds.md) illumination
+  field model and a [Surrogate](surrogate.md) excavation model both carry `field_model`; the kind is
+  the interface, not the subject. Consumers that need to distinguish the *thing* — an artifact
+  browser, an inspector — must discriminate on a second facet, which is why [Hub](hub.md) §2
+  principle 2 carries its container kind as a separate queryable field and never folds the two
+  vocabularies into one. Leaving this implicit is how the question got answered wrongly twice before
+  RFC-0010 settled it.
 - **Objective contract** — `ObjectiveSpec` (objective + success criteria + their **binding** to
   [Bench](bench.md) metrics and the [Ledger](ledger.md) value model); authored by
   [Studio](studio.md), consumed by Bench/Ledger/[Ops](ops.md)/[View](view.md). Schema only — the
