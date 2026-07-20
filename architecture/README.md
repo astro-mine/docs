@@ -34,13 +34,15 @@ exploration and in-situ resource utilization (ISRU).
 | **Simulation** | [Sim](sim.md) · [Surrogate](surrogate.md) |
 | **Autonomy & coordination** | [Mind](mind.md) · [Learn](learn.md) · [Allocate](allocate.md) · [Guard](guard.md) |
 | **Mission architecture & logistics** † | [Trajectory](trajectory.md) · [Sizing](sizing.md) · [Ledger](ledger.md) |
-| **Design & operations** | [Studio](studio.md) · [Ops](ops.md) · [Bridge](bridge.md) · [View](view.md) |
+| **Design & operations** | [Studio](studio.md) · [Ops](ops.md) · [Bridge](bridge.md) · [View](view.md) · Console ◊ |
 
 † Added by [RFC-0001](../rfc/0001-multi-regime-missions.md) (accepted; implementation Phase 3). [Core](core.md) is the "narrow waist" — the single most important package; if only one thing is designed superbly, it must be Core.
 
 ‡ Added by [RFC-0002](../rfc/0002-shared-spice-foundation.md) (accepted; implementation Phase 0). [Spice](spice.md) is the SPICE-backed realization of [Core](core.md)'s frame/time vocabulary, factored out as a *Core companion* so Worlds, Link, Sim, and Transit share **one** SPICE implementation rather than re-deriving it per package.
 
 ¶ Added by [RFC-0005](../rfc/0005-seal-supply-chain-companion.md) (accepted; implementation Phase 1). [Seal](seal.md) is the artifact-integrity realization of [Core](core.md)'s `Signature`/`Verifier` surface, factored out as a *Core companion* so Fleet, Hub, and Guard share **one** signing/verification/SLSA/SBOM implementation rather than re-copying it per package — the single home for the `cryptography` dependency Core deliberately never carries.
+
+◊ Added by [RFC-0010](../rfc/0010-console-surface-contract.md) (accepted; implementation Phase 1). **Console** is the platform's single GUI shell — `@astro-mine/console` composing per-component *surfaces* over the zero-dependency `@astro-mine/surface` contract and the `@astro-mine/ui` design system, so one front door spans every component without any of them importing another. Unlike the other rows it is a **front-end package set** (TypeScript, repo `astro-mine-console`), not a Python component, and it has no `console.md` yet — read the RFC. It changes nothing in [Core](core.md): contributions are keyed by Core's existing `PluginKind` vocabulary, consumed by its published `$id` rather than extended.
 
 ## Multi-regime missions (RFC-0001, accepted)
 
