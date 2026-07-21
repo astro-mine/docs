@@ -9,6 +9,12 @@
   independent of the surface title, and a structural inspector subject), accepted; see
   [Amendment 1](#amendment-1--the-surface-contract-the-surfaces-actually-need-accepted-2026-07-20)
   below.
+- **Amended:** 2026-07-20 — Amendment 2 (the contribution render machinery — the registry, the
+  `InspectorSlot` component, and the host context — moves **down** out of the shell into
+  `@astro-mine/surface` and `@astro-mine/ui`, so a Wave-24 surface can render a slot with only the
+  two published libraries and never imports the unpublished `@astro-mine/console`), accepted; see
+  [Amendment 2](#amendment-2--the-contribution-render-machinery-lives-in-surfaceui-not-the-shell-accepted-2026-07-20)
+  below.
 - **Affects Core:** no — introduces three **front-end packages** (`@astro-mine/surface`,
   `@astro-mine/ui`, `@astro-mine/console`) in a new repo `astro-mine-console`, and a cross-cutting
   layering convention for the platform's GUI. It makes **no** change to `astro-mine-core`: the
@@ -538,9 +544,97 @@ a bare kind carries neither the container facet nor `attributes`. Both bodies ne
 `subject={…}` before Wave 24 starts, the same correction already applied to
 [astro-mine-console#3](https://github.com/astro-mine/astro-mine-console/issues/3) and [console#5].
 
+## Amendment 2 — the contribution render machinery lives in `surface`/`ui`, not the shell (accepted 2026-07-20)
+
+The *Design* section's package table puts *"the surface registry"* in `@astro-mine/console` and
+describes `<InspectorSlot>` as the shell's. Amendment 1's own follow-up confirmed the other half of
+the picture: all three Wave-24 surfaces render `<InspectorSlot subject={…} />` **in their own pages**
+— [hub#31]'s `ArtifactDetailView` (Hub is this RFC's proof case), [bench#57]'s result→replay
+inspector, [studio#31]'s asset/world previews.
+
+Writing [console#13] — which gives `@astro-mine/surface` + `@astro-mine/ui` their cross-repo publish
+path — against that picture surfaced the contradiction. **`@astro-mine/console` is an application; it
+is `private` and is never published.** A surface in `astro-mine-bench`/`-hub`/`-studio` therefore
+*cannot* import `InspectorSlot` from it — the exact cross-import the layering forbids, and a hard
+blocker in mechanism, not just in spirit. So the packages as drawn cannot give a Wave-24 surface the
+one thing every one of them needs. **This is the RFC's acceptance test firing a second time** — a
+surface needs something beyond its registry line — and, like Amendment 1, it fired while the surfaces
+were still being specified, not after they shipped.
+
+### What changed
+
+The render machinery moves **down** the layering (`surface ← ui ← surfaces ← console`), so a surface
+renders a slot with only the two **published** libraries. Nothing about the resolution *contract*
+changes — only which package hosts the code that executes it.
+
+1. **The registry moves to `@astro-mine/surface`.** `buildRegistry`, `resolveSlot`, `statusesFor`,
+   `capabilityStatus`, `joinPath`, and the `Registry` type are pure, React-free logic that already
+   depended only on the contract — `resolveSlot` is a one-line wrapper over the normative
+   `resolveContribution`. Co-locating the registry with the rule it applies keeps them in one place,
+   and **the zero-runtime-dependency rule is untouched** (no React, no framework, no I/O). The
+   package table's *"the surface registry"* is now `surface`'s.
+
+2. **`InspectorSlot` and the host context move to `@astro-mine/ui`.** The React component that renders
+   a resolved contribution — the honest no-match state, the ambiguity diagnostic, the injection of
+   the *contributing* surface's endpoint/capability status — plus the `<ConsoleProvider>` /
+   `useConsole` context, are the design system's. `InspectorSlot` already renders `ui`'s own
+   `am-banner` honesty states, so it belonged there in substance already. `ui` takes
+   `@astro-mine/surface` as a dependency: a **strictly-lower** import (`ui → surface`), so
+   `check-layering` stays green.
+
+3. **`@astro-mine/console` keeps only composition.** `createConsole`, routing, and per-surface
+   endpoint config stay in the shell. It **builds** the registry once (`buildRegistry`) and
+   **provides** it (`<ConsoleProvider>`), and imports `InspectorSlot`/the registry from the two
+   packages exactly as any other consumer does. The shell owns *composition*, not the resolution
+   primitives a surface renders.
+
+The result: a surface renders a foreign artifact's inspector with
+`import { InspectorSlot } from "@astro-mine/ui"` and `import type { ArtifactSubject } from
+"@astro-mine/surface"` — and never names the shell.
+
+### Distribution (recorded with this amendment)
+
+Settled alongside the move: `@astro-mine/surface` and `@astro-mine/ui` are published as **private
+GitHub Packages that flip public with their repository** — the same single decision
+[astro-mine-view#17] made for all three front-end packages (`surface`, `ui`, `view`). Each carries
+`publishConfig.registry` pinned to `npm.pkg.github.com` and a tag-driven release; the two share one
+version train. `@astro-mine/console` is an application and is never published — which is *why* the
+machinery had to move into `surface`/`ui`: only those are consumable cross-repo. The reasoning and the
+rejected options (a public npmjs.com mirror; vendoring; staying private indefinitely) live in
+view#17 and `astro-mine-console`'s `ARCHITECTURE.md` ("Distribution").
+
+### Why via (this) RFC
+
+The change is confined to the three front-end packages this RFC introduced and touches no other
+component or RFC. But it alters **where a cross-cutting contract's machinery lives** — the package
+boundaries every future surface imports across — which is the same double trigger (new top-level
+surface + cross-cutting convention) that sent the original and Amendment 1 through [GOVERNANCE.md].
+Recording it as an amendment keeps the contract's authority in one readable place. It also **closes
+the follow-up Amendment 1 opened**: the surfaces render `<InspectorSlot>`; now they can, cross-repo,
+without importing the shell.
+
+### Impact on Core
+
+**None, unchanged.** No enum member, message, schema, or wire form changes; `CORE_INTERFACE_VERSIONS`
+stays `0.1.0`. The move is entirely within the front-end packages; the contribution model still
+*reads* Core's `PluginKind` by its published `$id`.
+
+### Decision
+
+**Accepted 2026-07-20** by the steering group (the founding team): the registry (`buildRegistry` /
+`resolveSlot` / `statusesFor` / `capabilityStatus` / `joinPath` / `Registry`) moves to
+`@astro-mine/surface`, which stays zero-runtime-dependency; `InspectorSlot` and the
+`<ConsoleProvider>` / `useConsole` context move to `@astro-mine/ui`, which takes a strictly-lower
+dependency on `@astro-mine/surface`; `@astro-mine/console` keeps `createConsole`, routing and
+endpoint config, builds the registry and provides it. `surface` and `ui` publish to private GitHub
+Packages (`publishConfig` + tag-driven release); `@astro-mine/console` is never published.
+`astro-mine-core` unchanged. Implementation is [console#13].
+
 [bench#57]: https://github.com/astro-mine/astro-mine-bench/issues/57
 [hub#31]: https://github.com/astro-mine/astro-mine-hub/issues/31
 [studio#31]: https://github.com/astro-mine/astro-mine-studio/issues/31
 [studio#32]: https://github.com/astro-mine/astro-mine-studio/issues/32
 [console#5]: https://github.com/astro-mine/astro-mine-console/issues/5
+[console#13]: https://github.com/astro-mine/astro-mine-console/issues/13
+[astro-mine-view#17]: https://github.com/astro-mine/astro-mine-view/issues/17
 [GOVERNANCE.md]: https://github.com/astro-mine/.github/blob/main/GOVERNANCE.md
