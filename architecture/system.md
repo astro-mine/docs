@@ -180,8 +180,11 @@ and [guard.md](guard.md) §9.5.
 | [Bench](bench.md) | Backbone | Benchmarks, scenario zoo, leaderboards | FastAPI + Postgres; eval on Cloud | Scenario specs, metrics, results | pins Core; runs Sim; Hub submissions; Cloud |
 | [Hub](hub.md) | Backbone | Registry for policies/worlds/assets/plugins | OCI registry + Postgres on Cloud | OCI artifacts, manifests, provenance | indexed by Core manifest; all producers/consumers |
 | [Cloud](cloud.md) | Backbone | Distributed sim/training orchestration | Kubernetes + Ray + Argo | Content-addressed datasets/artifacts | runs Sim/Learn/Allocate/Surrogate/Bench |
+| astro-mine-cli ◊◊ | Backbone | The discoverable umbrella CLI: `astro-mine <verb>` | Thin console script (near-zero deps); local everywhere | None owned — dispatches to component CLIs | discovers component CLIs via the `astro_mine.cli` entry-point group |
 
 † Added by [RFC-0001](../rfc/0001-multi-regime-missions.md) (accepted; implementation Phase 3). "Mission arch." = the **Mission architecture & logistics** layer. Existing components are also *extended* for multi-regime scope — see §13.
+
+◊◊ Added by [RFC-0011](../rfc/0011-umbrella-cli.md) (accepted). `astro-mine-cli` (import `astro_mine.cli`) is a **thin dispatcher**, not a dependency-heavy super-package: it discovers subcommands from the `astro_mine.cli` entry-point group (the platform's established extension mechanism) and imports a component only when its verb runs, so the local tier stays light (CX-LOCAL). It makes **no** change to Core. Every component CLI keeps working directly; the umbrella is the discoverable front door.
 
 ‡ Added by [RFC-0002](../rfc/0002-shared-spice-foundation.md) (accepted; implementation Phase 0). [Spice](spice.md) is a **Core companion** — the SPICE-backed realization of Core's frame/time vocabulary that Core cannot host (heavy deps; core.md §2 principle 3). See §3 and [spice.md](spice.md).
 
