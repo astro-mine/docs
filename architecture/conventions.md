@@ -378,6 +378,19 @@ code version, the environment lockfile, and the random seed. Datasets and polici
 
 - Packages: `Astro-Mine-<Name>` (PyPI/dist name lowercase `astro-mine-<name>`; import
   `astro_mine.<name>`).
+- **CLI naming (normative — [RFC-0011](../rfc/0011-umbrella-cli.md)).** A component's **direct
+  console script is `astro-mine-<package>`** — the prefix is uniform (it removes the `PATH`
+  land-grab of generic bare names like `fleet`/`link`/`prospect`) and names the command after its
+  package. The **discoverable umbrella surface is `astro-mine <verb>`** (verb-first — the user
+  guesses the *action*); component-scoped actions read as `astro-mine <component> <verb>` (e.g.
+  `astro-mine studio serve`). The umbrella (`astro-mine-cli`, import `astro_mine.cli`) **discovers**
+  subcommands from the **`astro_mine.cli`** entry-point group, so a component contributes a verb by
+  declaring an entry point — **never by a PR to the umbrella** — and it must **degrade honestly**
+  when a component is absent (name the `pip install`, never traceback). A missing first-party verb
+  names its fix; existing component CLIs keep working directly (the umbrella is additive). Any bare
+  or mis-nouned legacy name (`fleet`/`worlds`/`link`/`prospect`; `astro-mine-train`) is kept as an
+  **alias for one deprecation cycle**, removed at the public-flip gate. New CLIs are born under the
+  prefixed rule — the alias surface only shrinks.
 - **Front-end packages** (§2.1) are npm packages under the **`@astro-mine`** scope:
   `@astro-mine/<name>`, lowercase and hyphenated. A per-component *surface* is named for its
   component with a `-ui` suffix — `@astro-mine/bench-ui`, `@astro-mine/studio-ui`,
