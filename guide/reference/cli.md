@@ -113,12 +113,17 @@ astro-mine-sim {run,record}
 
 | Command | Flags | Notes |
 |---|---|---|
-| `run <scenario_id>` | `--seed` · `--out` · `--registry PATH` | Takes a **Bench `ScenarioSpec` id**, resolves it to a Sim `Scenario`, runs real physics, writes MCAP. Warns and proceeds on unresolved providers (unlike `bench score`, which refuses). |
-| `record` | `--scenario-file PATH` · `--seed` · `--out` | Takes a **Sim `Scenario` JSON document**. Self-contained: no registry, no content, no network. |
+| `run <scenario_id>` | `--seed` · `--out` · `--registry PATH` · `--metakernel PATH` | Takes a **Bench `ScenarioSpec` id**, resolves it to a Sim `Scenario`, runs real physics, writes MCAP. Warns and proceeds on unresolved providers (unlike `bench score`, which refuses). |
+| `record` | `--scenario-file PATH` · `--seed` · `--out` · `--metakernel PATH` | Takes a **Sim `Scenario` JSON document**. Self-contained: no registry, no content, no network — and no kernels. |
 
-> **Gap:** neither subcommand furnishes a SPICE kernel pool, and there is no `--metakernel` flag, so
-> a Sim-backed anchor run cannot be driven from a shell alone. See
-> [tutorial 02 §3](../tutorials/02-run-it-in-the-simulator.md) for the wrapper that works.
+**SPICE kernels.** `--metakernel PATH` furnishes the pool, defaulting to
+`$ASTRO_MINE_SPICE_METAKERNEL`. Kernels are not shipped — get them from
+[NAIF](https://naif.jpl.nasa.gov/naif/data.html). The **environment variable is also what
+`astro-mine-bench score --runner sim` uses**: Bench hands the runner a content store and nothing
+else, so the runner reads the variable itself rather than Bench growing a vocabulary for SPICE. The
+pool is validated against the episode's epoch window at startup, so a short kernel set fails
+immediately rather than mid-run. See
+[tutorial 02 §3](../tutorials/02-run-it-in-the-simulator.md).
 
 ## Train — `astro-mine-learn`
 

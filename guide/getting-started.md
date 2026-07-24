@@ -200,23 +200,20 @@ A scorecard is a claim about a run, and this run would not have modelled the con
 A scorecard is a claim. Refusing to make a claim about content that was never loaded is integrity,
 not breakage.
 
-**3. SPICE kernels.** The world resolves body-fixed frames through SPICE, and **nothing in the CLI
-furnishes a kernel pool**. Today this is a genuine hole in the command-line path: `astro-mine-bench
-score --runner sim` cannot be run from a shell alone. You must furnish a metakernel in-process
-first:
+**3. SPICE kernels.** The world resolves body-fixed frames through SPICE, so a Sim-backed run needs
+a furnished kernel pool. Kernels are **not shipped** with the platform — obtain SPK/PCK/FK/LSK
+kernels from [NAIF](https://naif.jpl.nasa.gov/naif/data.html) and list them in a metakernel (`.tm`).
 
-```python
-from astro_mine.spice import load_metakernel
-load_metakernel("/path/to/metakernel.tm")
-
-from astro_mine.bench.cli import main
-main(["score", "lunar-polar-ice-prospecting-v1", "--runner", "sim", "--seeds", "1001"])
+```bash
+export ASTRO_MINE_SPICE_METAKERNEL=/kernels/lunar.tm
 ```
 
-Kernels are not shipped with the platform; obtain them from
-[NAIF](https://naif.jpl.nasa.gov/naif/data.html). This is tracked as a gap — see
-[tutorial 02](tutorials/02-run-it-in-the-simulator.md), which walks the whole path and shows the
-scorecard it produces.
+The environment variable is what the **scoring** path uses, because `astro-mine-bench score` hands
+the Sim runner a content store and nothing else — Bench has no vocabulary for SPICE. `astro-mine-sim
+run` and `record` additionally take `--metakernel PATH`, which wins over the variable.
+
+The pool is validated against the episode's epoch window when the run starts, so a kernel set that
+stops short of a 30-day lunar month fails in the first second rather than partway through.
 
 With all three in place, the same command reports a different runner and different numbers:
 
