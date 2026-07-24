@@ -181,10 +181,10 @@ Sim's job; Mind importing Sim would put an engine dependency behind the planning
 Bench and Sim's:
 
 ```bash
-python score_sim.py score lunar-polar-ice-prospecting-v1 --runner sim --seeds 1001 1002 1003 1004 1005
+astro-mine-bench score lunar-polar-ice-prospecting-v1 --runner sim --seeds 1001 1002 1003 1004 1005
 ```
 
-(the wrapper from [tutorial 02 §3](02-run-it-in-the-simulator.md), which furnishes SPICE).
+(with `$ASTRO_MINE_SPICE_METAKERNEL` set — see [tutorial 02 §3](02-run-it-in-the-simulator.md)).
 
 That is the whole point of the exercise: your stack and the reference baseline are scored by the
 **same** benchmark, over the same pinned content and the same seeds, producing scorecards whose

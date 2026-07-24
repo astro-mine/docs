@@ -184,7 +184,7 @@ Before publishing, score it the way [tutorial 02](02-run-it-in-the-simulator.md)
 baseline, and do it across **seeds**, not one:
 
 ```bash
-python score_sim.py score lunar-polar-ice-prospecting-v1 --runner sim --seeds 1001 1002 1003 1004 1005
+astro-mine-bench score lunar-polar-ice-prospecting-v1 --runner sim --seeds 1001 1002 1003 1004 1005
 ```
 
 Report the seed sweep, not your best seed. The anchor's public seeds are `1001–1005`; the

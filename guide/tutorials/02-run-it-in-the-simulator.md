@@ -20,7 +20,7 @@ Three things, and the platform will stop you on each.
 |---|---|---|
 | **1. The runner** | `astro-mine-sim[bench]` | Registers `sim` into the `astro_mine.bench.runners` entry-point group. **Bench never imports Sim** — it discovers runners. |
 | **2. The producers** | `astro-mine-worlds`, `astro-mine-prospect`, `astro-mine-link` | Content and code ship separately. The fetched bundles are data; these packages rebuild them into live providers through `astro_mine.providers`. |
-| **3. SPICE kernels** | a furnished metakernel | The world resolves body-fixed frames through SPICE. **Nothing in the CLI furnishes them** — see §3. |
+| **3. SPICE kernels** | a metakernel, via `$ASTRO_MINE_SPICE_METAKERNEL` or `--metakernel` | The world resolves body-fixed frames through SPICE. Kernels are not shipped — see §3. |
 
 Plus the content itself, from [tutorial 01](01-score-the-anchor.md) §6:
 
@@ -69,46 +69,46 @@ that fact in its own provenance.
 > traceback rather than a clean CLI error. The message is the last few lines. This is a defect, not
 > a signal that you did something worse than you did.
 
-## 3. SPICE: the gap in the command-line path
+## 3. SPICE kernels
 
-The world resolves frames like `MOON_ME` through SPICE, and **no Astro-Mine CLI furnishes a kernel
-pool**. Run `astro-mine-bench score --runner sim` with everything else in place and you get:
+The world resolves frames like `MOON_ME` through SPICE, which cannot answer a geometry query until a
+kernel pool is furnished. Kernels are **not shipped** with the platform: obtain SPK/PCK/FK/LSK
+kernels from [NAIF](https://naif.jpl.nasa.gov/naif/data.html) and list them in a metakernel (`.tm`).
 
-```
-SpiceGeometryError: cannot resolve position of 'SUN' relative to 'MOON' in frame 'MOON_ME' at
-ET 0.0: SPICE(UNKNOWNFRAME) -- The string supplied to specify the reference frame was 'MOON_ME'.
-This frame is not recognized.
-```
-
-Kernels are not shipped with the platform — get them from
-[NAIF](https://naif.jpl.nasa.gov/naif/data.html) and assemble a metakernel. Then furnish it
-in-process before invoking the CLI's entry point:
-
-```python
-# score_sim.py
-import sys
-from astro_mine.spice import load_metakernel
-load_metakernel("/path/to/metakernel.tm")
-
-from astro_mine.bench.cli import main
-sys.exit(main(sys.argv[1:]))
-```
+Point the platform at it once, for the shell:
 
 ```bash
-export ASTRO_MINE_HUB_REGISTRY=~/.cache/astro-mine/hub-registry
-python score_sim.py score lunar-polar-ice-prospecting-v1 --runner sim --seeds 1001
+export ASTRO_MINE_SPICE_METAKERNEL=/kernels/lunar.tm
 ```
 
-This is a genuine hole: **the documented CLI path cannot be completed from a shell alone.** There is
-no `--metakernel` flag on `score` or on `sim run`, and nothing reads a kernel path from the
-environment. Everything below was produced through the four-line wrapper above.
+**The environment variable is what the scoring path uses**, and the reason is the narrow waist:
+`astro-mine-bench score` hands the Sim runner a content store and nothing else. Bench has no
+vocabulary for SPICE and does not grow one — so the runner reads the variable itself, exactly as it
+already resolves its content store from `$ASTRO_MINE_HUB_REGISTRY`
+([concepts/narrow-waist.md](../concepts/narrow-waist.md)).
+
+`astro-mine-sim run` and `astro-mine-sim record` also take an explicit flag, which wins over the
+variable:
+
+```bash
+astro-mine-sim run lunar-polar-ice-prospecting-v1 --metakernel /kernels/lunar.tm
+```
+
+**The pool is checked against the episode, not just loaded.** Kernels are furnished once the
+scenario is materialized, so its epoch window is validated against the SPK data up front: a kernel
+set that stops short of the anchor's 30-day month fails in the first second rather than ~18,000
+ticks in. And if you forget entirely, the error names the flag, the variable, and NAIF — rather than
+a `SPICE(UNKNOWNFRAME)` traceback from inside the illumination model.
+
+A run that needs no geometry needs no kernels: `astro-mine-sim record` on a self-contained scenario
+works with none configured.
 
 ## 4. Score it
 
 Start on the sprint scenario — same machinery, minutes instead of tens of minutes:
 
 ```bash
-python score_sim.py score lunar-polar-ice-prospecting-sprint-v1 --runner sim --seeds 1001
+astro-mine-bench score lunar-polar-ice-prospecting-sprint-v1 --runner sim --seeds 1001
 ```
 
 ```
@@ -125,7 +125,7 @@ scorecard: sha256:2445f40a72ed2bea469519156ac8fb6593e5f5c6321f70238d3267bc875e47
 Then the anchor itself — 43,200 ticks of 60 s, a 30-day lunar month:
 
 ```bash
-python score_sim.py score lunar-polar-ice-prospecting-v1 --runner sim --seeds 1001
+astro-mine-bench score lunar-polar-ice-prospecting-v1 --runner sim --seeds 1001
 ```
 
 ```
@@ -200,14 +200,12 @@ read it there rather than from a copy that can drift.
 Scoring gives you numbers. To see what happened, record the episode:
 
 ```bash
-python sim_run.py run lunar-polar-ice-prospecting-sprint-v1 --seed 1001 --out anchor.mcap
+astro-mine-sim run lunar-polar-ice-prospecting-sprint-v1 --seed 1001 --out anchor.mcap
 ```
 
 ```
 06bfb73d54397f074b1930e943c7a7946e757c84519fa643be71338cdf811663
 ```
-
-(`sim_run.py` is the same four-line wrapper as §3, calling `astro_mine.sim.__main__:main`.)
 
 It prints the run's content hash and writes an [MCAP](https://mcap.dev/) log — 790 KB for the sprint
 scenario. MCAP is a standard robotics log format, so any MCAP tool reads it; the platform's own
