@@ -4,6 +4,10 @@
 > Expands [`architecture/conventions.md`](architecture/conventions.md) §7 (packaging) and §13
 > (naming & versioning). While the platform is in **private incubation**, the "incubation" rules
 > here take precedence over any public-distribution language in the architecture docs.
+>
+> **Amended 2026-07-23** for [RFC-0011](rfc/0011-umbrella-cli.md): §2.2 settles the umbrella CLI's
+> release cadence — the RFC's one deferred question — and §7 gains the deprecated-alias removal it
+> made due at the public flip.
 
 ## 1. Two version axes
 
@@ -66,6 +70,45 @@ version identity** — `uv` resolves the dependency by ref, not by the package's
 - Tags are **annotated** and named `vMAJOR.MINOR.PATCH` (e.g. `v0.1.0`), one series per
   repository.
 
+### 2.2 The umbrella CLI (`astro-mine-cli`)
+
+`astro-mine-cli` ([RFC-0011](rfc/0011-umbrella-cli.md)) versions something no other package does:
+a **discovery surface**. It ships the `astro-mine` dispatcher, the `Subcommand` contract that
+component adapters bind to, and the static first-party verb manifest — and it declares **zero
+runtime dependencies**, so it is the one repo with no dependency pins to move (§5 does not apply
+to it).
+
+Its cadence follows from that:
+
+- **It tracks the platform, not any component.** Its version answers *"which verb surface and
+  dispatcher is this?"*, never *"which Bench does it work with?"* Like every other package it is
+  cut at integration milestones (§3).
+- **A component adding, renaming, or removing a verb does not bump it.** Verbs are discovered from
+  the `astro_mine.cli` entry-point group at runtime, so a component contributes one by declaring an
+  entry point in its *own* `pyproject.toml`. That is the design's central promise — *no PR to
+  extend* (RFC-0011 §3) — and it means the umbrella's version is deliberately slow-moving while the
+  platform's command surface grows underneath it.
+- **It bumps when its own behaviour changes:** the dispatcher, the degradation contract, the
+  `Subcommand` protocol, or the **first-party manifest** (which does move when the platform gains a
+  verb of its own or renames a distribution — the manifest is a roster of *our* packages, and a
+  platform verb missing from it degrades to being described as a stranger's).
+
+**The `Subcommand` contract is a cross-repo compatibility surface — and is *not* a Core interface
+version.** Every component's adapter binds to it structurally (`name`, `help`, `add_arguments`,
+`run`), so changing it breaks every adapter at once. It is nonetheless **not** in
+`CORE_INTERFACE_VERSIONS`: RFC-0011 makes no change to Core, and the umbrella is a Backbone
+component, not the narrow waist. Treat a breaking change to it with the same *discipline* as a
+contract change without borrowing Core's axis:
+
+- bump `astro-mine-cli`'s **minor** (pre-1.0 semantics, §2 — `0.y` minor is the breaking bump);
+- land the component adapters in the **same integration milestone**, so no release exists in which
+  the contract and its implementations disagree;
+- state the change in the tag's annotation, since there are no GitHub Releases to carry notes (§6).
+
+Because the contract is structural rather than imported, a mismatch surfaces at *dispatch* rather
+than at install: the umbrella reports a non-conforming provider by name, entry point and missing
+member. That is a good error, not a substitute for the coordination above.
+
 ## 3. When versions are assigned — integration milestones
 
 Versions are cut at the roadmap's **integration milestones** (`roadmap/`), giving stable
@@ -75,6 +118,7 @@ cross-repo pin targets and reproducible Bench inputs without per-commit churn.
 |---|---|
 | Core v0.1 (Phase-0 backbone) | `astro-mine-core v0.1.0` |
 | M0.1 / M0.2 first runnable slices | first `0.1.0` of each participating repo (worlds, prospect, fleet, sim, bench, link, cloud) |
+| umbrella CLI first cut | `astro-mine-cli v0.1.0` — the dispatcher + the `Subcommand` contract (§2.2) |
 | later milestones (M1.1, …) | minor bumps as each repo advances |
 
 Between milestones, a downstream repo pins the last tag (or a specific commit) of its
@@ -211,6 +255,15 @@ Phase 1 — possibly later):
 - Execute **`RM-P0-CORE-08`**: publish the `astro-mine-core` **wheel to a public index (PyPI)**
   via OIDC / Trusted Publishing, signed; switch downstream repos from the Git source to a normal
   version range (e.g. `astro-mine-core>=0.1,<0.2`).
+- **Remove the deprecated CLI aliases.** [RFC-0011](rfc/0011-umbrella-cli.md) §5 renamed five
+  binaries and kept the old names for **one deprecation cycle, ending here**: `fleet`, `worlds`,
+  `link` and `prospect` (bare names that squatted a user's `PATH`) and `astro-mine-train` (prefixed,
+  but named after its verb rather than its package). Each still runs and prints a one-line notice to
+  stderr. Deleting them at the flip is what makes the promise true that **no outside user ever
+  learns a transitional name** — miss it and the aliases become permanent by default. The alias
+  surface only ever shrinks: every CLI added since is born prefixed (`conventions.md §13`).
+  - Sweep the in-source docstrings and comments that still name the old commands in prose at the
+    same time; they are accurate only while the aliases live.
 - Turn on **full GitHub Releases** with signed wheel assets + SLSA provenance + SBOMs (CX-SEC).
 - Reconcile `RM-P0-CORE-08`'s acceptance criteria (currently "`pip install astro-mine-core`" /
   "wheel on an index") with this document.
@@ -225,6 +278,11 @@ Phase 1 — possibly later):
 - During incubation, depend on Core via a **tag-pinned `uv` Git source + PAT in CI**; **no public
   PyPI**, OCI to **private GHCR**.
 - **Tags always; full GitHub Releases deferred** to the public flip.
+- **`astro-mine-cli` tracks the platform**, not any component: a component adding a verb never
+  bumps it (discovery is dynamic), and its `Subcommand` contract is a cross-repo surface
+  coordinated like — but not versioned as — a Core interface (§2.2).
+- **The deprecated CLI aliases die at the public flip** (§7); that is the deadline RFC-0011 §5
+  set, and this document is where it is actionable.
 - With the interface version frozen, **lockfiles + content hashes + `buf breaking`** — not
   version negotiation — guarantee compatibility and reproducibility.
 
@@ -232,4 +290,6 @@ Phase 1 — possibly later):
 
 *See also:* [`architecture/conventions.md`](architecture/conventions.md) (§7 packaging, §13
 naming & versioning) · [`architecture/core.md`](architecture/core.md) (§7 distribution, §11
-versioning model) · [`roadmap/`](roadmap/) (integration milestones, `RM-P0-CORE-08`).
+versioning model) · [`rfc/0011-umbrella-cli.md`](rfc/0011-umbrella-cli.md) (the umbrella CLI and
+the naming/alias rule §2.2 and §7 implement) · [`roadmap/`](roadmap/) (integration milestones,
+`RM-P0-CORE-08`).

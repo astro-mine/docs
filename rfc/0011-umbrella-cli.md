@@ -247,8 +247,11 @@ new-package precedent of Spice (RFC-0002) and Seal (RFC-0005). It is a *backbone
 - **Whether `astro-mine` should re-expose a component's *full* subcommand tree** (e.g.
   `astro-mine hub <anything hub supports>`) or only a curated verb set is deferred; the entry-point
   contract supports either.
-- The umbrella's own version/release cadence relative to components (it should track the platform,
-  not any one component) is deferred to `VERSIONING.md`.
+- ~~The umbrella's own version/release cadence relative to components (it should track the platform,
+  not any one component) is deferred to `VERSIONING.md`.~~ **Resolved 2026-07-23** in
+  [`VERSIONING.md §2.2`](../VERSIONING.md): it tracks the platform; a component adding a verb never
+  bumps it (discovery is dynamic); and the `Subcommand` contract is coordinated like — but
+  deliberately not versioned as — a Core interface.
 
 ## Doc impact
 
