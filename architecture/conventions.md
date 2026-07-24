@@ -397,6 +397,16 @@ code version, the environment lockfile, and the random seed. Datasets and polici
   `@astro-mine/hub-ui` — which is also what the console's layering check keys on to tell a surface
   from a library. A repo's workspace root is private and unpublished; only the packages it ships
   carry the scope.
+- **Shipped examples (normative).** A component that defines an authored format MUST ship at least
+  one working example of it, and the example MUST be reachable **two ways**, because the two
+  audiences are different: **package data** under `src/astro_mine/<comp>/reference/` for a reader
+  who has installed a wheel and calls `importlib.resources.files(...)`, and a path under the repo's
+  **`examples/`** for a reader browsing on GitHub. Where both exist, one is the file and the other
+  points at it — never two copies that can drift. An example MUST validate under its owner's
+  validator (`astro-mine-core validate`, or the component's own) at merge time, and the component's
+  README MUST name it by path and show the call that loads it. A format whose only example is
+  authored inside a build script does not satisfy this: content that ships but cannot be found is
+  content that does not exist.
 - Every component repo carries an `ARCHITECTURE.md` that links back to this directory.
 - Interface versions are independent of implementation versions; a component declares the Core
   interface major versions it supports.
