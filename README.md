@@ -4,7 +4,9 @@ Documentation for the [Astro-Mine](https://github.com/astro-mine) platform — t
 open-source commons for designing, simulating, and operating planetary robotic swarms for
 exploration and in-situ resource utilization (ISRU).
 
-> **Status:** early incubation (Phase 0). Content is being scaffolded.
+> **Status:** Phase 1 (autonomy & studio) shipped; Phase 2 (operations bridge) is next.
+> Repositories are private during incubation and flip public at the first public-benchmark
+> milestone.
 
 ## Contents
 
