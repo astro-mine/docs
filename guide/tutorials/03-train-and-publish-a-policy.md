@@ -117,10 +117,9 @@ One content-addressed entry **per agent kind**, each holding `model.onnx` and
 exported graph must reproduce the trained network's outputs. A model that does not survive the
 round trip is not written.
 
-> ⚠️ **`--export` must be an absolute path.** With a relative one the export writes `model.onnx`,
-> then dies with `ValueError: relative path can't be expressed as a file URI` before writing
-> `policy_package.json`, leaving a half-written entry. A defect, not intended behavior — pass an
-> absolute path.
+A relative path works — `--export ./policies` resolves to an absolute one, and the sidecar records
+the resulting `file://` URI. The entry is written atomically, so an interrupted export leaves
+nothing rather than a digest directory holding a model with no `policy_package.json` beside it.
 
 `--export-format onnx` is the only format (ONNX is the one cross-component policy artifact) and
 `--export-version` stamps the SemVer on the package (default `0.1.0`).

@@ -65,9 +65,10 @@ that was never loaded. Bench refuses to make it.
 recording a partial run is a legitimate ask at the library tier, and a run that *was* blind records
 that fact in its own provenance.
 
-> **Known rough edge.** The refusal is correct but currently escapes as an unhandled `RuntimeError`
-> traceback rather than a clean CLI error. The message is the last few lines. This is a defect, not
-> a signal that you did something worse than you did.
+The refusal is a typed outcome, not a crash: Bench prints it as an error and exits non-zero, and a
+runner that hits a genuine bug still raises with its traceback intact. So an `error:` here means the
+platform decided, and a traceback means something is actually broken — the two are worth telling
+apart, and you can.
 
 ## 3. SPICE kernels
 
