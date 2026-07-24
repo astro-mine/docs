@@ -280,7 +280,7 @@ umbrella is additive. See [reference/cli.md](reference/cli.md) for the complete 
 | **P5** Mission designer | [07 — design a swarm in Studio](tutorials/07-design-a-swarm-in-studio.md) → [the console guide](console.md) |
 | **P6** Educator / student | this page → [01 — score the anchor](tutorials/01-score-the-anchor.md) → [the console guide](console.md) |
 | Extending the platform | [how-to/write-a-plugin.md](how-to/write-a-plugin.md) |
-| Looking something up | [reference/cli.md](reference/cli.md) · [reference/file-formats.md](reference/file-formats.md) · [concepts/](concepts/) |
+| Looking something up | [reference/cli.md](reference/cli.md) · [reference/file-formats.md](reference/file-formats.md) · [concepts/](concepts/README.md) |
 
 ---
 
