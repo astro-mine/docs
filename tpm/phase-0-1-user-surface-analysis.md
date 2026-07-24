@@ -9,6 +9,32 @@
 > **Evidence:** ground truth from shipped code across all 18 repos, not from architecture docs.
 > Where a claim was load-bearing it was executed, not read.
 
+> ### ⚑ Acted on and superseded (2026-07-24)
+>
+> This report drove **Waves 21–26**, which are now complete — see
+> [issue-plan.md § Outcome](issue-plan.md#outcome). **It is deliberately not updated**: it records
+> the platform as of 2026-07-16, which is what makes it readable as a diagnosis rather than a
+> changelog. Everything below describes a state that no longer holds.
+>
+> **The headline finding — *"the platform is far more built than it is usable"* — has been
+> answered.** The ❌ cluster §4 identified on the two phase objectives is closed: running the anchor
+> for real (UC-B3/B4), the policy artifact (UC-D2), the design GUI (UC-F1/F3/F7), the leaderboard
+> face (UC-G5), and plugin onboarding (UC-H1/H2). There is now a
+> [user guide](../guide/README.md) (G1.7), an umbrella CLI (G2.1), and one console (G1.5).
+>
+> **Three of this report's own claims did not survive verification** and are corrected where they
+> were acted on, not here:
+>
+> - **G3.5** (committed `.venv` in `astro-mine-core`) — **false**. Untracked, gitignored, never
+>   committed. Struck; no issue was filed.
+> - **G3.1**'s companion claim that Hub's README *"omits `search`"* — **false**. It does not.
+> - **G3.2** (`1 - Planning` classifiers) named Hub and Seal; the drift was **15 of 18** repos.
+>   **G3.4** listed Surrogate as missing from the org package map; it was present. Spice and Seal
+>   were the omissions.
+>
+> Treat the analysis as a snapshot and the gap IDs as stable references. For current state, read the
+> [guide](../guide/README.md) — which, unlike this document, is maintained.
+
 ---
 
 ## 1. Executive summary

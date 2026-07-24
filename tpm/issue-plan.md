@@ -1,5 +1,10 @@
 # Phase-1 UX & User-Guide backlog — issue plan (Waves 21–26)
 
+> **Status: complete (2026-07-24).** All six waves shipped; every `Wave 21`–`Wave 26` issue is
+> closed. This document is the plan **as drafted**, kept for the reasoning behind each issue — it is
+> not edited to match what was built. What execution found, including where the plan was wrong, is
+> recorded in [§ Outcome](#outcome) at the end.
+
 Source of truth for the issue-drafting pass. Derived from
 `phase-0-1-user-surface-analysis.md` (the gap report). Gap IDs (G1.x/G2.x/G3.x)
 and use-case IDs (UC-xx) below refer to that report.
@@ -295,3 +300,82 @@ CLI — gates 25.x's dispatch surface and 22.5's scaffold).
 
 **Critical path:** 21.2 (publish anchor content) → 21.3 (fetch) → 21.1/21.5 (honest Sim scoring) →
 26.2/26.3 (the tutorials that prove the Phase-0 promise). Everything else is parallel.
+
+---
+
+## Outcome
+
+**Completed 2026-07-24.** All six waves shipped. 54 issues carrying `Wave 21`–`Wave 26` labels are
+closed across 15 repos — the 33 planned here, plus issues spun out during execution (most of them in
+Wave 21, where making Sim-backed scoring honest turned up four real physics gaps: extraction
+uncoupled from excavation, per-asset dynamics never executed, no belief conditioned, and an
+unresolved provider scoring blind).
+
+### The plan held where it mattered
+
+The **critical path was right**. 21.2 (publish the anchor content) was the root blocker, and
+everything downstream unblocked in the predicted order. The **sequencing rule was right** — tutorials
+02/03/07/08 could not have been written honestly before their gaps closed, and the two that were
+written first (01 and 04) needed no rework.
+
+The **one-console decision** and the **surface-lives-in-its-component-repo** decision both survived
+contact: registering a shipped surface in the shell is one line, exactly as RFC-0010's acceptance
+test claimed.
+
+### Where the plan was wrong
+
+- **26.9 (`G3.5`, committed `.venv`) was struck** — verified false. `astro-mine-core`'s
+  `examples/downstream-consumer/.venv/` exists on disk but is untracked, gitignored, and has never
+  appeared in a commit. It was never filed.
+- **Three of the gap report's own claims did not survive verification** and are corrected in-place
+  in issues #39/#40: `G3.1`'s "the Hub README omits `search`" (it does not); `G3.2`'s scope (the
+  `1 - Planning` drift was **15 of 18** repos, not Hub and Seal); `G3.4`'s list (Surrogate was
+  already on the org package map — Spice and Seal were missing, and later Console and Cli too).
+- **Wave 26's gate assumptions went stale mid-flight.** The issues were re-verified 2026-07-23 and a
+  large RFC-0011 rollout landed 07-23/24, so four of the eight carried statements that were false by
+  the time the work started — most consequentially "`astro-mine-cli` is not built" (it was) and
+  "tutorial 05 is still gated" (`astro-mine-worlds#57` had closed the gate hours earlier). The guide
+  was written against the code, as each issue instructs, not against its own issue text.
+- **`astro-mine-cli` is a repo the plan did not anticipate.** RFC-0011 was drafted as a naming
+  decision inside Wave 25 and produced a new package, a new entry-point group, and a rename of every
+  component binary.
+
+### What execution surfaced that no analysis would have
+
+Writing the guide against the shipped code — running every command rather than reading it — found
+three defects the gap report could not have, because each only appears when you actually try the
+documented path end to end:
+
+| Defect | Why it mattered |
+|---|---|
+| [`astro-mine-sim#80`](https://github.com/astro-mine/astro-mine-sim/issues/80) | **No CLI furnished a SPICE kernel pool.** `bench score --runner sim` — the platform's central claim — could not be run from a shell at all. |
+| [`astro-mine-bench#79`](https://github.com/astro-mine/astro-mine-bench/issues/79) | The provider refusal escaped as a traceback, so integrity read as breakage. |
+| [`astro-mine-learn#33`](https://github.com/astro-mine/astro-mine-learn/issues/33) | `--export` with a relative path left a half-written content-addressed entry — a model resolvable by digest with no provenance beside it. |
+
+All three are fixed, and the guide's caveats about them removed. Plus a fourth class found in the
+same pass: **five CLIs printed a deprecated command name in their own `--help`**, and Fleet's `new`
+scaffold wrote the deprecated name into every generated asset file.
+
+The lesson worth carrying: *a documentation wave is a integration test*. Every one of these was
+invisible to code review and to the components' own suites, and unmissable the first time someone
+followed the instructions.
+
+### Deferred, with reasons
+
+- **G2.15** — whether Prospect priors should have a hand-authored file format. A design question, not
+  a doc gap; the guide records the state truthfully and invents no schema.
+- **G3.6** — Hub artifact naming ([`astro-mine-hub#44`](https://github.com/astro-mine/astro-mine-hub/issues/44)).
+  Now a content migration rather than a rename, since the anchor set is published with immutable
+  digests. Cheaper before the public flip than after.
+- **G3.7** — Seal has no CLI ([`astro-mine-seal#13`](https://github.com/astro-mine/astro-mine-seal/issues/13)).
+  A feature, and correctly kept out of a Low/Small sweep.
+- **UC-E3's single-command form** — `astro-mine-mind run`
+  ([`astro-mine-mind#25`](https://github.com/astro-mine/astro-mine-mind/issues/25)). The narrow waist
+  says Mind cannot own an Environment; the guide documents the Bench/Sim hop instead.
+
+### The standing constraint
+
+The guide is only true while it is executed. Every command in it was run at authoring time, and two
+of its pages had to be corrected within a day when the fixes they described as defects shipped. That
+is the maintenance cost of the *"document what ships"* rule — and it is the rule that makes the guide
+worth having.
