@@ -72,6 +72,17 @@ work ([tutorial 04](04-author-an-asset.md)).
 With the anchor content fetched, this is the six-asset roster the benchmark itself uses:
 prospecting rover, excavator, hauler, ISRU plant, lander, relay orbiter.
 
+**Compose the swarms you want to compare.** In **New study**, each *candidate* row names a swarm:
+give it a name, pick a robot from the menu, and set a count. Add a row per composition — "4 rovers"
+against "2 rovers + 2 haulers" is two rows each naming one robot, and a swarm mixing kinds is
+several candidates you compare side by side.
+
+Picking from the menu is what puts the artifact's **real content digest** on the candidate, and the
+row then shows you what that digest names — `namespace/name@version` and the capability tags it
+declares. You are not typing a hash: a reference that is not in the catalog is refused at authoring
+time, and a row missing either a name or a robot blocks the launch rather than being posted
+half-formed.
+
 ## 5. Launch a trade study (UC-F3)
 
 A trade study explores swarm compositions against your objective — how many rovers, how many
@@ -79,6 +90,35 @@ haulers, what the ISRU plant costs you in mass and power — and evaluates each 
 
 Launch it from the workspace and watch it populate. This is the step that, before the Wave-24 work,
 existed only as a REST endpoint; it is now a button.
+
+### What evaluated your candidates — read this before the front
+
+The study you just ran was scored by a **stand-in**, and the comparison view says so: it opens with
+*"Stand-in evaluator — no physics ran"*, naming `stand-in/0.1.0`. That banner is the same contract
+as `runner: fixture/0.1.0` on a Bench scorecard ([tutorial 01 §4, "The runner is the story"](01-score-the-anchor.md)) — **a
+stand-in never looks like the real thing**, and you never infer which one you have from the numbers.
+
+The shipped local evaluator is a deterministic stub. Each metric's base value scales with swarm size,
+with a per-metric factor derived from the metric's own *name*, so:
+
+- the numbers are **not domain-realistic** and are not predicted performance;
+- renaming a metric changes its score, because the letters changed;
+- every metric is a *positive* multiple of swarm size, so a bigger swarm wins on every axis at once
+  and **no candidate can dominate another**.
+
+That last one is why any study you run here reports "N candidates, **N** on the front". The surface
+labels that too, under *"Every candidate is on the front"* — it is a property of the scoring, not a
+finding about your designs.
+
+The evaluator identity rides the artifact, not just the pixels: `TradeStudy.evaluator` is part of the
+study's content hash, and a published campaign carries it forward, so a reviewer pulling either by
+digest can tell what justified it.
+
+**What this tutorial does demonstrate honestly**, all of it real and exercised end to end: the
+authoring journey, the objective as a validated Core artifact, the Pareto math, the uncertainty
+rendering, the provenance and lineage, and the publish path. Only the physics behind the metric
+values is stubbed — and the loop is built precisely so that swapping in a sibling evaluator changes
+that one seam and nothing else.
 
 ## 6. Read the Pareto front — with its uncertainty (UC-F4)
 
@@ -97,6 +137,9 @@ objective at once.
 - *"A beats B"* when their uncertainty overlaps — however far apart their centres sit, that ranking
   is **not resolved**
 - anything about a dimension the study did not model
+- anything at all about *physical* performance while the banner reads `stand-in/0.1.0` — under the
+  stand-in the front is complete by construction (§5), so its shape is telling you about the scoring
+  function, not about your designs
 
 Uncertainty is rendered as uncertainty; there are no false-precision heatmaps
 ([concepts/uncertainty.md](../concepts/uncertainty.md)). This is not decoration. P5's output has to
@@ -106,12 +149,37 @@ tells your reviewer where you are and are not confident.
 
 ## 7. Inspect a candidate in 3D (UC-F5)
 
-Select a candidate and inspect the swarm in the 3D scene — assets placed on the real world bundle,
-rendered through `@astro-mine/view`'s Cesium globe.
+**Pick a world first.** The workspace's **World** menu lists the world bundles in your registry;
+choosing one resolves the terrain the swarm is placed on. Until you do, the scene is a bare body —
+which is a legitimate design-time view, and the pane says so rather than looking broken. The
+`?world=` query parameter still works as a deep link and seeds the menu.
 
-If an asset shows as a plain box: that is the **inertia-equivalent proxy**, drawn because the asset
-declares mass and inertia but no visual mesh. It is labelled as a proxy rather than passed off as
-geometry ([tutorial 04 §6](04-author-an-asset.md)).
+Then select a candidate and inspect the swarm in the 3D scene, rendered through
+`@astro-mine/view`'s Cesium globe.
+
+### Reading what the scene draws
+
+Assets whose geometry resolved are drawn as **geometry**. Everything else is marked with an 8-pixel
+**glyph** at its position, and the colour tells you which case you are in:
+
+| What you see | What it means |
+| --- | --- |
+| Rendered geometry | The asset's mesh resolved and is drawn. |
+| **Cornflower-blue** glyph | Geometry resolved, but the swarm exceeded the scene's model budget or the asset is far away. Status: *"Swarm exceeds the model budget: N rendered as geometry, M as glyphs."* |
+| **Orange-red** glyph | Geometry could **not** be resolved. Status: *"N of M assets have no renderable geometry — showing their positions only."* |
+
+Both are honest degradations, not bugs: the scene marks a position it cannot draw rather than
+silently omitting the asset or inventing a shape for it.
+
+The anchor roster's SADF documents carry `geometry: []`, so on the shipped content you should expect
+orange-red glyphs and that status line.
+
+> **Not to be confused with the inertia-equivalent proxy.** Fleet's `render` CLI *synthesizes* a
+> proxy box from an asset's mass and inertia and writes it out as glTF
+> ([tutorial 04 §6](04-author-an-asset.md)). That is an offline authoring step, and its output is a
+> real mesh a scene can draw. View's browser panes never do this: a live scene refuses to invent
+> geometry it was not given, and marks the position instead. If you want proxy boxes in the viewer,
+> render them with Fleet and publish them as geometry.
 
 ## 8. Publish the campaign (UC-F6)
 
@@ -123,13 +191,22 @@ That is the deliverable: not a screenshot in a slide deck, but an artifact carry
 the chosen composition, and the study that justified it, which a reviewer can pull by digest and a
 simulator can run.
 
+It also carries **what evaluated it** and **which world you inspected it on** — `evaluator` and
+`world_ref` on the campaign. A reviewer holding only the digest can therefore tell that this design
+was justified by `stand-in/0.1.0` rather than by physics, without having to take your word for it or
+re-run anything.
+
 ---
 
 ## 9. What you did
 
-You stated a goal, picked robots from a real catalog, ran a trade study, read a Pareto front with
-its uncertainty, inspected a candidate in 3D, and published a signed campaign — **without touching
-a command line after the first line**, and without hand-writing a single JSON document.
+You stated a goal, composed candidate swarms from a real catalog, ran a trade study, read a Pareto
+front with its uncertainty *and knew what produced it*, resolved a world and inspected a candidate on
+it in 3D, and published a signed campaign that records both — **without touching a command line
+after the first line**, and without hand-writing a single JSON document.
+
+The one thing that was not real is the physics behind the metric values, and the platform told you
+so at every step it mattered: on the comparison view, and on the published artifact.
 
 - **See it alongside the other surfaces:** [the console guide](../console.md).
 - **Run your campaign as a benchmark:** [02 — run it in the simulator](02-run-it-in-the-simulator.md).
