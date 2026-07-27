@@ -18,13 +18,27 @@ command appears below, and it is the one that starts the application.
 
 ```bash
 uv pip install "./astro-mine-studio[serve]"
+
+# Build the UI. `serve` mounts a built directory; it does not build one.
+cd ui && pnpm install && pnpm run build:harness && cd ..
+
 astro-mine-studio serve --registry /path/to/hub-registry
 ```
 
-One command composes the whole thing: the FastAPI backend, the Hub seams wired to your local
-OCI-layout registry, the built UI mounted, and **an example study seeded** so you land on a
-populated workspace rather than an empty one. It prints a startup banner naming every seam and its
-state.
+Then one command composes the whole thing: the FastAPI backend, the Hub seams wired to your local
+OCI-layout registry, the built UI mounted, and **an example study seeded** so you land on a populated
+workspace rather than an empty one. It prints a startup banner naming every seam and its state.
+
+> **`build:harness`, not `build`.** Since the surface conversion, `pnpm build` emits the *library*
+> (`ui/dist`, no `index.html`) for the console to compose. Only `build:harness` produces the
+> browsable standalone app at `ui/dist-harness` that `serve` mounts. Skip this step and you get a
+> **"not built"** page — deliberately, so `serve` says what is missing instead of 404-ing the root —
+> and every section below is unreachable.
+>
+> **Rebuild after pulling.** `ui/dist-harness` is a gitignored local build artifact, so a fresh clone
+> has none and a stale one is served silently: the banner prints `UI: mounted from <path>` with no
+> indication of when it was built. A bundle older than the source will show you defects that are
+> already fixed.
 
 | Flag | Default | For |
 |---|---|---|
@@ -154,8 +168,30 @@ choosing one resolves the terrain the swarm is placed on. Until you do, the scen
 which is a legitimate design-time view, and the pane says so rather than looking broken. The
 `?world=` query parameter still works as a deep link and seeds the menu.
 
-Then select a candidate and inspect the swarm in the 3D scene, rendered through
-`@astro-mine/view`'s Cesium globe.
+Then pick a candidate from the **Candidate** menu — the front members are labelled *on the front* —
+and its swarm is placed on the resolved world, rendered through `@astro-mine/view`'s Cesium globe.
+The first candidate on the front is selected for you, so a resolved world shows a swarm without a
+click.
+
+### Where the swarm is standing, and where it is not
+
+The pane says so itself, above the scene: **these are design-time layout positions, not simulated
+poses.** A candidate is a *proposal* — it has no run, so it has no poses to show. Rather than invent
+coordinates silently, Studio applies one stated convention: an evenly spaced ring around the world
+bundle's own published tileset anchor, at that anchor's datum height, with the units in the
+candidate's own declaration order.
+
+Which means, precisely:
+
+- The centre is the world's, not Studio's — the same anchor View places the terrain at, so the swarm
+  cannot drift off the ground it is drawn on.
+- It is **not terrain-conformed**. Nothing samples the DEM, so a unit sits at the tile origin's datum
+  height rather than on the local mesh.
+- It is a **layout, not a plan**: no reachability, no slope, no illumination, no collision. It exists
+  so you can see the size and mix of a candidate on the terrain it would work.
+
+If the pane shows no swarm it names the reason — no candidate selected, no world resolved, or a world
+bundle that publishes no tileset anchor (older bundles) — because each has a different fix.
 
 ### Reading what the scene draws
 
@@ -173,6 +209,12 @@ silently omitting the asset or inventing a shape for it.
 
 The anchor roster's SADF documents carry `geometry: []`, so on the shipped content you should expect
 orange-red glyphs and that status line.
+
+> **The table above is the swarm pane's, not the catalog preview's.** Selecting a robot in §4's
+> catalog also draws an orange-red glyph, from a different component with a different message:
+> *"Asset unavailable (SADF asset declares no "geometry" — there is nothing to render) — showing its
+> position only."* Same honesty, one asset rather than a swarm. If the status line you are reading
+> says "its position" rather than "N of M assets", you are looking at the preview, not the swarm.
 
 > **Not to be confused with the inertia-equivalent proxy.** Fleet's `render` CLI *synthesizes* a
 > proxy box from an asset's mass and inertia and writes it out as glTF
@@ -201,12 +243,15 @@ re-run anything.
 ## 9. What you did
 
 You stated a goal, composed candidate swarms from a real catalog, ran a trade study, read a Pareto
-front with its uncertainty *and knew what produced it*, resolved a world and inspected a candidate on
-it in 3D, and published a signed campaign that records both — **without touching a command line
-after the first line**, and without hand-writing a single JSON document.
+front with its uncertainty *and knew what produced it*, resolved a world and stood a candidate's
+swarm on it in 3D, and published a signed campaign that records both — **without touching a command
+line after the setup**, and without hand-writing a single JSON document.
 
-The one thing that was not real is the physics behind the metric values, and the platform told you
-so at every step it mattered: on the comparison view, and on the published artifact.
+**Two things were not real, and the platform said so where it mattered.** The physics behind the
+metric values is a stand-in, disclosed on the comparison view and on the published artifact. And the
+swarm's positions are a stated layout convention rather than simulated poses, disclosed on the
+inspection pane. Both are the same rule: a surface that cannot tell you *how* it knows something
+tells you that instead.
 
 - **See it alongside the other surfaces:** [the console guide](../console.md).
 - **Run your campaign as a benchmark:** [02 — run it in the simulator](02-run-it-in-the-simulator.md).

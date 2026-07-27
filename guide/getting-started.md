@@ -186,7 +186,7 @@ the `astro_mine.providers` entry-point group rather than by importing them. Plus
 **Sim refuses to score without them**, and the refusal is worth reading as designed behavior:
 
 ```
-refusing to score this scenario: 2 pinned input(s) resolved by digest but rebuilt no provider,
+refusing to score this scenario: 3 pinned input(s) resolved by digest but rebuilt no provider,
 so this run is blind to them:
   - 'shackleton-de-gerlache-v1' (world_provider): install astro-mine-worlds — without it, no
     terrain, gravity or illumination — night windows cannot be measured, so `nights_survived`
@@ -194,8 +194,15 @@ so this run is blind to them:
   - 'shackleton_water_ice_v1' (resource_field_backend): install astro-mine-prospect — without it,
     no sealed resource field — prospecting sensors render `valid=False`, so `discovery_latency`
     never trips and ISRU extraction sees no abundance
+  - 'astro-mine.link.lunar-polar-relay-dsn' (comms_model): install astro-mine-link — without it,
+    no contact plan — every observation is unmasked, so `comms_robustness` scores not-applicable
+Content and code ship separately: `astro-mine-bench fetch` obtains the bundles; the producer
+packages above rebuild them into live providers.
 A scorecard is a claim about a run, and this run would not have modelled the content it pins.
 ```
+
+One bullet per package the paragraph above names, which is the point: the anchor pins content from
+all three producers, so all three are missing until you install them.
 
 A scorecard is a claim. Refusing to make a claim about content that was never loaded is integrity,
 not breakage.

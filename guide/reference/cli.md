@@ -206,10 +206,12 @@ astro-mine-guard {validate,compile,falsify,sign}
 |---|---|
 | `validate <spec>...` | Validate SafetySpecs. |
 | `compile <spec>` | Compile to the content-addressed IR (prints `spec_hash` and `compiled_hash`). |
-| `falsify <spec>` | Seeded adversarial search on the anchor scenario. |
+| `falsify` | Seeded adversarial search on the anchor scenario. **Takes no spec** — `--trials N` sweeps seeds `0..N-1`, `--seed` names one. |
 | `sign <spec>` | Sign the spec's content hash (offline dev signer). |
 
-Pass `anchor` as the spec to use the shipped reference spec. Tutorial:
+Pass `anchor` as the spec to use the shipped reference spec — for the three commands that take one.
+`falsify` is anchor-only; falsifying a spec you authored is not available yet
+([astro-mine-guard#35](https://github.com/astro-mine/astro-mine-guard/issues/35)). Tutorial:
 [06](../tutorials/06-compose-a-planner-stack.md).
 
 ## Validate anything Core owns — `astro-mine-core`

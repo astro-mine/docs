@@ -76,6 +76,13 @@ Leaderboard scoring runs against those. A policy tuned to the public five does n
 there is nothing to tune against a hash. The commitment is published *before* the seeds are used,
 so the operator cannot choose them after seeing submissions either.
 
+**What a held-out seed does and does not withhold.** It withholds the *episodes* — which is what stops
+tuning to the ones you will be judged on. It does **not** withhold the sealed resource field: that is
+realized per *scenario*, not per seed, so scoring a scenario's public seeds samples the same ground
+truth the held-out ones will ([concepts/uncertainty.md](uncertainty.md#the-sealed-field-is-per-scenario-not-per-seed)).
+Withholding the field is what hidden test scenarios are for, and the two mechanisms compose rather
+than substitute.
+
 ## Reproducing someone else's result
 
 Four things, all recorded, none guessable:
