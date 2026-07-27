@@ -150,17 +150,45 @@ same benchmark ([tutorial 06](06-compose-a-planner-stack.md) §6) — the compar
 To publish, your plugin needs a **Core plugin manifest**: what it is, what it registers, which Core
 interface versions it supports.
 
+Real examples to copy — either works as-is:
+
 ```bash
+cp astro-mine-core/examples/plugins/greedy-prospecting-baseline.manifest.yaml \
+   my-plugin.manifest.yaml
+# the other example: lunar-terramechanics-engine.manifest.yaml
 astro-mine-core kinds       # `manifest` -> .../core/registry/v0.1/manifest.schema.json
 astro-mine-core validate my-plugin.manifest.yaml
 ```
 
-Real examples to copy:
+```
+OK  my-plugin.manifest.yaml: valid manifest
+```
 
-```
-astro-mine-core/examples/plugins/greedy-prospecting-baseline.manifest.yaml
-astro-mine-core/examples/plugins/lunar-terramechanics-engine.manifest.yaml
-```
+Edit `name`, `version` and `description` to yours. **Keep `name`/`version` in step with the
+`--name`/`--version` you publish under**: the catalog indexes the *manifest's* pair, so a mismatch
+publishes under one name and is found under the other.
+
+Both on-disk shapes are accepted, YAML or JSON: a **manifest document** (`manifest_version` + a
+`manifest:` mapping — what the examples above are, and what `astro-mine-core validate` blesses) or a
+bare `PluginManifest`. `hub publish` used to require the bare JSON form only, so the shipped examples
+validated and then could not be published; that is fixed
+([astro-mine-hub#46](https://github.com/astro-mine/astro-mine-hub/issues/46)).
+
+### Which `kind` does a solver declare?
+
+`kind` is required and drawn from Core's **closed** `PluginKind` vocabulary, and there is no `solver`
+in it — by design. `astro_mine.allocate.solvers` *"deliberately adds nothing to Core"*: what crosses
+the narrow waist is the allocation artifact, not the machinery that searched for it.
+
+**Declare `kind: policy`.** That is the rule the tier recipe already states — *"the manifest's kind
+must be `policy` — true even for allocators and shields"* — and a solver sits one level below an
+allocator, as the backend an allocator's search runs on. Its only consumer is a `policy`-kind
+allocator, so `policy` names what the plugin participates in rather than asserting a Core interface
+it does not implement. Nothing resolves a solver *through the registry*; the entry point is the whole
+registration.
+
+If the platform ever wants solvers distinguished in the catalog, that is a new `PluginKind` and
+therefore an **RFC against Core**, not a value to pick per plugin.
 
 The how-to's *"The manifest side"* section covers the fields.
 
@@ -175,8 +203,26 @@ astro-mine-hub publish \
   --key ./keys/cosign.key
 ```
 
+```
+sha256:ffecc1fa7809e635cf1daf0c51a6d0a579db6501429bcea000bc88cbec0a5e26
+```
+
+> **`--kind` appears twice here, meaning two different things, and both are right.** The flag is
+> **Hub's container vocabulary** — the shape of the payload, where `plugin` is the deliberate generic
+> container for a payload with no more specific shape. Your manifest's own `kind:` is the **Core
+> interface** the plugin declares against (`policy`, above). Container ≠ contract; they are separate
+> axes and do not map onto each other. See the how-to's
+> [*Publishing*](../how-to/write-a-plugin.md#publishing) section and
+> [hub.md §2 principle 2](../../architecture/hub.md).
+
 Signed, content-addressed, discoverable by digest — the same pipeline as every other artifact
 ([concepts/content-addressing.md](../concepts/content-addressing.md)).
+
+Then confirm it is findable, which is the point of the step:
+
+```bash
+astro-mine-hub search --registry ./myreg --text my-solver
+```
 
 **Do not skip this step.** A plugin nobody can find is not a contribution to a commons; it is a
 local patch that happens to be well-structured. `astro-mine-hub search` is how someone else finds

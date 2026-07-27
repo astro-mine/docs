@@ -106,13 +106,23 @@ Copy a stack, change the plugin named in one tier, re-validate:
 
 ```bash
 python - <<'PY'
-from astro_mine.mind.reference import load_stack_resource
-open("my-stack.yaml", "w").write(load_stack_resource("lunar_prospecting.yaml"))
+from importlib.resources import files
+from pathlib import Path
+
+text = files("astro_mine.mind.reference").joinpath("stacks/lunar_prospecting.yaml").read_text()
+Path("my-stack.yaml").write_text(text)   # -> 1059 chars
 PY
 # edit my-stack.yaml: point `tamp` at your plugin id
 astro-mine-mind validate my-stack.yaml
 astro-mine-mind compose my-stack.yaml
 ```
+
+Reading the file rather than `load_stack_resource(...)` is deliberate: that function returns a
+**parsed, validated `StackSpecDocument`**, which is what you want in order to *use* a stack and not
+what you want in order to *copy* one. It is the same `importlib.resources` idiom
+[`reference/file-formats.md`](../reference/file-formats.md) uses to reach package data. `write_text`
+rather than `open(..., "w").write(...)` for the same reason it is used elsewhere in the guide: it
+does not truncate the target before it has something to put in it.
 
 If your plugin is not registered, `validate` says so. Writing and registering one is
 [tutorial 08](08-write-a-plugin.md) — the `astro_mine.mind.tier_plugins` group, scaffolded by
@@ -128,7 +138,7 @@ data**, so it is reachable from an installed wheel:
 astro-mine-guard/src/astro_mine/guard/reference/safety_specs/anchor.safety.yaml
 ```
 
-Pass `anchor` to any Guard subcommand to use it:
+Pass `anchor` to any Guard subcommand that takes a spec — `validate`, `compile`, `sign`:
 
 ```bash
 astro-mine-guard validate anchor
@@ -163,15 +173,33 @@ temporal monitors over a 1,209,600-sample window — a 14-day lunar night — fo
 thermal survival.
 
 ```bash
-astro-mine-guard falsify anchor      # seeded adversarial search on the anchor scenario
+astro-mine-guard falsify             # seeded adversarial search — anchor scenario only, no spec
 astro-mine-guard sign anchor         # sign the spec's content hash (offline dev signer)
 ```
 
-`falsify` is the one to run before you trust a spec you wrote: it actively searches for a
-counterexample rather than waiting for one.
+```
+control (unshielded): 258 violation(s) — the search is real
+  seed    0: shield held
+  seed    1: shield held
 
-Author your own with `astro-mine new safety my.safety.yaml`, then `validate` → `compile` →
-`falsify` → `sign`.
+shield held across 2 seed(s) — zero hard-constraint violations
+```
+
+`falsify` takes **no spec** — it is the shipped adversarial search against the *anchor* scenario, and
+the unshielded control line is what makes its result meaningful: 258 violations without the shield,
+zero with it, so "shield held" is a measurement rather than an absence. `--trials N` sets how many
+seeds it sweeps.
+
+**So `anchor` is accepted by three of the four subcommands, not all four.** `validate`, `compile` and
+`sign` take a spec and understand `anchor`; `falsify` takes none and would answer
+`unrecognized arguments: anchor`.
+
+Author your own with `astro-mine new safety my.safety.yaml`, then `validate` → `compile` → `sign`.
+**There is no way to falsify a spec you wrote** — falsification is currently the component's own
+validation strategy over the anchor scenario (`architecture/guard.md` § "Testing & validation")
+rather than a per-spec user command, so the authoring loop above stops at `sign`. Giving `falsify` a
+positional spec is tracked in
+[astro-mine-guard#35](https://github.com/astro-mine/astro-mine-guard/issues/35).
 
 ## 6. Measure it (UC-E3)
 

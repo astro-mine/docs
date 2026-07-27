@@ -41,7 +41,7 @@ astro-mine-bench score --runner sim --registry ~/.cache/astro-mine/hub-registry
 ```
 
 ```
-refusing to score this scenario: 2 pinned input(s) resolved by digest but rebuilt no provider,
+refusing to score this scenario: 3 pinned input(s) resolved by digest but rebuilt no provider,
 so this run is blind to them:
   - 'shackleton-de-gerlache-v1' (world_provider): install astro-mine-worlds — without it, no
     terrain, gravity or illumination — night windows cannot be measured, so `nights_survived`
@@ -49,12 +49,17 @@ so this run is blind to them:
   - 'shackleton_water_ice_v1' (resource_field_backend): install astro-mine-prospect — without it,
     no sealed resource field — prospecting sensors render `valid=False`, so `discovery_latency`
     never trips and ISRU extraction sees no abundance
+  - 'astro-mine.link.lunar-polar-relay-dsn' (comms_model): install astro-mine-link — without it,
+    no contact plan — every observation is unmasked, so `comms_robustness` scores not-applicable
 Content and code ship separately: `astro-mine-bench fetch` obtains the bundles; the producer
 packages above rebuild them into live providers.
 A scorecard is a claim about a run, and this run would not have modelled the content it pins.
 Install the producers above, or pass `SimEpisodeRunner(allow_unresolved_content=True)` to score
 anyway.
 ```
+
+Three bullets, one per producer in §1's table — the anchor pins content from all of
+`astro-mine-worlds`, `astro-mine-prospect` and `astro-mine-link`, so all three are missing here.
 
 **Read this as integrity, not breakage.** The scenario pins a world by digest. Without
 `astro-mine-worlds` the digest resolves — the bytes are right there — but nothing turns them into

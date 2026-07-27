@@ -37,9 +37,10 @@ astro-mine-fleet --help
 ```
 
 > The binary is `astro-mine-fleet`. The bare name `fleet` still works and is kept as an **alias for
-> one deprecation cycle**, removed at the public flip (`conventions.md` §13, RFC-0011). Some of
-> Fleet's own help text and scaffold comments still print the bare form; prefer the prefixed name in
-> anything you write down.
+> one deprecation cycle**, removed at the public flip (`conventions.md` §13, RFC-0011). Two
+> sub-command help strings still print the bare form — `resolve-family`'s *"see `fleet families`"*
+> and the umbrella's *"`fleet --help` lists it"*; `astro-mine-fleet --help` itself is clean, and so
+> is what `new` scaffolds. Prefer the prefixed name in anything you write down.
 
 ## 2. Start from a shipped asset (recommended)
 
@@ -180,15 +181,18 @@ astro-mine-fleet render mini-rover.sadf.yaml -o mini-rover.glb
 ```
 
 ```
+rendered imported.mini_rover -> mini-rover.glb
+  lossy (2) — SADF stays authoritative:
     [render.proxy_geometry] asset.frames['base_link']: link 'base_link' declares mass but no visual
     mesh; the preview shows its inertia-equivalent box (same mass, same inertia tensor) — a derived
     proxy, not geometry the asset claims
     [render.proxy_geometry] asset.frames['mast_link']: link 'mast_link' declares mass but no visual
     mesh; the preview shows its inertia-equivalent box (same mass, same inertia tensor) — a derived
     proxy, not geometry the asset claims
-rendered imported.mini_rover -> mini-rover.glb
-  lossy (2) — SADF stays authoritative
 ```
+
+`lossy (2)` is the header for exactly those two warnings, which is why they are nested beneath it.
+The warnings go to stderr and the summary to stdout, so a redirect separates them.
 
 **This is the honesty rule working.** The Phase-0 reference assets — and your freshly imported
 robot — declare mass and inertia but no meshes. Rather than render nothing or invent a shape,

@@ -10,8 +10,9 @@ The anchor scenario has two resource fields, and keeping them apart is the whole
 - **The belief prior** — `shackleton_water_ice_v1`, a probabilistic field over water-ice abundance
   derived from public LOLA / Diviner / LEND / M³ datasets. This is published, pinned by digest, and
   visible to everyone.
-- **The sealed ground truth** — realized *per seed at runtime* from that prior. It is what sensors
-  read against. It is never published and never visible to a policy.
+- **The sealed ground truth** — a fixed, seeded realization **for a scenario** (`prospect.md`:109),
+  drawn from that prior once. It is what sensors read against. It is never published and never
+  visible to a policy.
 
 A prospecting swarm therefore does what a real one does: it starts with a prior, takes noisy
 readings, and updates a posterior. Two of the anchor's metrics score exactly that —
@@ -19,9 +20,28 @@ readings, and updates a posterior. Two of the anchor's metrics score exactly tha
 area it brought below an uncertainty threshold). A policy that drives straight to the richest cell
 of the *prior* is not prospecting; it is guessing well.
 
-Sealing per seed is also what makes the benchmark honest across submissions: nobody can memorize
-where the ice is, because it is somewhere different every seed, and the seeds that count are
-[held out](determinism-and-provenance.md#held-out-seeds).
+### The sealed field is per scenario, not per seed
+
+**Sealing is per scenario.** Two runs of the same scenario at different seeds read against the *same*
+sealed field: the realization rides in the pinned bundle, and nothing on the `astro-mine-bench score
+--runner sim` path re-realizes it per episode. So a seed sweep over one scenario measures the
+policy's sensitivity to *its own* stochasticity, not to where the ice is — and the honest expectation
+for a scenario-independent metric like `information_gain` is **low or zero dispersion across seeds**,
+which reads as a broken harness if you were told to expect the field to move.
+
+That is a property worth knowing before you design an evaluation, because it means **held-out seeds
+alone do not stop memorization.** What does, per `bench.md` §9, is the combination:
+
+| Mechanism | What it withholds |
+|---|---|
+| **Hidden test scenarios** | the field itself — a scenario you have never scored has a sealed realization you have never sampled |
+| **Embargoed specs** | the scenario definition, until the evaluation closes |
+| **Held-out seeds** | the specific episodes, so a policy cannot be tuned to the ones it will be judged on |
+
+Held-out seeds are the weakest of the three on their own and the guide previously rested the whole
+anti-gaming argument on them. Report a seed sweep because it exposes variance you would otherwise
+average away ([tutorial 03 §5](../tutorials/03-train-and-publish-a-policy.md)) — not because the
+world changes underneath it.
 
 ## Sensors return validity, not just values
 

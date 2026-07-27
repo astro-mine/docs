@@ -201,19 +201,40 @@ never a fork."* **Experiment tracking (UC-D6)** is MLflow, third-party and optio
 
 ## 6. Publish it (UC-G1)
 
+First the manifest. `--manifest` takes a **Core plugin manifest**, and Core ships one for exactly this
+artifact — a baseline prospecting policy — so start from it rather than writing one:
+
+```bash
+cp astro-mine-core/examples/plugins/greedy-prospecting-baseline.manifest.yaml ./manifest.yaml
+# edit `name`, `version` and `description` to match what you are publishing
+astro-mine-core validate ./manifest.yaml
+```
+
+```
+OK  ./manifest.yaml: valid manifest
+```
+
+Either on-disk shape is accepted, YAML or JSON: a **manifest document** (`manifest_version` + a
+`manifest:` mapping — what the example is, and what `validate` blesses) or a bare `PluginManifest`.
+**Keep the manifest's `name`/`version` in step with the `--name`/`--version` below** — the catalog
+indexes the *manifest's* pair, so a mismatch publishes under one name and is found under the other.
+
 ```bash
 astro-mine-hub keygen --out ./keys
 astro-mine-hub publish \
   --registry ./myreg \
   --name mappo-rover --version 0.1.0 --kind policy \
-  --manifest ./manifest.json \
+  --manifest ./manifest.yaml \
   --layer /abs/policies/4b634500.../model.onnx \
   --layer /abs/policies/4b634500.../policy_package.json \
   --key ./keys/cosign.key
 ```
 
-`--kind` is a closed set — `policy, world, asset, surrogate, plugin, schema, design, campaign` —
-and `--manifest` is a Core plugin manifest describing the artifact. The registry can be a local
+`--kind` is a closed set — `policy, world, asset, surrogate, plugin, schema, design, campaign` — and
+it is **Hub's container vocabulary** (the shape of the payload), a *different axis* from your
+manifest's own `kind:` (the Core interface the artifact declares against). They coincide here, both
+being `policy`, which is why it is worth saying that they need not: see the how-to's
+[*Publishing*](../how-to/write-a-plugin.md#publishing) section. The registry can be a local
 OCI-layout directory (as here) or a remote (`ghcr.io/astro-mine`). Publishing is always signed;
 admission re-verifies.
 
