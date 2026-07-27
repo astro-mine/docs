@@ -138,7 +138,7 @@ data**, so it is reachable from an installed wheel:
 astro-mine-guard/src/astro_mine/guard/reference/safety_specs/anchor.safety.yaml
 ```
 
-Pass `anchor` to any Guard subcommand that takes a spec — `validate`, `compile`, `sign`:
+Pass `anchor` to any of the four Guard subcommands to use it:
 
 ```bash
 astro-mine-guard validate anchor
@@ -173,33 +173,64 @@ temporal monitors over a 1,209,600-sample window — a 14-day lunar night — fo
 thermal survival.
 
 ```bash
-astro-mine-guard falsify             # seeded adversarial search — anchor scenario only, no spec
+astro-mine-guard falsify anchor      # seeded adversarial search for a counterexample
 astro-mine-guard sign anchor         # sign the spec's content hash (offline dev signer)
 ```
 
 ```
-control (unshielded): 258 violation(s) — the search is real
+spec:    anchor-lunar-polar-v0 (sha256:e2a1737c…)
+start:   position (0.0, 0.0, 50.0), 6 signal(s) inside their own bounds
+control (unshielded): 614 violation(s) — the search is real
   seed    0: shield held
   seed    1: shield held
 
 shield held across 2 seed(s) — zero hard-constraint violations
 ```
 
-`falsify` takes **no spec** — it is the shipped adversarial search against the *anchor* scenario, and
-the unshielded control line is what makes its result meaningful: 258 violations without the shield,
-zero with it, so "shield held" is a measurement rather than an absence. `--trials N` sets how many
-seeds it sweeps.
+**Read the control line first.** It is the unshielded run: the same attack with the shield removed,
+which breaches hundreds of times. That is what makes "shield held" a *measurement* rather than an
+absence — a search that found nothing would report `shield held` too, and mean nothing. `falsify`
+refuses to report a result at all if its control finds no violations. `--trials N` sets how many seeds
+it sweeps; `--seed n` replays one.
 
-**So `anchor` is accepted by three of the four subcommands, not all four.** `validate`, `compile` and
-`sign` take a spec and understand `anchor`; `falsify` takes none and would answer
-`unrecognized arguments: anchor`.
+The exact violation count is a function of how hard the attack pushes, so do not read anything into
+the number beyond "much greater than zero".
 
-Author your own with `astro-mine new safety my.safety.yaml`, then `validate` → `compile` → `sign`.
-**There is no way to falsify a spec you wrote** — falsification is currently the component's own
-validation strategy over the anchor scenario (`architecture/guard.md` § "Testing & validation")
-rather than a per-spec user command, so the authoring loop above stops at `sign`. Giving `falsify` a
-positional spec is tracked in
-[astro-mine-guard#35](https://github.com/astro-mine/astro-mine-guard/issues/35).
+## Falsify the spec *you* wrote
+
+All four subcommands take a spec path, `-` for stdin, or the literal `anchor` — so the authoring loop
+runs end to end on your own contract:
+
+```bash
+astro-mine new safety my.safety.yaml
+astro-mine-guard validate my.safety.yaml
+astro-mine-guard compile  my.safety.yaml
+astro-mine-guard falsify  my.safety.yaml --trials 3
+astro-mine-guard sign     my.safety.yaml
+```
+
+```
+spec:    my-safety (sha256:ef07834e…)
+start:   position (0.0, 0.0, 0.0), 1 signal(s) inside their own bounds
+control (unshielded): 99 violation(s) — the search is real
+  seed    0: shield held
+  seed    1: shield held
+  seed    2: shield held
+
+shield held across 3 seed(s) — zero hard-constraint violations
+```
+
+**There is no scenario to choose, and that is deliberate.** The falsification plant is synthetic — a
+double integrator carrying the spec's scalar signals — with no terrain, no mission and no world. What
+the search is relative to is your spec's **own safe set**: it starts clear of the keep-out geometry
+you declared, with every signal inside the envelope your own bounds carve out, and then attacks both.
+The `start:` line reports what it derived, so a result is attributable to a spec rather than to a
+lucky initial condition.
+
+Two consequences worth knowing. A spec declaring **no keep-out geometry at all** — which is what the
+scaffold above is — still gets a real search, on its scalar bounds; that is the 99 violations. And a
+spec whose bounds contradict each other (a floor above its own ceiling) is reported as having nothing
+to falsify, rather than searched fruitlessly.
 
 ## 6. Measure it (UC-E3)
 

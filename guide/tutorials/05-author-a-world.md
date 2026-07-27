@@ -22,10 +22,10 @@ astro-mine-worlds/src/astro_mine/worlds/spec/examples/synthetic_polar.world.yaml
 ```
 
 It is deliberately **small and synthetic** — a 10 km × 10 km lunar south-polar basin at 20 m
-resolution — and **authoring and validating** it (§1–§3) needs neither the LOLA DEM nor SPICE
-kernels. *Building* it does need a DEM raster, and needs kernels for the PSR layer the scaffold
-declares; §4 says exactly what and why. Copy it, or scaffold a copy with your own identity
-substituted:
+resolution — and it needs neither the LOLA DEM nor SPICE kernels to author, validate *or build*:
+Worlds ships a synthetic-DEM generator so the copyable spec has a copyable input (§4). The one
+exception is the PSR layer the scaffold declares, which needs kernels; §4 says so where it matters.
+Copy it, or scaffold a copy with your own identity substituted:
 
 ```bash
 astro-mine new world my.world.yaml --id my-basin --world-version 0.1.0
@@ -130,54 +130,69 @@ Building is a **Python/script path**, not a CLI verb — `astro-mine-worlds` shi
 already-built layer products**, so the spec is the first of six steps, not the whole of it:
 
 ```python
-from pathlib import Path
-
-from astro_mine.spice import kernel_pool, epoch_from_utc
 from astro_mine.worlds import terrain
-from astro_mine.worlds.illumination import IlluminationModel, PsrEpochSemantics
 from astro_mine.worlds.regolith import build_regolith_field
 from astro_mine.worlds.spec import WorldSpec, build_world_bundle
 from astro_mine.worlds.thermal import diurnal_curve
 
-spec = WorldSpec.from_yaml("my.world.yaml")           # 1. the declaration
+spec = WorldSpec.from_yaml("my.world.yaml")                     # 1. the declaration
 
-product = terrain.ingest_dem(DEM_PATH, "out/mine", resolution_m=20.0)   # 2. terrain
-reg = build_regolith_field(product, "out/mine-regolith")                # 3. regolith
+dem = terrain.synthesize_dem("out/mine-dem.tif")                # 2. an input, with no download
+product = terrain.ingest_dem(dem, "out/mine", resolution_m=20.0)  # 3. terrain
+reg = build_regolith_field(product, "out/mine-regolith")        # 4. regolith
+thermal = [diurnal_curve(cls) for cls in spec.layers.thermal_classes]   # 5. thermal
 
-with kernel_pool(METAKERNEL_PATH):                                      # 4. PSR mask
-    window = (epoch_from_utc("2025-01-01T00:00:00"), epoch_from_utc("2026-01-01T00:00:00"))
-    psr = IlluminationModel(product).psr_mask(
-        window, step_s=12 * 3600, semantics=PsrEpochSemantics.SEASONAL
-    )
-
-thermal = [diurnal_curve(cls) for cls in spec.layers.thermal_classes]    # 5. thermal
-
-bundle = build_world_bundle(                                            # 6. the bundle
-    spec, terrain=product, regolith=reg, psr=psr, thermal=thermal, out_dir="out/mine-bundle"
+bundle = build_world_bundle(                                    # 6. the bundle
+    spec, terrain=product, regolith=reg, thermal=thermal, out_dir="out/mine-bundle"
 )
 print(bundle.path / "world.json")
 ```
 
-The component [README](https://github.com/astro-mine/astro-mine-worlds#readme) documents steps 2–5
+That runs on one workstation in minutes with **nothing downloaded** — which is what the synthetic
+example is for. `synthesize_dem`'s defaults are exactly this spec's region and resolution, so step 2
+takes no arguments; pass `crs=`/`min_x_m=`/… when you change the region.
+
+**It is a stand-in, not science.** The surface is an analytic basin — a bowl, a rim, two craters, a
+little noise — chosen to exercise slope / aspect / roughness / void-fill, not to resemble anywhere
+real. That is why the spec declares `source_dem.id: synthetic-polar-dem` with a `content_hash` of
+`null`: nothing sampled it, so there is nothing to pin. Never publish a bundle built this way as a
+model of a real place.
+
+### The one thing this path cannot produce: the PSR mask
+
+The scaffold declares `psr_semantics: seasonal`, `psr_days: 365.0`, `psr_step_hours: 12.0`, and
+computing that mask needs a furnished **SPICE kernel pool** — kernels from
+[NAIF](https://naif.jpl.nasa.gov/naif/data.html), which are not shipped. So the build above produces
+a bundle with **no `illumination` component**, and it tells you so rather than omitting it quietly:
+
+```
+UserWarning: example-polar-basin: the spec declares PSR parameters (psr_semantics, psr_start,
+psr_days, psr_step_hours) but no PSR layer was supplied, so this bundle has no `illumination`
+component and its world_hash does not pin one.
+```
+
+Two ways to resolve it, and the warning names both. Add the layer:
+
+```python
+from astro_mine.spice import kernel_pool, epoch_from_utc
+from astro_mine.worlds.illumination import IlluminationModel, PsrEpochSemantics
+
+with kernel_pool(METAKERNEL_PATH):
+    window = (epoch_from_utc("2025-01-01T00:00:00"), epoch_from_utc("2026-01-01T00:00:00"))
+    psr = IlluminationModel(product).psr_mask(
+        window, step_s=12 * 3600, semantics=PsrEpochSemantics.SEASONAL
+    )
+# ...then pass psr=psr to build_world_bundle
+```
+
+Or drop the four `psr_*` fields from your spec, so the declaration matches what you build. Either is
+fine; a spec that declares a layer it never carries is what is not.
+
+So §1's *"needs neither the LOLA DEM nor SPICE kernels"* is now true of the DEM in every step, and
+true of kernels for everything except the PSR layer.
+
+The component [README](https://github.com/astro-mine/astro-mine-worlds#readme) documents steps 3–5
 in detail; this is the shape they compose in.
-
-**Two prerequisites, stated before you hit them.** Neither is optional, and §1's *"needs neither the
-LOLA DEM nor SPICE kernels"* is true of **authoring and validating** a spec — §1–§3 above — and not
-of building one:
-
-- **`DEM_PATH` — a raster on disk.** There is no public API that synthesizes a DEM, so step 2 has no
-  input unless you supply one. Worlds' own tests fabricate a raster through a *private*
-  `synthetic_dem` fixture that an installed wheel does not expose. Shipping a public synthetic-DEM
-  generator — which would make the "minutes on one workstation, no external data" claim true end to
-  end — is tracked in
-  [astro-mine-worlds#60](https://github.com/astro-mine/astro-mine-worlds/issues/60).
-- **`METAKERNEL_PATH` — SPICE kernels.** The scaffold declares `psr_semantics: seasonal`,
-  `psr_days: 365.0`, `psr_step_hours: 12.0`, and computing that mask needs a furnished kernel pool.
-  So the one tutorial advertised as kernel-free needs kernels to build the PSR layer its own scaffold
-  declares. Kernels come from [NAIF](https://naif.jpl.nasa.gov/naif/data.html).
-
-Drop `psr` (and the `psr_*` fields from your spec) and step 4 goes away with it — that is the genuinely
-kernel-free build, and it produces a bundle with no PSR layer.
 
 ## 5. The real-data path (UC-C6), honestly
 
