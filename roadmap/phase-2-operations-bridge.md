@@ -5,9 +5,14 @@
 > validated campaign first as a digital-twin shadow, then drive an analog rover swarm (charter §9;
 > system.md §11).
 
+**Status: next.** Nothing below is built.
+
 **Entry dependencies:** Phase 1 complete — a closed, scored design loop producing a Studio
 [Campaign](../architecture/studio.md); the autonomy stack (Mind/Allocate/Guard) and Sim validated and
-publishable.
+publishable. **Met.** Additionally, `RM-DIST-03` and `RM-DIST-04` ([the distribution
+track](README.md#the-distribution-track)) should land first: Ops and Bridge arrive as new platform
+subpackages, the ops console as a new front-end surface, and both are cheaper to add once the REST and
+front-end distributions exist than to add and then move.
 
 **Integration milestones:**
 

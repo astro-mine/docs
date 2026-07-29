@@ -1,6 +1,11 @@
 # Phase 1 — Autonomy & studio
 
 > **Window:** ~12–30 mo · **Theme:** Autonomy & studio · **Roadmap home:** [README](README.md)
+> **Status: built.** Every item below shipped, plus a UX and console backlog the plan did not
+> anticipate: the single-GUI [console](../architecture/console.md) and its `Surface` contract, the
+> `astro-mine` [CLI](../architecture/cli.md), and the [user guide](../guide/README.md). What followed
+> the phase was the packaging correction in [the distribution
+> track](README.md#the-distribution-track) — no new capability, and no change to the deliverables here.
 > **Goal:** become the **MARL and planning commons** for planetary swarms — first public
 > leaderboards and community plugins (charter §9; system.md §11).
 

@@ -4,8 +4,10 @@
 > **Goal:** become the **default stack** — for surface ISRU *and* full interplanetary resource
 > missions — as the cislunar economy matures (charter §9; system.md §11).
 
+**Status: later.** Nothing below is built.
+
 **Entry dependencies:** Phase 2 complete (sim→ops threshold crossed on analogs); the **multi-regime Core
-schema hooks reserved in Phase 1** (`RM-P1-CORE-04`) — without them this phase would require
+schema hooks reserved in Phase 1** (`RM-P1-CORE-04`, **done**) — without them this phase would require
 retrofitting the frozen waist, the exact failure the charter warns against.
 
 **This phase has two largely independent tracks:**

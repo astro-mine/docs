@@ -1,8 +1,16 @@
 # Phase 0 — Commons seed
 
 > **Window:** ~0–12 mo · **Theme:** Commons seed · **Roadmap home:** [README](README.md)
+> **Status: built.** Every item below shipped; this is the plan and the record.
 > **Goal:** a runnable, reproducible benchmark on the lunar-polar anchor scenario — a researcher can
 > *clone, run, and score a baseline in an afternoon* (charter §9, §11; system.md §11).
+>
+> Two things about the delivered phase that the plan could not name. The anchor content set is
+> published as content-addressed artifacts and resolvable by digest, which is what made *clone, run,
+> score* real rather than aspirational. And every component named below now ships as a subpackage of
+> [`astro-mine-platform`](../architecture/platform.md) with its commands in
+> [`astro-mine-cli`](../architecture/cli.md) — a packaging change made after the phase closed, which
+> left the deliverables here untouched (see [the distribution track](README.md#the-distribution-track)).
 
 **Entry dependencies:** none (this is the seed). **Governance, license, and export-control posture
 must be stood up alongside the first code, not after** (charter §11 → [CX-GOV](README.md#cross-cutting-workstreams)).
