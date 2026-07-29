@@ -23,7 +23,7 @@ of implementation versions").
 **What the consolidation removed from this document.** Seventeen per-component SemVer lines, seventeen
 Git tag series, a per-component milestone cut table, and a cross-repo dependency-pin matrix. A
 component does not have a version. `astro_mine.sim` ships in `astro-mine-platform` and moves when it
-moves; there is no `astro-mine-sim` to pin, and therefore nothing to skew.
+moves; there is no separate `sim` distribution to pin, and therefore nothing to skew.
 
 ## 2. Distribution versions
 

@@ -5,29 +5,29 @@ make, and it produces confusing errors rather than obvious ones.
 
 | | `ScenarioSpec` | `Scenario` |
 |---|---|---|
-| **Owned by** | `astro-mine-bench` | `astro-mine-sim` |
+| **Owned by** | `astro-mine bench` | `astro-mine sim` |
 | **Names content by** | **pinned digests** | materialized, resolved content |
 | **Answers** | "what is the benchmark?" | "what does the engine run?" |
 | **Carries** | scenario id, content pins, metrics, seeds, held-out commitment | assets, providers, episode length, engine configuration |
-| **You pass it to** | `astro-mine-bench score/fetch/list`, `astro-mine-sim run` | `astro-mine-sim record --scenario-file` |
+| **You pass it to** | `astro-mine bench score/fetch/list`, `astro-mine sim run` | `astro-mine sim record --scenario-file` |
 | **Needs content?** | pins it; does not contain it | contains what it needs |
 
 ## The bridge
 
-`astro-mine-sim run <scenario_id>` takes a **Bench `ScenarioSpec` id** and resolves it into a Sim
+`astro-mine sim run <scenario_id>` takes a **Bench `ScenarioSpec` id** and resolves it into a Sim
 `Scenario` through `sim_scenario_from_spec`: it looks up each pinned digest in the content store and
 rebuilds it into a live provider.
 
 ```bash
-astro-mine-sim run lunar-polar-ice-prospecting-sprint-v1 --seed 1001 --out run.mcap
+astro-mine sim run lunar-polar-ice-prospecting-sprint-v1 --seed 1001 --out run.mcap
 ```
 
-`astro-mine-sim record --scenario-file <path>` takes a **Sim `Scenario` JSON document** — already
+`astro-mine sim record --scenario-file <path>` takes a **Sim `Scenario` JSON document** — already
 materialized, self-contained, and needing no registry, no content, and no network. That is the path
 the shipped reference scenario uses, and it is why it works offline with nothing downloaded:
 
 ```bash
-astro-mine-sim record --scenario-file <astro_mine/sim/reference/scenario.json> --out run.mcap
+astro-mine sim record --scenario-file <astro_mine/sim/reference/scenario.json> --out run.mcap
 ```
 
 If you pass a Bench scenario **id** to `record`, or a Sim scenario **file** to `run`, you get an
@@ -54,7 +54,7 @@ happens, and it is deliberate.
 ## The scenario zoo
 
 ```bash
-astro-mine-bench list
+astro-mine bench list
 ```
 
 ```
@@ -72,4 +72,4 @@ lunar-polar-ice-prospecting-v1
 | `…-excavation-fidelity-v1` | Granular contact fidelity, where the excavator's `tool` contact element matters. |
 
 The zoo ships **in-package**, so `list` and fixture scoring work before you download anything. The
-content those specs pin does not — that is [`astro-mine-bench fetch`](../tutorials/01-score-the-anchor.md).
+content those specs pin does not — that is [`astro-mine bench fetch`](../tutorials/01-score-the-anchor.md).

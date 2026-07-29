@@ -146,8 +146,8 @@ look for them (`platform.md` §4).
 ## 11. What this distribution must not do
 
 1. **No second executable.** One binary, one grammar. The prefixed per-component binaries
-   (`astro-mine-<component>`) and the bare legacy aliases (`fleet`, `worlds`, `link`, `prospect`,
-   `astro-mine-train`) are gone and MUST NOT come back (`conventions.md` §13).
+   (`astro-mine-<component>`) and the bare legacy aliases (`fleet`, `worlds`, `link`, `prospect`, and
+   the mis-nouned `astro-mine-train`) are gone and MUST NOT come back (`conventions.md` §13).
 2. **No domain logic** (§7).
 3. **No eager imports** (§5).
 4. **No component may depend on it.** The dependency runs one way; a layering test asserts it

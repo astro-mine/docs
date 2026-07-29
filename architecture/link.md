@@ -68,10 +68,10 @@ intermittent comms and partial observability"). Link is the package that makes t
    geometrically open links. The two concerns are cleanly separated so either can be dialed in
    fidelity independently.
 2. **Borrow ephemerides and terrain; never re-derive them.** Frames, epochs, body orientation,
-   and orbits come from SPICE/NAIF through the shared **[`astro-mine-spice`](spice.md)** foundation
+   and orbits come from SPICE/NAIF through the shared **[`astro_mine.spice`](spice.md)** foundation
    (`astro_mine.spice`, [Spice](spice.md)); horizons and elevation
    come from [Worlds](worlds.md), consumed through the Core `WorldProvider` contract. Link depends on
-   neither a private SPICE adapter nor the `astro-mine-worlds` package — it adds only the
+   neither a private SPICE adapter nor the `astro_mine.worlds` package — it adds only the
    *communications* interpretation, consistent with conventions.md §1.7 ("interop, don't reinvent")
    and the SPICE-backed frame/time mandate in §5.
 3. **Time-varying by construction.** Connectivity is a function of epoch, not a static graph. The
@@ -144,7 +144,7 @@ astro_mine.link
 
 ### Key abstractions consumed
 
-- **SPICE/NAIF** via the shared **[`astro-mine-spice`](spice.md)** foundation (`astro_mine.spice`,
+- **SPICE/NAIF** via the shared **[`astro_mine.spice`](spice.md)** foundation (`astro_mine.spice`,
   [Spice](spice.md)), which realizes [Core](core.md)'s `units`/`frames`
   vocabulary (conventions.md §5): SPK ephemerides, PCK body orientation, FK/IK frames, CK pointing
   where available (SpiceyPy in Python; CSPICE in native paths). Link drives `astro_mine.spice` for
@@ -153,7 +153,7 @@ astro_mine.link
 - **Terrain occlusion** via the Core **`WorldProvider`** contract (`core.world`): `ray_intersect` /
   horizon-map `line_of_sight` over [Worlds](worlds.md) DEMs (Cloud-Optimized GeoTIFF via GDAL) in an
   explicit body-fixed CRS. Link consumes an **injected** provider through the contract; it does **not**
-  import or depend on the `astro-mine-worlds` package (no edge→edge side-channel, conventions.md §1.1).
+  import or depend on the `astro_mine.worlds` package (no edge→edge side-channel, conventions.md §1.1).
 - **[Fleet](fleet.md)/SADF**: each node's comms capability block — antenna gain pattern, EIRP,
   G/T, frequency band, supported mod/cod, pointing capability — read from the [Core](core.md)
   SADF schema. Relay orbiters and ground stations may themselves be SADF assets.
@@ -194,7 +194,7 @@ cloud tier; interactive queries run in-process.
   for hundreds of node-pairs) are the candidate for a **C++20** core via Pybind11, or vectorized
   NumPy/Numba first and promoted only if profiling demands it ("measure before optimizing",
   conventions.md §8).
-- **Geometry/astrodynamics:** SPICE/NAIF accessed through the shared **`astro-mine-spice`**
+- **Geometry/astrodynamics:** SPICE/NAIF accessed through the shared **`astro_mine.spice`**
   foundation (`astro_mine.spice`; SpiceyPy/CSPICE under the hood) for ephemerides, frames, and
   body-fixed positions; Link layers its **SPICE geometry-finder** window search (`gfposc`, `gftfov`,
   occultation/visibility solvers) on top of those primitives (LINK-02). **Astropy** for
@@ -260,8 +260,8 @@ Link sits in the **World & environment** layer and integrates exclusively throug
 
 - **Consumes** terrain occlusion (DEMs/horizon maps in an explicit planetary CRS) through the Core
   **`WorldProvider`** contract — an injected [Worlds](worlds.md) provider, **not** a dependency on the
-  `astro-mine-worlds` package. **Consumes** SPICE ephemerides/frames through the shared
-  **[`astro-mine-spice`](spice.md)** foundation (`astro_mine.spice`, [Spice](spice.md)),
+  `astro_mine.worlds` package. **Consumes** SPICE ephemerides/frames through the shared
+  **[`astro_mine.spice`](spice.md)** foundation (`astro_mine.spice`, [Spice](spice.md)),
   which realizes Core's `units`/`frames` vocabulary (conventions.md §5). **Consumes** node comms
   capabilities from [Fleet](fleet.md) SADF (relay orbiters and ground stations may be SADF assets
   themselves).

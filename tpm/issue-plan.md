@@ -57,13 +57,13 @@ outside this workspace can run.*
 
 | # | Repo | Title | Gap | Pri | Size | Milestone |
 |---|---|---|---|---|---|---|
-| 21.1 | `astro-mine-bench` | `[G1.1]` Score against Sim, not the fixture — add `--runner`, and make the stand-in unmistakable | G1.1 | High | M | M1.1 |
-| 21.2 | `astro-mine-hub` | `[G1.2]` Publish the anchor content set so it can be fetched by digest | G1.2 | **High** | L | M1.1 |
-| 21.3 | `astro-mine-bench` | `[G1.2]` `astro-mine-bench fetch` — populate a local registry from the published anchor content | G1.2 | High | M | M1.1 |
-| 21.4 | `astro-mine-sim` | `[G2.2]` Give Sim a CLI and a README a user can start from | G2.2 | High | M | M1.1 |
-| 21.5 | `astro-mine-sim` | `[G1.3]` An anchor baseline that scores non-empty against Sim | G1.3 | High | M | M1.1 |
+| 21.1 | `astro-mine bench` | `[G1.1]` Score against Sim, not the fixture — add `--runner`, and make the stand-in unmistakable | G1.1 | High | M | M1.1 |
+| 21.2 | `astro-mine hub` | `[G1.2]` Publish the anchor content set so it can be fetched by digest | G1.2 | **High** | L | M1.1 |
+| 21.3 | `astro-mine bench` | `[G1.2]` `astro-mine bench fetch` — populate a local registry from the published anchor content | G1.2 | High | M | M1.1 |
+| 21.4 | `astro-mine sim` | `[G2.2]` Give Sim a CLI and a README a user can start from | G2.2 | High | M | M1.1 |
+| 21.5 | `astro-mine sim` | `[G1.3]` An anchor baseline that scores non-empty against Sim | G1.3 | High | M | M1.1 |
 
-**21.1 detail.** `astro-mine-bench score --runner fixture|sim` (default `fixture`, honest).
+**21.1 detail.** `astro-mine bench score --runner fixture|sim` (default `fixture`, honest).
 **Bench must not import Sim** — resolve runners through an entry-point group
 (`astro_mine.bench.runners`) that `astro-mine-sim[bench]` registers into; Bench discovers, never
 imports. Fix the same gap in `scripts/determinism_gate.py` (**G2.16** — the repro oracle currently
@@ -77,14 +77,14 @@ ContactPlan). All 9 exist today **only** in a hand-built local registry on one d
 content-addressed set to private GHCR via a release workflow, reusing the shipped Hub publish path
 + Seal signing. Must stay pullable offline after first fetch. **This is the root blocker.**
 
-**21.3 detail.** `astro-mine-bench fetch [scenario]` resolves a ScenarioSpec's pins and pulls them
+**21.3 detail.** `astro-mine bench fetch [scenario]` resolves a ScenarioSpec's pins and pulls them
 via the Hub client into a local OCI-layout registry, verify-twice fail-closed. Prints the store path
 for `open_bundle_store(...)`. Consider a small synthetic anchor world shipped in-package for a
 5-minute offline path (also gives P3 a WorldSpec to copy — see 26.x / G2.11).
 
 **21.4 detail.** Sim ships no console script; `python -m astro_mine.sim` is documented as a
 container entrypoint and consumes a **different schema** (Sim `Scenario`) from Bench's
-`ScenarioSpec` — a real trap. Add `astro-mine-sim run <scenario> [--seed] [--out run.mcap]`
+`ScenarioSpec` — a real trap. Add `astro-mine sim run <scenario> [--seed] [--out run.mcap]`
 accepting a **Bench ScenarioSpec id** and resolving via `sim_scenario_from_spec`. Rewrite the
 35-line README (it still says *"Phase 0 — scaffolding"*): quickstart, the two scenario schemas and
 when each applies, the `[bench]` extra, MCAP output.
@@ -102,10 +102,10 @@ report §9.**
 
 | # | Repo | Title | Gap | Pri | Size | Milestone |
 |---|---|---|---|---|---|---|
-| 22.1 | `astro-mine-learn` | `[G1.4]` Export the trained policy — the CLI currently discards it | G1.4 | **High** | S | M1.2 |
-| 22.2 | `astro-mine-learn` | `[G2.10]` Ship an anchor env factory so the quickstart is copy-pasteable | G2.10 | High | M | M1.2 |
-| 22.3 | `astro-mine-bench` | `[G2.14]` `astro-mine-bench submit` — a CLI path to the leaderboard | G2.14 | Med | M | M1.2 |
-| 22.4 | `astro-mine-allocate` | `[G2.9]` Open the solver registry — it is advertised as pluggable and is a hardcoded dict | G2.9 | Med | M | M1.2 |
+| 22.1 | `astro-mine learn` | `[G1.4]` Export the trained policy — the CLI currently discards it | G1.4 | **High** | S | M1.2 |
+| 22.2 | `astro-mine learn` | `[G2.10]` Ship an anchor env factory so the quickstart is copy-pasteable | G2.10 | High | M | M1.2 |
+| 22.3 | `astro-mine bench` | `[G2.14]` `astro-mine bench submit` — a CLI path to the leaderboard | G2.14 | Med | M | M1.2 |
+| 22.4 | `astro-mine allocate` | `[G2.9]` Open the solver registry — it is advertised as pluggable and is a hardcoded dict | G2.9 | Med | M | M1.2 |
 | 22.5 | `docs` | `[G2.8]` Write the plugin-authoring guide — 5 live entry-point groups, zero recipes | G2.8 | High | M | M1.2 |
 
 **22.1 detail.** `train/run.py` `main()` does `report, _export = train(...)` and drops the export;
@@ -184,11 +184,11 @@ blank. Nothing depends on `console`.
 
 | # | Repo | Title | Gap | Pri | Size | Milestone |
 |---|---|---|---|---|---|---|
-| 24.1 | `astro-mine-bench` | Leaderboard surface — `@astro-mine/bench-ui` (**closes bench#27**) | G1.6 | High | L | M1.2 |
-| 24.2 | `astro-mine-studio` | `@astro-mine/studio-ui` — convert the SPA to a surface | G1.5 | High | M | M1.1 |
-| 24.3 | `astro-mine-studio` | The authoring journey — wire `/intent`, `/studies`, `/campaigns/publish` into the UI | G1.5 | High | L | M1.1 |
-| 24.4 | `astro-mine-studio` | `[G2.3/G2.4]` `studio serve` — one command to a working Studio | G2.3 | High | M | M1.1 |
-| 24.5 | `astro-mine-hub` | `@astro-mine/hub-ui` — convert the SPA to a surface; add publish/resolve | G2.x | Med | M | M1.2 |
+| 24.1 | `astro-mine bench` | Leaderboard surface — `@astro-mine/bench-ui` (**closes bench#27**) | G1.6 | High | L | M1.2 |
+| 24.2 | `astro-mine studio` | `@astro-mine/studio-ui` — convert the SPA to a surface | G1.5 | High | M | M1.1 |
+| 24.3 | `astro-mine studio` | The authoring journey — wire `/intent`, `/studies`, `/campaigns/publish` into the UI | G1.5 | High | L | M1.1 |
+| 24.4 | `astro-mine studio` | `[G2.3/G2.4]` `studio serve` — one command to a working Studio | G2.3 | High | M | M1.1 |
+| 24.5 | `astro-mine hub` | `@astro-mine/hub-ui` — convert the SPA to a surface; add publish/resolve | G2.x | Med | M | M1.2 |
 | 24.6 | `astro-mine-view` | Resolve `@astro-mine/view` distribution; document the harness as a dev gallery | G1.5 | **High** | M | — |
 
 **24.1** — the leaderboard is REST-only today; M1.2's public face does not exist. Rankings,
@@ -201,7 +201,7 @@ a `?study=` URL param with no picker, no upload, no authoring. Ship: objective f
 compare → publish, plus a **seeded example study** so the surface is never empty on first open.
 
 **24.4** — Studio has no console script and its README documents no server command; `_require()`
-makes 5 of 9 routes **503** without hand-wired `[hub]` seams. `astro-mine-studio serve` should
+makes 5 of 9 routes **503** without hand-wired `[hub]` seams. `astro-mine studio serve` should
 compose the backend, wire the Hub seams, serve the built bundle (`app.py` mounts world/asset caches
 but **never** `ui/dist`), and seed the example study.
 
@@ -218,15 +218,15 @@ console and should not pretend to be.
 | # | Repo | Title | Gap | Pri | Size |
 |---|---|---|---|---|---|
 | 25.1 | `docs` | **RFC-0011: the `astro-mine` umbrella CLI and command naming** | G2.1 | Med | M |
-| 25.2 | `astro-mine-core` | `[G2.5]` `astro-mine-core validate <file>` — 9 authored formats, 1 has a checker | G2.5 | Med | M |
-| 25.3 | `astro-mine-guard` | `[G2.6/G2.7]` Guard CLI + ship the anchor SafetySpec as package data | G2.6 | Med | M |
-| 25.4 | `astro-mine-mind` | `[G2.6]` Mind CLI + a README with a stack spec in it | G2.6 | Med | M |
+| 25.2 | `astro-mine core` | `[G2.5]` `astro-mine core validate <file>` — 9 authored formats, 1 has a checker | G2.5 | Med | M |
+| 25.3 | `astro-mine guard` | `[G2.6/G2.7]` Guard CLI + ship the anchor SafetySpec as package data | G2.6 | Med | M |
+| 25.4 | `astro-mine mind` | `[G2.6]` Mind CLI + a README with a stack spec in it | G2.6 | Med | M |
 
 **25.1 — RFC-0011.** Decides the umbrella's **home and shape** (the open question): one package
 depending on all components, or a **thin dispatcher** shelling out to installed `astro-mine-*`
 binaries — the local-tier rule favors the dispatcher, since a dependency-heavy umbrella would drag
 the whole platform into every install. Also settles naming: 8 CLIs today, 2 schemes (bare `fleet`,
-`worlds`, `link`, `prospect` vs prefixed `astro-mine-bench`, `-hub`, `-cloud`, `-train`). Proposes
+`worlds`, `link`, `prospect` vs prefixed `astro-mine bench`, `-hub`, `-cloud`, `-train`). Proposes
 `astro-mine <verb>` with aliases for one deprecation cycle, and hosts `plugin new` (22.5's
 scaffold) and `validate` dispatch.
 
@@ -273,7 +273,7 @@ docs/guide/{getting-started.md, tutorials/, how-to/, reference/{cli,file-formats
 |---|---|---|---|---|---|
 | 26.7 | multi | `[G2.13]` Surface the shipped anchor content in the READMEs that hide it | G2.13 | Med | M |
 | 26.8 | multi | `[G3.x]` Fix doc drift — phantom commands, "Planning" classifiers, stale status lines | G3.1–3.4 | Low | S |
-| 26.9 | `astro-mine-core` | `[G3.5]` Repo hygiene — committed `.venv` and build artifacts | G3.5 | Low | S |
+| 26.9 | `astro-mine core` | `[G3.5]` Repo hygiene — committed `.venv` and build artifacts | G3.5 | Low | S |
 
 **26.7** — Fleet's 6-asset anchor roster, Prospect's Shackleton priors, and Mind's 6 reference
 stacks all ship, are one call away, and are mentioned in **none** of their READMEs. Also **G2.12**:
@@ -324,7 +324,7 @@ test claimed.
 
 ### Where the plan was wrong
 
-- **26.9 (`G3.5`, committed `.venv`) was struck** — verified false. `astro-mine-core`'s
+- **26.9 (`G3.5`, committed `.venv`) was struck** — verified false. `astro-mine core`'s
   `examples/downstream-consumer/.venv/` exists on disk but is untracked, gitignored, and has never
   appeared in a commit. It was never filed.
 - **Three of the gap report's own claims did not survive verification** and are corrected in-place
@@ -369,7 +369,7 @@ followed the instructions.
   digests. Cheaper before the public flip than after.
 - **G3.7** — Seal has no CLI ([`astro-mine-seal#13`](https://github.com/astro-mine/astro-mine-seal/issues/13)).
   A feature, and correctly kept out of a Low/Small sweep.
-- **UC-E3's single-command form** — `astro-mine-mind run`
+- **UC-E3's single-command form** — `astro-mine mind run`
   ([`astro-mine-mind#25`](https://github.com/astro-mine/astro-mine-mind/issues/25)). The narrow waist
   says Mind cannot own an Environment; the guide documents the Bench/Sim hop instead.
 

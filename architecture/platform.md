@@ -49,7 +49,7 @@ src/astro_mine/<component>/   the component packages
 tests/<component>/            each component's suite, with its own default selection
 schemas/                      Core's proto + JSON-Schema sources (path- and digest-coupled);
                               schemas/<component>/ for other owners' codegen sources
-examples/<component>/          runnable examples, one directory per owning component
+examples/                     runnable examples, grouped by kind (assets, worlds, plans, …)
 rust/                         Guard's crate (PyO3 → astro_mine.guard._core)
 scripts/                      test runner, codegen, schema-bundle builder, determinism gate
 docs/components/<component>/  per-component source-tree notes; the design lives here in docs/

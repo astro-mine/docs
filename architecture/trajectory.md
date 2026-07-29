@@ -207,7 +207,7 @@ arcs and budgets — and persists little beyond results and provenance.
     the tabular porkchop/Pareto data for [Studio](studio.md) and [View](view.md);
   - **verification residuals** — the oracle/Sim re-propagation deltas attached to each `TrajectoryRef`.
 - **Consumes:** **force models + ephemerides** from [Transit](transit.md) and SPICE geometry via the
-  shared **`astro-mine-spice`** foundation ([Spice](spice.md); frames,
+  shared **`astro_mine.spice`** foundation ([Spice](spice.md); frames,
   TDB/ET epochs); **propulsion/Δv capability** from [Fleet](fleet.md) SADF
   (mission-model.md §2.1); **body shape/gravity field** from [Worlds](worlds.md) for proximity
   legs. All states carry an explicit planetary/inertial CRS resolved via SPICE/PROJ and SI units

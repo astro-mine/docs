@@ -14,7 +14,7 @@ the frame/time *vocabulary* — `Epoch`, `ReferenceFrame`, `PlanetaryCRS`, and t
 `require_crs` fail-loud guards — but deliberately cannot host the *resolution* of those names into
 geometry: `spiceypy`/`numpy` are exactly the heavy dependencies the narrow waist must never carry
 ([core.md](core.md) §2 principle 3). Spice is that resolution, factored into a thin package
-(`astro-mine-spice`, import `astro_mine.spice`) that every SPICE consumer depends on.
+(`astro_mine.spice`) that every SPICE consumer depends on.
 
 Concretely, given furnished NAIF kernels, Spice:
 
@@ -55,7 +55,7 @@ ephemerides/frames).
 
 ## 2. Architecture principles
 
-1. **A thin Core companion, not an edge.** Spice depends only on `astro-mine-core` (frame/time *types*
+1. **A thin Core companion, not an edge.** Spice depends only on `astro_mine.core` (frame/time *types*
    and guards) plus `spiceypy` and `numpy`. No GDAL/rasterio, no other `astro-mine-*` package. Core
    depends on it not at all; it depends on Core for vocabulary only.
 2. **Resolve, don't interpret.** Spice turns names + epochs into numbers. The meaning of those numbers
@@ -160,21 +160,21 @@ Transit consume the same primitives for ephemerides/frames.
 Spice sits on the **Commons backbone** as a Core companion and integrates through plain package
 dependencies (no service plane, no side-channels — conventions.md §1.1):
 
-- **← [Core](core.md).** Depends on `astro-mine-core` for the frame/time types and `require_frame`
+- **← [Core](core.md).** Depends on `astro_mine.core` for the frame/time types and `require_frame`
   guard. Core does **not** depend on Spice; the narrow waist stays free of heavy deps (core.md §2 principle 3).
 - **→ [Worlds](worlds.md).** Worlds resolves SPICE frames/epochs/Sun-Earth geometry through Spice
   (illumination/PSR, RM-P0-WORLDS-03); `worlds.crs` re-imports `MOON_RADIUS_M`. Replaces the former
   in-package `astro_mine.worlds.spice`, extracted here when the foundation was factored out.
 - **→ [Link](link.md).** Link resolves Earth/relay body-fixed positions through Spice for LOS, then
   evaluates terrain occlusion via the Core `WorldProvider` contract — **no dependency on
-  `astro-mine-worlds`**.
+  `astro_mine.worlds`**.
 - **→ [Sim](sim.md), [Bridge](bridge.md), [Trajectory](trajectory.md), [Transit](transit.md).** Sim's
   orbital engine (SIM-03, Phase 0), Bridge's time/frame transforms (Phase 2), and Trajectory/Transit
   (Phase 3) consume the same primitives when they next touch SPICE — additive, no rework, because
   the cut-over was deliberately deferred to each consumer's next SPICE change rather than forced.
 
 **This is the seam fix.** By being the one package every consumer depends on, Spice eliminates both the
-"re-derive a thin SPICE adapter per package" drift and the "depend on `astro-mine-worlds` just for
+"re-derive a thin SPICE adapter per package" drift and the "depend on `astro_mine.worlds` just for
 SPICE" edge→edge side-channel that `conventions.md §1.1` forbids.
 
 ---
@@ -241,7 +241,7 @@ SPICE" edge→edge side-channel that `conventions.md §1.1` forbids.
 
 Phase-0 deliverable, sequenced **before the Link MVP** (see [roadmap/phase-0](../roadmap/phase-0-commons-seed.md)):
 
-- **RM-P0-SPICE-01** — extract `astro-mine-spice` near-verbatim from `astro_mine.worlds.spice`.
+- **RM-P0-SPICE-01** — extract `astro_mine.spice` near-verbatim from `astro_mine.worlds.spice`.
 - **RM-P0-SPICE-02** — cut Worlds over (hard cut, delete the in-package module; oracle tests move).
 - **RM-P0-SPICE-03** — distribution (Git-tag versioning, pinned downstream; no operational-targeting tag).
 

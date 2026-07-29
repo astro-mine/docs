@@ -15,8 +15,7 @@ complete authoring lifecycle. What the rest of the platform's UX is aiming at lo
 ## 1. Install
 
 ```bash
-uv pip install ./astro-mine-fleet ./astro-mine-hub
-astro-mine-fleet --help
+astro-mine fleet --help
 ```
 
 ```
@@ -36,11 +35,10 @@ astro-mine-fleet --help
     render        render an asset preview/thumbnail (a composed, posed glTF/USD scene)
 ```
 
-> The binary is `astro-mine-fleet`. The bare name `fleet` still works and is kept as an **alias for
-> one deprecation cycle**, removed at the public flip (`conventions.md` §13, RFC-0011). Two
-> sub-command help strings still print the bare form — `resolve-family`'s *"see `fleet families`"*
-> and the umbrella's *"`fleet --help` lists it"*; `astro-mine-fleet --help` itself is clean, and so
-> is what `new` scaffolds. Prefer the prefixed name in anything you write down.
+> The command is `astro-mine fleet <verb>`. A bare `fleet` binary once existed as a deprecated
+> alias; it is gone (`conventions.md` §13). A couple of sub-command help strings still print the old
+> bare form in prose — `resolve-family`'s *"see `fleet families`"*, for instance. `astro-mine fleet
+> --help` itself is clean, and so is what `new` scaffolds.
 
 ## 2. Start from a shipped asset (recommended)
 
@@ -57,7 +55,7 @@ src/astro_mine/fleet/library/
 └── surface/prospecting-rover.sadf.yaml
 ```
 
-These are not toys. Packaged with `astro-mine-fleet package`, they *are* six of the anchor's nine
+These are not toys. Packaged with `astro-mine fleet package`, they *are* six of the anchor's nine
 pins ([tutorial 01](01-score-the-anchor.md) §6). Copying the one closest to your vehicle is
 usually faster than starting from the scaffold:
 
@@ -70,7 +68,7 @@ print(src.read_text()[:400])
 ## 3. Scaffold a new one (UC-C1)
 
 ```bash
-astro-mine-fleet new rover my-rover.sadf.yaml --id example.my-rover --name "My Rover"
+astro-mine fleet new rover my-rover.sadf.yaml --id example.my-rover --name "My Rover"
 ```
 
 ```
@@ -105,8 +103,8 @@ An asset with no capability tags will validate and publish, and nothing will eve
 ## 4. Validate and lint (UC-C2)
 
 ```bash
-astro-mine-fleet validate my-rover.sadf.yaml
-astro-mine-fleet lint my-rover.sadf.yaml
+astro-mine fleet validate my-rover.sadf.yaml
+astro-mine fleet lint my-rover.sadf.yaml
 ```
 
 ```
@@ -122,7 +120,7 @@ tutorials later.
 Every Core-owned format has a validator, not just SADF:
 
 ```bash
-astro-mine-core validate my-rover.sadf.yaml     # dispatches on $id/$schema
+astro-mine core validate my-rover.sadf.yaml     # dispatches on $id/$schema
 astro-mine validate my-rover.sadf.yaml          # the umbrella routes to the owner
 ```
 
@@ -150,7 +148,7 @@ The bridge from the robotics world you already have. Given `mini.urdf`:
 ```
 
 ```bash
-astro-mine-fleet import mini.urdf -o mini-rover.sadf.yaml
+astro-mine fleet import mini.urdf -o mini-rover.sadf.yaml
 ```
 
 ```
@@ -162,7 +160,7 @@ Kinematics, masses, and inertias come across; visual meshes are converted to USD
 `--assets-dir`. This URDF declares no meshes, hence `0 ref(s)`.
 
 ```bash
-astro-mine-fleet validate mini-rover.sadf.yaml
+astro-mine fleet validate mini-rover.sadf.yaml
 ```
 
 ```
@@ -177,7 +175,7 @@ real work, and it is the part that makes SADF worth having.
 ## 6. Preview it (UC-C4)
 
 ```bash
-astro-mine-fleet render mini-rover.sadf.yaml -o mini-rover.glb
+astro-mine fleet render mini-rover.sadf.yaml -o mini-rover.glb
 ```
 
 ```
@@ -208,7 +206,7 @@ proxy. It then tells you, per link, that this is what you are looking at, and st
 Generate a signing key, then publish to a **local** OCI-layout registry — no server, no account:
 
 ```bash
-astro-mine-hub keygen --out ./keys
+astro-mine hub keygen --out ./keys
 ```
 
 ```
@@ -216,7 +214,7 @@ wrote keys/cosign.key and keys/cosign.pub
 ```
 
 ```bash
-astro-mine-fleet publish mini-rover.sadf.yaml \
+astro-mine fleet publish mini-rover.sadf.yaml \
   --registry ./myreg --sign --key ./keys/cosign.key --pub ./keys/cosign.pub
 ```
 
@@ -234,7 +232,7 @@ where it lands. Local first: everything in this tutorial works with no network.
 ## 8. See it in the menu
 
 ```bash
-astro-mine-fleet catalog --registry ./myreg
+astro-mine fleet catalog --registry ./myreg
 ```
 
 ```
@@ -248,7 +246,7 @@ also the reminder from §3: **no capability tags**, so nothing will ever task it
 Point `catalog` at the fetched anchor content and you see what a populated menu looks like:
 
 ```bash
-astro-mine-fleet catalog --registry ~/.cache/astro-mine/hub-registry
+astro-mine fleet catalog --registry ~/.cache/astro-mine/hub-registry
 ```
 
 ```

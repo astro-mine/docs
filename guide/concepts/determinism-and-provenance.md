@@ -8,8 +8,8 @@ Given the same scenario, the same seeds, the same content digests, and the same 
 run produces a **byte-identical scorecard**. You can check this yourself in one command, twice:
 
 ```bash
-astro-mine-bench score --seeds 1001 1002 | grep scorecard
-astro-mine-bench score --seeds 1001 1002 | grep scorecard
+astro-mine bench score --seeds 1001 1002 | grep scorecard
+astro-mine bench score --seeds 1001 1002 | grep scorecard
 ```
 
 ```

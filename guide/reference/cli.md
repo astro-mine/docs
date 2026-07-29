@@ -1,6 +1,6 @@
 # CLI reference
 
-Every shipped command, organized by **what you are trying to do** rather than by which repository
+Every shipped command, organized by **what you are trying to do** rather than by which component
 owns it. Covers **UC-A3** (discover which command does what) and **UC-A4** (find the docs for my
 task).
 
@@ -9,55 +9,69 @@ so rather than omitting it.
 
 ---
 
-## Naming: two schemes, one rule
+## One binary, one grammar
 
-**The rule** (`conventions.md` §13, normative; [RFC-0011](../../rfc/0011-umbrella-cli.md)):
+```
+astro-mine <component> <verb> [options]
+```
 
-- A component's direct console script is **`astro-mine-<package>`** — uniform prefix, named after
-  its package. This removes the `PATH` land-grab of generic bare names.
-- The discoverable surface above them is **`astro-mine <verb>`** — verb-first, because a user
-  guesses the *action*. Component-scoped actions read as `astro-mine <component> <verb>`.
-- The umbrella **discovers** verbs from the `astro_mine.cli` entry-point group. A component
-  contributes a verb by declaring an entry point, **never by a PR to the umbrella**.
+`astro-mine` is the **only** executable the platform installs (`conventions.md` §13, normative). It
+comes from `astro-mine-cli`, which depends on `astro-mine-platform` — so `pip install astro-mine-cli`
+gets you the command and every component behind it.
 
-**What you will still find in the wild.** Four bare binaries — `fleet`, `worlds`, `link`,
-`prospect` — and the mis-nouned `astro-mine-train` predate the rule. They are kept as **aliases for
-one deprecation cycle and removed at the public-flip gate**. They work today, they print
-deprecation warnings in some cases, and you should not write them down. New CLIs are born prefixed;
-the alias surface only shrinks.
-
-So if you find `fleet validate` in a blog post: it is the old name for `astro-mine-fleet validate`,
-and it will stop working.
-
----
-
-## The umbrella
+Thirteen names are components. Three are **routers**, which exist because they answer a question no
+single component can: *who owns this?*
 
 ```bash
-astro-mine --help                # verbs available here, plus verbs whose component is missing
-astro-mine <verb> --help         # a verb's own options
+astro-mine                       # the components and the routers
+astro-mine <component> --help    # that component's verbs — where the real help lives
 astro-mine --version
 ```
 
-The umbrella's own three verbs:
+**Top-level help does not list verbs, on purpose.** Rendering them would mean importing all thirteen
+components to print a help screen. `astro-mine` imports **none**; dispatch imports exactly the one
+module you named. You pay for the command you ran.
+
+### The three routers
 
 | Command | What it does |
 |---|---|
-| `astro-mine validate <file>...` | Validate an authored document. Routed to the component that owns its format; the umbrella owns no schema. `--json` for machine-readable output. |
+| `astro-mine validate <file>...` | Validate an authored document. Routed to the component that owns its schema `$id`; the router owns no schema. `--json` for machine-readable output. |
 | `astro-mine new [kind] [output]` | Scaffold an authored document. Each kind is written by the component owning that format. Omit the kind to list them. |
 | `astro-mine plugin new <kind> <output>` | Scaffold a plugin package against a live extension group. |
 
-**It degrades honestly.** A verb whose component is not installed is still listed, with the
-distribution that provides it:
+`new` and `validate` are two ends of one contract: what `new` writes, `validate` accepts.
 
-```
-Available from components that are not installed here:
-  cloud     submit and manage cluster jobs [astro-mine-cloud]
-  studio    the design studio (`studio serve`) [astro-mine-studio]
-  train     train a policy and export it [astro-mine-learn]
+### Where a command is unavailable
+
+Every component is always installed, so "component missing" is no longer a state you can reach. What
+you can still hit is a surface that lives in **another distribution**, and the command says so rather
+than failing obscurely:
+
+```console
+$ astro-mine studio serve
+astro-mine studio serve needs the Studio REST surface (astro_mine.studio.api), which is not
+included in astro-mine-platform.
 ```
 
-Never a traceback, never "unknown command".
+That surface belongs to [`astro-mine-api`](../../architecture/api.md), which is not yet stood up.
+(The hint the command prints after that line still names a retired distribution —
+[astro-mine-cli#19](https://github.com/astro-mine/astro-mine-cli/issues/19).) An
+unknown name is a plain error with the valid ones listed — never a traceback:
+
+```console
+$ astro-mine nosuch
+astro-mine: error: unknown component or verb 'nosuch'; available: bench, cloud, core, fleet,
+guard, hub, learn, link, mind, new, plugin, prospect, sim, studio, validate, worlds
+```
+
+### Names you may find in the wild
+
+An earlier scheme gave every component its own `astro-mine-<component>` binary, with four bare names
+(`fleet`, `worlds`, `link`, `prospect`) and the mis-nouned `astro-mine-train` kept as deprecated
+aliases. **All of them are gone.** If you find `astro-mine-bench score` or `fleet validate` in a blog
+post or an old transcript, the current spelling is `astro-mine bench score` and `astro-mine fleet
+validate`.
 
 ### Scaffold kinds
 
@@ -65,22 +79,22 @@ Never a traceback, never "unknown command".
 
 | Kind | Document | Provided by |
 |---|---|---|
-| `asset` | a SADF asset | `astro-mine-fleet` |
-| `safety` | a SafetySpec | `astro-mine-guard` |
-| `stack` | an autonomy stack spec | `astro-mine-mind` |
-| `world` | a WorldSpec | `astro-mine-worlds` |
+| `asset` | a SADF asset | `astro-mine fleet` |
+| `safety` | a SafetySpec | `astro-mine guard` |
+| `stack` | an autonomy stack spec | `astro-mine mind` |
+| `world` | a WorldSpec | `astro-mine worlds` |
 
 `astro-mine plugin new <kind>` — plugin packages, one per live extension group:
 
 | Kind | Entry-point group | Provided by |
 |---|---|---|
-| `algorithm` | `astro_mine.learn.algorithms` | `astro-mine-learn` |
-| `curriculum` | `astro_mine.learn.curricula` | `astro-mine-learn` |
-| `field-model` | `astro_mine.field_models` | `astro-mine-worlds` |
-| `provider` | `astro_mine.providers` | `astro-mine-sim` |
-| `runner` | `astro_mine.bench.runners` | `astro-mine-bench` |
-| `solver` | `astro_mine.allocate.solvers` | `astro-mine-allocate` |
-| `tier` | `astro_mine.mind.tier_plugins` | `astro-mine-mind` |
+| `algorithm` | `astro_mine.learn.algorithms` | `astro-mine learn` |
+| `curriculum` | `astro_mine.learn.curricula` | `astro-mine learn` |
+| `field-model` | `astro_mine.field_models` | `astro-mine worlds` |
+| `provider` | `astro_mine.providers` | `astro-mine sim` |
+| `runner` | `astro_mine.bench.runners` | `astro-mine bench` |
+| `solver` | `astro_mine.allocate.solvers` | `astro-mine allocate` |
+| `tier` | `astro_mine.mind.tier_plugins` | `astro-mine mind` |
 | `cli` | `astro_mine.cli` | `astro-mine-cli` |
 
 What these scaffolds emit are the recipes in
@@ -88,16 +102,16 @@ What these scaffolds emit are the recipes in
 
 ---
 
-## Run and score a benchmark — `astro-mine-bench`
+## Run and score a benchmark — `astro-mine bench`
 
 ```
-astro-mine-bench {score,fetch,submit,list,zoo-sync,zoo-search}
+astro-mine bench {score,fetch,submit,list,zoo-sync,zoo-search}
 ```
 
 | Command | Flags | Notes |
 |---|---|---|
 | `list` | — | The scenario ids in the packaged zoo. |
-| `score [scenario_id]` | `--seeds SEED...` · `--runner NAME` · `--registry PATH` · `--json` | Default scenario `lunar-polar-ice-prospecting-v1`; default runner **`fixture`** (a deterministic trace, not physics). `sim` needs `astro-mine-sim[bench]` + fetched content. The runner is recorded in the scorecard and its hash. |
+| `score [scenario_id]` | `--seeds SEED...` · `--runner NAME` · `--registry PATH` · `--json` | Default scenario `lunar-polar-ice-prospecting-v1`; default runner **`fixture`** (a deterministic trace, not physics). `sim` needs fetched content. The runner is recorded in the scorecard and its hash. |
 | `fetch [scenario_id]` | `--registry PATH` · `--from REGISTRY` · `--trusted-key PATH` | Resolves the scenario's pins by digest, mirrors them locally, verifies fail-closed. Anchor ≈ **461 MB**; needs `$GITHUB_TOKEN` with `read:packages` while the org is private. Idempotent, then offline. `--from` defaults to `ghcr.io/astro-mine`. |
 | `submit` | `--hub-ref REF` \| `--policy-ref MODULE:ATTR` \| `--job ID` · `--scenario-id ID` · `--to URL` · `--method` · `--author` · `--wait` · `--token-file` · `--json` | `--hub-ref` is the reproducible path. `--policy-ref` is local/dev and **not leaderboard-grade**. Token from `$ASTRO_MINE_BENCH_TOKEN`, never a flag. |
 | `zoo-sync` | — | Seed the Postgres/pgvector catalog from the packaged zoo (operator task, P7). |
@@ -105,10 +119,10 @@ astro-mine-bench {score,fetch,submit,list,zoo-sync,zoo-search}
 
 Tutorials: [01](../tutorials/01-score-the-anchor.md), [02](../tutorials/02-run-it-in-the-simulator.md).
 
-## Simulate — `astro-mine-sim`
+## Simulate — `astro-mine sim`
 
 ```
-astro-mine-sim {run,record}
+astro-mine sim {run,record}
 ```
 
 | Command | Flags | Notes |
@@ -119,13 +133,13 @@ astro-mine-sim {run,record}
 **SPICE kernels.** `--metakernel PATH` furnishes the pool, defaulting to
 `$ASTRO_MINE_SPICE_METAKERNEL`. Kernels are not shipped — get them from
 [NAIF](https://naif.jpl.nasa.gov/naif/data.html). The **environment variable is also what
-`astro-mine-bench score --runner sim` uses**: Bench hands the runner a content store and nothing
+`astro-mine bench score --runner sim` uses**: Bench hands the runner a content store and nothing
 else, so the runner reads the variable itself rather than Bench growing a vocabulary for SPICE. The
 pool is validated against the episode's epoch window at startup, so a short kernel set fails
 immediately rather than mid-run. See
 [tutorial 02 §3](../tutorials/02-run-it-in-the-simulator.md).
 
-## Train — `astro-mine-learn`
+## Train — `astro-mine learn`
 
 One command, no subcommands.
 
@@ -140,11 +154,11 @@ One command, no subcommands.
 | `--export-format onnx` · `--export-version` | ONNX is the only cross-component policy artifact; version defaults to `0.1.0`. |
 | `--output PATH` | Run report JSON (default stdout). |
 
-`astro-mine-train` is the deprecated alias.
+`astro-mine learn` is the deprecated alias.
 
 Tutorial: [03](../tutorials/03-train-and-publish-a-policy.md).
 
-## Author assets — `astro-mine-fleet`
+## Author assets — `astro-mine fleet`
 
 The platform's exemplar CLI: a complete authoring lifecycle in 14 subcommands.
 
@@ -167,7 +181,7 @@ The platform's exemplar CLI: a complete authoring lifecycle in 14 subcommands.
 
 Tutorial: [04](../tutorials/04-author-an-asset.md).
 
-## Author worlds — `astro-mine-worlds`
+## Author worlds — `astro-mine worlds`
 
 | Command | What it does |
 |---|---|
@@ -178,10 +192,10 @@ Tutorial: [04](../tutorials/04-author-an-asset.md).
 Building a world from a WorldSpec is a Python/script path, not a CLI verb. Tutorial:
 [05](../tutorials/05-author-a-world.md).
 
-## Author autonomy — `astro-mine-mind`, `astro-mine-guard`
+## Author autonomy — `astro-mine mind`, `astro-mine guard`
 
 ```
-astro-mine-mind {validate,compose,stacks}
+astro-mine mind {validate,compose,stacks}
 ```
 
 | Command | What it does |
@@ -191,15 +205,15 @@ astro-mine-mind {validate,compose,stacks}
 | `compose <stack>` | Resolve to tier → plugin @ version, and the entry-point group each came from. |
 
 A bare reference-stack name resolves against the shipped set, **including the `.yaml` suffix**:
-`astro-mine-mind compose lunar_prospecting.yaml`.
+`astro-mine mind compose lunar_prospecting.yaml`.
 
 > **There is deliberately no `mind run`.** Stepping a stack needs a Core `Environment`, which is
 > Sim's job, and the narrow waist forbids Mind importing it. Execute through Bench/Sim.
-> A Sim-backed `astro-mine-mind run` is tracked in
-> [astro-mine-mind#25](https://github.com/astro-mine/astro-mine-mind/issues/25).
+> A Sim-backed `astro-mine mind run` is tracked in
+> tracked as an open Mind issue (the `mind run` verb's scope).
 
 ```
-astro-mine-guard {validate,compile,falsify,sign}
+astro-mine guard {validate,compile,falsify,sign}
 ```
 
 | Command | What it does |
@@ -214,7 +228,7 @@ scenario: its plant is synthetic, and the search derives its start and its attac
 safe set, so it runs on a spec you wrote. Tutorial:
 [06](../tutorials/06-compose-a-planner-stack.md).
 
-## Validate anything Core owns — `astro-mine-core`
+## Validate anything Core owns — `astro-mine core`
 
 | Command | What it does |
 |---|---|
@@ -224,7 +238,7 @@ safe set, so it runs on a spec you wrote. Tutorial:
 `--json` on the top-level command for machine-readable output. See
 [file-formats.md](file-formats.md).
 
-## Publish and fetch artifacts — `astro-mine-hub`
+## Publish and fetch artifacts — `astro-mine hub`
 
 | Command | Flags |
 |---|---|
@@ -241,16 +255,16 @@ safe set, so it runs on a spec you wrote. Tutorial:
 > **Inconsistency:** `publish --kind` is validated against the closed set above; `search --kind`
 > accepts any string.
 
-## Publish content — `astro-mine-link`, `astro-mine-prospect`
+## Publish content — `astro-mine link`, `astro-mine prospect`
 
 Both ship exactly one subcommand:
 
 | Command | What it does |
 |---|---|
-| `astro-mine-link publish` | Publish a ContactPlan to a local OCI-layout registry. |
-| `astro-mine-prospect publish` | Publish a belief-prior bundle to a local registry. |
+| `astro-mine link publish` | Publish a ContactPlan to a local OCI-layout registry. |
+| `astro-mine prospect publish` | Publish a belief-prior bundle to a local registry. |
 
-## Design — `astro-mine-studio`
+## Design — `astro-mine studio`
 
 | Command | Flags |
 |---|---|
@@ -259,7 +273,7 @@ Both ship exactly one subcommand:
 Composes the backend, wires the Hub seams from a local registry, mounts the built UI, and seeds an
 example study. Tutorial: [07](../tutorials/07-design-a-swarm-in-studio.md).
 
-## Scale out — `astro-mine-cloud`
+## Scale out — `astro-mine cloud`
 
 | Command | What it does |
 |---|---|
@@ -270,8 +284,10 @@ example study. Tutorial: [07](../tutorials/07-design-a-swarm-in-studio.md).
 | `workflow` | Compile a WorkflowSpec to an Argo Workflow. |
 | `backends` | List registered backends. |
 
-`astro-mine-cloud-harness` is the in-container harness entry point. Cloud is always optional —
-every tutorial in this guide runs on one workstation.
+The in-container harness is not a command: it is `python -m astro_mine.cloud.submission.harness`,
+invoked by the pod that Cloud creates rather than typed by a person
+([cli.md](../../architecture/cli.md) §10). Cloud itself is always optional — every tutorial in this
+guide runs on one workstation.
 
 ---
 
@@ -281,12 +297,12 @@ Named here so you do not go looking.
 
 | You might expect | Reality |
 |---|---|
-| `astro-mine-seal ...` | **Seal has no CLI.** An archetypal sign/verify tool with no shell surface; signing is reached through Hub and Fleet, or the Python API. |
-| `astro-mine-allocate ...` | No CLI. Allocate is a library plus the `astro_mine.allocate.solvers` plugin group. |
-| `astro-mine-spice ...`, `astro-mine-surrogate ...` | No CLI. Libraries only. |
-| `astro-mine-mind run` | Deliberately absent — see above. |
-| A world **build** verb | Building a world bundle from a WorldSpec is a script/Python path. `astro-mine-worlds` covers validate, schema, publish. |
-| `astro-mine-prospect` authoring verbs | Prospect priors are Python objects, not an authored file format. Only `publish` exists. |
+| `astro-mine seal ...` | **Seal has no CLI yet.** An archetypal sign/verify tool with no shell surface; signing is reached through Hub and Fleet, or the Python API. Tracked as [astro-mine-cli#17](https://github.com/astro-mine/astro-mine-cli/issues/17). |
+| `astro-mine allocate ...` | No CLI. Allocate is a library plus the `astro_mine.allocate.solvers` plugin group. |
+| `astro-mine spice ...`, `astro-mine surrogate ...` | No CLI. Libraries only. |
+| `astro-mine mind run` | Deliberately absent — see above. |
+| A world **build** verb | Building a world bundle from a WorldSpec is a script/Python path. `astro-mine worlds` covers validate, schema, publish. |
+| `astro-mine prospect` authoring verbs | Prospect priors are Python objects, not an authored file format. Only `publish` exists. |
 
 `console` and `view` are TypeScript packages with no Python CLI — see the
 [console guide](../console.md).

@@ -506,7 +506,8 @@ Normative consequences:
     every component was always present.
   - **No prefixed per-component binaries, and no aliases.** The earlier scheme gave each component
     its own `astro-mine-<component>` script, with bare legacy names (`fleet`, `worlds`, `link`,
-    `prospect`) and one mis-nouned prefixed name kept as deprecated aliases. All of them are gone.
+    `prospect`) and one mis-nouned prefixed name (`astro-mine-train`) kept as deprecated aliases. All
+    of them are gone.
     Any such name in a document, a docstring, or a blog post is historical.
 - **Front-end packages** (§2.1) are npm packages under the **`@astro-mine`** scope:
   `@astro-mine/<name>`, lowercase and hyphenated. A per-component *surface* is named for its
@@ -543,7 +544,7 @@ Normative consequences:
   one working example of it, and the example MUST be reachable **two ways**, because the two
   audiences are different: **package data** under `src/astro_mine/<component>/reference/` for a
   reader who has installed the wheel and calls `importlib.resources.files(...)`, and a path under
-  the platform's **`examples/<component>/`** for a reader browsing on GitHub. Where both exist, one
+  the platform's **`examples/`** tree for a reader browsing on GitHub. Where both exist, one
   is the file and the other points at it — never two copies that can drift. An example MUST validate
   under its owner's validator (`astro-mine validate`, or the owning component's own verb) at merge
   time, and the component's documentation MUST name it by path and show the call that loads it. A

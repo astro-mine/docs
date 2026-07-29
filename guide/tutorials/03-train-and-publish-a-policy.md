@@ -29,10 +29,13 @@ per-agent spaces from real SADF **without either package importing the other**. 
 Sim-free; Sim never hears of Learn.
 
 ```bash
-uv pip install "./astro-mine-learn[export]" ./astro-mine-sim
+pip install "astro-mine-platform[learn-export]"
 ```
 
-The `[export]` extra pulls the ONNX toolchain. Without it, training works and `--export` does not.
+The `learn-export` extra pulls the ONNX toolchain. Without it, training works and `--export` does not.
+This is one of the few places you still add something: heavy optional stacks stay behind
+component-prefixed extras so the base install remains a local tier rather than a training rig
+([conventions.md](../../architecture/conventions.md) §7.1).
 
 ## 2. Train (UC-D1)
 
@@ -68,13 +71,13 @@ Two iterations of 32 steps is a **smoke configuration** — it proves the pipeli
 anything. Raise `iterations` and `rollout_steps` once the path works end to end.
 
 ```bash
-astro-mine-learn \
+astro-mine learn \
   --env-factory astro_mine.sim.reference:make_reference_env_and_assets \
   --config-json /path/to/train_config.json \
   --output train-report.json
 ```
 
-> The binary is `astro-mine-learn`. `astro-mine-train` still works and prints a deprecation warning:
+> The binary is `astro-mine learn`. `astro-mine learn` still works and prints a deprecation warning:
 > it is a **mis-nouned legacy alias kept for one cycle**, removed at the public flip (RFC-0011 §5).
 
 The run report carries the learning curve, throughput, and the produced policy's provenance:
@@ -99,7 +102,7 @@ This is the commons' **unit of exchange**: an ONNX model plus a typed `PolicyPac
 to use it and what it assumes.
 
 ```bash
-astro-mine-learn \
+astro-mine learn \
   --env-factory astro_mine.sim.reference:make_reference_env_and_assets \
   --config-json /path/to/train_config.json \
   --export /absolute/path/to/policies \
@@ -183,7 +186,7 @@ Before publishing, score it the way [tutorial 02](02-run-it-in-the-simulator.md)
 baseline, and do it across **seeds**, not one:
 
 ```bash
-astro-mine-bench score lunar-polar-ice-prospecting-v1 --runner sim --seeds 1001 1002 1003 1004 1005
+astro-mine bench score lunar-polar-ice-prospecting-v1 --runner sim --seeds 1001 1002 1003 1004 1005
 ```
 
 Report the seed sweep, not your best seed. The anchor's public seeds are `1001–1005`; the
@@ -195,7 +198,7 @@ the fetched anchor content rather than the reference environment — the same co
 world, and the SPICE prerequisite from [tutorial 02](02-run-it-in-the-simulator.md) §3.
 
 **Scale-out (UC-D5)** is optional and never a prerequisite: `--num-workers` for vectorized rollouts,
-`--ray-address` for a Ray cluster, `astro-mine-cloud submit` to wrap the same entry point in a
+`--ray-address` for a Ray cluster, `astro-mine cloud submit` to wrap the same entry point in a
 KubeRay job. The training entry point does not change — *"the same code with a different executor,
 never a fork."* **Experiment tracking (UC-D6)** is MLflow, third-party and optional.
 
@@ -205,9 +208,9 @@ First the manifest. `--manifest` takes a **Core plugin manifest**, and Core ship
 artifact — a baseline prospecting policy — so start from it rather than writing one:
 
 ```bash
-cp astro-mine-core/examples/plugins/greedy-prospecting-baseline.manifest.yaml ./manifest.yaml
+cp astro-mine-platform/examples/plugins/greedy-prospecting-baseline.manifest.yaml ./manifest.yaml
 # edit `name`, `version` and `description` to match what you are publishing
-astro-mine-core validate ./manifest.yaml
+astro-mine core validate ./manifest.yaml
 ```
 
 ```
@@ -220,8 +223,8 @@ Either on-disk shape is accepted, YAML or JSON: a **manifest document** (`manife
 indexes the *manifest's* pair, so a mismatch publishes under one name and is found under the other.
 
 ```bash
-astro-mine-hub keygen --out ./keys
-astro-mine-hub publish \
+astro-mine hub keygen --out ./keys
+astro-mine hub publish \
   --registry ./myreg \
   --name mappo-rover --version 0.1.0 --kind policy \
   --manifest ./manifest.yaml \
@@ -242,7 +245,7 @@ admission re-verifies.
 
 ```bash
 export ASTRO_MINE_BENCH_TOKEN=<your leaderboard token>
-astro-mine-bench submit \
+astro-mine bench submit \
   --hub-ref sha256:4b6345006f45abaab1928029223e8054a1ceaf62e4489022a049b54956340005 \
   --scenario-id lunar-polar-ice-prospecting-v1 \
   --to https://leaderboard.example \

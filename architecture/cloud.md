@@ -236,7 +236,7 @@ object store is enforced to avoid cross-zone egress cost and latency. See §8 an
 outputs are content-addressed; every run records inputs, image digest, Core interface version,
 lockfile, and seed (conventions.md §5, §11) — so a scaled result reproduces exactly. Object-store
 **lifecycle policies** tier/expire scratch and intermediate artifacts; durable results graduate to
-[Hub](hub.md). The `astro-mine-cloud` wheel and Helm charts are **SemVer**'d (conventions.md §7,
+[Hub](hub.md). The platform wheel and Cloud's Helm charts are **SemVer**'d (conventions.md §7,
 §13).
 
 ---

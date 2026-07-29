@@ -28,7 +28,7 @@ single-robot planning stack (use MoveIt or OMPL directly), a flight-qualified GN
 scope), or a finished product — this is an incubating platform whose repositories are still
 private.
 
-Architecturally it is a **thin, stable core with thick, swappable edges**: `astro-mine-core` owns
+Architecturally it is a **thin, stable core with thick, swappable edges**: `astro_mine.core` owns
 the asset format, the environment and policy APIs, the message schemas, and the plugin registry,
 and everything else — worlds, resource fields, comms, simulation, autonomy, learning, benchmarking
 — is a component that integrates only through those contracts. See
@@ -39,49 +39,53 @@ and everything else — worlds, resource fields, comms, simulation, autonomy, le
 ## Install
 
 **What you need:** Linux, macOS, or WSL2; **Python 3.12**; [`uv`](https://docs.astral.sh/uv/);
-`git`. A GPU is never required.
+`git`; and a **Rust toolchain** if you build from source. A GPU is never required.
 
-**The honest part first.** During incubation every Astro-Mine repository is **private**, and the
-packages are not on PyPI. That has two consequences you will hit immediately:
-
-1. Installing a component means cloning it, or installing from its Git URL with credentials.
-2. Components depend on `astro-mine-core` by Git URL, so `uv` needs a token that can read it. Set
-   `CORE_REPO_TOKEN` to a GitHub token with `repo` (read) scope before installing anything.
-
-Both resolve at the public flip — the first public-benchmark milestone, when the repositories and
-packages become public. Until then, if you cannot read the org, you cannot install the platform.
-
-Each repository is self-contained and installs the same way:
+One line installs everything:
 
 ```bash
-git clone https://github.com/astro-mine/astro-mine-sim.git
-cd astro-mine-sim
-uv sync                     # creates .venv from the lockfile
+pip install astro-mine-cli
 ```
 
-To work across several components — which is what the tutorials do — install them into one
-environment:
+`astro-mine-cli` provides the `astro-mine` command and depends on `astro-mine-platform`, the single
+distribution that ships **every** component — Core, Sim, Worlds, Fleet, Bench, Hub, Mind, Learn,
+Guard and the rest — as `astro_mine.<component>`. There is nothing else to add, no component to
+install separately, and no version to reconcile: you get the whole platform at one self-consistent
+version. See [architecture/platform.md](../architecture/platform.md).
+
+**The honest part.** During incubation the repositories are **private** and neither distribution is
+on PyPI, so that line does not work for you yet. Until the public flip you install from source, which
+needs read access to the org:
 
 ```bash
-export CORE_REPO_TOKEN=<a GitHub token with read access to astro-mine>
+git clone https://github.com/astro-mine/astro-mine-platform.git
+git clone https://github.com/astro-mine/astro-mine-cli.git
 uv venv --python 3.12 .venv
-uv pip install ./astro-mine-core ./astro-mine-bench "./astro-mine-sim[bench]"
+uv pip install ./astro-mine-platform ./astro-mine-cli
 ```
 
-> **Python 3.12, pinned.** `uv venv` follows the machine default, which may be 3.13. Every repo
-> pins `.python-version` to 3.12; pass `--python 3.12` explicitly when you build an environment by
-> hand.
+Building the platform compiles Guard's Rust safety core into the wheel, so the first install takes a
+few minutes and needs `rustup` on the machine (`source ~/.cargo/env` first). If you cannot read the
+org, you cannot install the platform; that resolves at the first public-benchmark milestone.
+
+**Heavy optional stacks stay optional.** Everything the tutorials below do works from the base
+install. Ray-based training, MuJoCo contact and the ONNX controller tier sit behind
+component-prefixed extras — `astro-mine-platform[learn-rllib]`, `[sim-mujoco]`, `[mind-onnx]` — and
+the local tier is guaranteed to work without any of them.
+
+> **Python 3.12, pinned.** `uv venv` follows the machine default, which may be 3.13. Both
+> repositories pin `.python-version` to 3.12; pass `--python 3.12` explicitly when you build an
+> environment by hand.
 
 ---
 
 ## Minute one: a real run, no content, no account
 
-Astro-Mine ships a **reference environment** as package data inside `astro-mine-sim`: a small
+Astro-Mine ships a **reference environment** as package data inside `astro_mine.sim`: a small
 synthetic three-agent scenario that needs no downloaded content, no registry, no network, and no
 token. It is the fastest way to see the simulator actually run.
 
 ```bash
-uv pip install ./astro-mine-sim
 python - <<'PY'
 from importlib.resources import files
 from astro_mine.sim.reference import REFERENCE_SCENARIO_FILE
@@ -92,7 +96,7 @@ PY
 That prints the path to the shipped `scenario.json`. Record an episode from it:
 
 ```bash
-astro-mine-sim record --scenario-file <that path> --out run.mcap
+astro-mine sim record --scenario-file <that path> --out run.mcap
 ```
 
 It prints the run's content hash and writes an MCAP log:
@@ -115,12 +119,11 @@ for what that means.
 
 ## The benchmark, in three commands
 
-`astro-mine-bench` ships the scenario zoo in-package, so listing and scoring work before you
+`astro-mine bench` ships the scenario zoo in-package, so listing and scoring work before you
 download anything.
 
 ```bash
-uv pip install ./astro-mine-bench
-astro-mine-bench list
+astro-mine bench list
 ```
 
 ```
@@ -131,7 +134,7 @@ lunar-polar-ice-prospecting-v1
 ```
 
 ```bash
-astro-mine-bench score
+astro-mine bench score
 ```
 
 ```
@@ -169,7 +172,7 @@ Running the anchor on real physics needs three things the fixture path does not.
 assets, one resource prior, one contact plan.
 
 ```bash
-astro-mine-bench fetch
+astro-mine bench fetch
 ```
 
 > **Before you run this:** it downloads **~461 MB** (the world bundle is 99.6% of it), and while
@@ -177,35 +180,31 @@ astro-mine-bench fetch
 > `ghcr.io/astro-mine`. Without that token it fails with a registry authentication error. Re-running
 > is idempotent, and once fetched the content works offline forever.
 
-**2. The producer packages.** Content and code ship separately. The bundles are data; turning them
-back into live terrain, illumination, resource fields, and comms needs the packages that built
-them — `astro-mine-worlds`, `astro-mine-prospect`, `astro-mine-link` — which Sim reaches through
-the `astro_mine.providers` entry-point group rather than by importing them. Plus
-`astro-mine-sim[bench]`, which registers the `sim` runner into `astro_mine.bench.runners`.
+**2. The producers — already installed.** Content and code ship separately. The bundles are data;
+turning them back into live terrain, illumination, resource fields, and comms needs the code that
+built them — `astro_mine.worlds`, `astro_mine.prospect`, `astro_mine.link` — which Sim reaches
+through the `astro_mine.providers` entry-point group rather than by importing them.
 
-**Sim refuses to score without them**, and the refusal is worth reading as designed behavior:
+**You have all of them.** One wheel ships every component, so the step that used to be here — install
+three more packages and a `[bench]` extra, from three more repositories — is gone. This was the single
+largest source of confusion in this guide, and the consolidation deleted it rather than documenting it
+better.
+
+The mechanism that made that confusion legible is still there and still matters. Sim **refuses to
+score** a scenario whose pinned content rebuilt no provider:
 
 ```
-refusing to score this scenario: 3 pinned input(s) resolved by digest but rebuilt no provider,
+refusing to score this scenario: 1 pinned input(s) resolved by digest but rebuilt no provider,
 so this run is blind to them:
-  - 'shackleton-de-gerlache-v1' (world_provider): install astro-mine-worlds — without it, no
-    terrain, gravity or illumination — night windows cannot be measured, so `nights_survived`
-    scores not-applicable
-  - 'shackleton_water_ice_v1' (resource_field_backend): install astro-mine-prospect — without it,
+  - 'some-third-party-field' (resource_field_backend): no provider registered — without it,
     no sealed resource field — prospecting sensors render `valid=False`, so `discovery_latency`
     never trips and ISRU extraction sees no abundance
-  - 'astro-mine.link.lunar-polar-relay-dsn' (comms_model): install astro-mine-link — without it,
-    no contact plan — every observation is unmasked, so `comms_robustness` scores not-applicable
-Content and code ship separately: `astro-mine-bench fetch` obtains the bundles; the producer
-packages above rebuild them into live providers.
 A scorecard is a claim about a run, and this run would not have modelled the content it pins.
 ```
 
-One bullet per package the paragraph above names, which is the point: the anchor pins content from
-all three producers, so all three are missing until you install them.
-
-A scorecard is a claim. Refusing to make a claim about content that was never loaded is integrity,
-not breakage.
+You will now only see this for **third-party** content whose provider package you have not installed —
+which is exactly when you should see it. A scorecard is a claim. Refusing to make a claim about content
+that was never loaded is integrity, not breakage.
 
 **3. SPICE kernels.** The world resolves body-fixed frames through SPICE, so a Sim-backed run needs
 a furnished kernel pool. Kernels are **not shipped** with the platform — obtain SPK/PCK/FK/LSK
@@ -215,8 +214,8 @@ kernels from [NAIF](https://naif.jpl.nasa.gov/naif/data.html) and list them in a
 export ASTRO_MINE_SPICE_METAKERNEL=/kernels/lunar.tm
 ```
 
-The environment variable is what the **scoring** path uses, because `astro-mine-bench score` hands
-the Sim runner a content store and nothing else — Bench has no vocabulary for SPICE. `astro-mine-sim
+The environment variable is what the **scoring** path uses, because `astro-mine bench score` hands
+the Sim runner a content store and nothing else — Bench has no vocabulary for SPICE. `astro-mine sim
 run` and `record` additionally take `--metakernel PATH`, which wins over the variable.
 
 The pool is validated against the episode's epoch window when the run starts, so a kernel set that
@@ -246,30 +245,35 @@ does. It is a conformance floor, deliberately beatable.
 
 ## Discovering commands
 
-Every component ships its own CLI named after its package (`astro-mine-bench`, `astro-mine-sim`,
-`astro-mine-fleet`, …). Above them sits the **umbrella**:
+There is one binary, and one grammar — `astro-mine <component> <verb>`:
 
 ```bash
-uv pip install ./astro-mine-cli
-astro-mine --help
+astro-mine
 ```
 
-It lists the verbs available in your environment, and — the part that matters when you are still
-learning the platform's shape — the verbs that exist but whose component you have not installed:
+It lists every component that owns commands, and the three routers that answer *who owns this?* for
+you:
 
 ```
-Verbs:
-  fetch     download a scenario's pinned content
-  list      list the scenarios in the zoo
-  score     run a policy on a scenario and score it
+Components — `astro-mine <component> <verb>`:
+  core      validate Core-authored formats; list them
+  fleet     author, package and publish SADF assets
+  worlds    author and publish world bundles
   ...
-Available from components that are not installed here:
-  studio    the design studio (`studio serve`) [astro-mine-studio]
-  train     train a policy and export it [astro-mine-learn]
+  studio    the design studio
+
+Routers — these pick the owning component for you:
+  validate  validate an authored document (routed to the format's owner)
+  new       scaffold an authored document (routed to the format's owner)
+  plugin    scaffold a plugin package (`plugin new <kind>`)
+
+`astro-mine <component> --help` lists that component's verbs.
 ```
 
-`astro-mine <verb> --help` shows a verb's own options. Component CLIs keep working directly; the
-umbrella is additive. See [reference/cli.md](reference/cli.md) for the complete surface.
+Top-level help deliberately does **not** list a component's verbs: rendering that would mean importing
+all thirteen components to print a help screen, and `astro-mine` imports none. `astro-mine <component>
+--help` is where the real help lives. See [reference/cli.md](reference/cli.md) for the complete
+surface.
 
 ---
 

@@ -186,7 +186,7 @@ record which Core schema versions they were produced against (provenance, conven
 Core is the integration substrate; it doesn't integrate *with* others so much as it *is* what
 others integrate through:
 
-- **Every component** depends on `astro-mine-core` and generates its gRPC/data bindings from
+- **Every component** depends on `astro_mine.core` and generates its gRPC/data bindings from
   Core schemas.
 - **Fleet** authors assets in SADF; **Worlds/Prospect/Link** expose worlds via the Environment
   API; **Sim** implements the Environment API; **Mind/Learn/Allocate/Guard** implement the

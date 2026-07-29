@@ -291,7 +291,7 @@ Architect mode.
 - **RM-P1-HUB-04** — **SemVer + Core-interface-range dependency/compat resolution**. *(trace: hub.md §3, §11)*
 - **RM-P1-HUB-05** — **License + export-control download gating** (OPA against capability tags;
   tiered open vs. curated/verified namespaces). *(trace: hub.md §9; conventions §12; `LUNAR-SR-001`)*
-- **RM-P1-HUB-06** — **`astro-mine-hub` client/CLI** that resolves/verifies/pulls against *any* OCI
+- **RM-P1-HUB-06** — **`astro_mine.hub` client/CLI** that resolves/verifies/pulls against *any* OCI
   registry (so the local tier needs no hosted Hub). *(trace: hub.md §3, §7)*
 
 **Dependencies:** Core (`RM-P1-CORE-02`), Cloud (deploys on it). **Exit criteria:** a contributor

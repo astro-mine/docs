@@ -103,7 +103,7 @@ leaderboards + Hub are the growth engine), and §10.5 (interop-first; honest abo
 6. **Standards in, standards out.** Hub speaks the **OCI Distribution Spec** so any
    `oci`/`oras`/`docker`/`cosign` client interoperates; there is no proprietary push/pull
    protocol. The value is in the *index and policy*, not in lock-in.
-7. **Library first, service second.** A client SDK (`astro-mine-hub`) resolves, verifies, and
+7. **Library first, service second.** A client SDK (`astro_mine.hub`) resolves, verifies, and
    caches artifacts on a single workstation against any OCI registry; the hosted service is a
    deployment of that capability, not a separate stack (conventions.md §1, tenet 4).
 8. **Honest about dual use at the download boundary.** License and export-control gating
@@ -271,7 +271,7 @@ Hub sits at the center of the **contribute-once-use-everywhere** flywheel (chart
 - **[Core](core.md)** — Hub indexes *everything* by the Core **plugin manifest** and validates
   the **Core interface versions** an artifact declares; capability negotiation and the
   capability-tag vocabulary used for dual-use gating are Core's, consumed here. Hub depends on
-  `astro-mine-core` for the manifest model and version-range logic.
+  `astro_mine.core` for the manifest model and version-range logic.
 - **Producers (publish to Hub):** [Fleet](fleet.md) SADF assets; [Worlds](worlds.md) and
   [Prospect](prospect.md) world/resource-field content; [Learn](learn.md) **ONNX** policies;
   [Surrogate](surrogate.md) models; [Mind](mind.md)/[Allocate](allocate.md) planners; and
@@ -302,7 +302,7 @@ concern (that's MCAP, owned by Sim/Ops).
 
 - **Deployment tier:** **Cloud** (conventions.md §7, tier 2) — Kubernetes on [Cloud](cloud.md).
   A **local/dev** tier (tier 1, which MUST always work) runs the registry + Postgres + MinIO via
-  `docker compose`, and the `astro-mine-hub` client resolves/pulls against **any** OCI registry
+  `docker compose`, and the `astro_mine.hub` client resolves/pulls against **any** OCI registry
   (including `ghcr.io` or a private Harbor/Zot) so a researcher needs no hosted Hub to be
   productive.
 - **Containerization & orchestration:** OCI images for every service; deployed via Helm/Argo CD
@@ -451,7 +451,7 @@ want to enter and the place reproducibility lives or dies. This section is centr
 | Discovery approach | Keyword only; faceted only; **faceted + full-text + semantic embeddings + capability match** | **All combined** — facets/full-text for precision, embeddings for "find something like this," capability match against manifests for correctness |
 | Curation / moderation | Fully open; reviewed-only; **tiered (open + curated/verified namespaces)** | **Tiered** — frictionless open publish (signed, unreviewed) plus curated/verified-publisher namespaces; trust tier is a queryable facet |
 | Dependency & compat resolution | Pin-only (no resolution); **SemVer + Core interface-range solver** | **SemVer + Core interface ranges** — resolve closures, refuse incompatible Core interface majors, pin to digests |
-| Artifact push/pull client | docker CLI; **ORAS + cosign**; bespoke protocol | **ORAS + cosign** (standard OCI tooling) wrapped by the `astro-mine-hub` SDK; no bespoke protocol |
+| Artifact push/pull client | docker CLI; **ORAS + cosign**; bespoke protocol | **ORAS + cosign** (standard OCI tooling) wrapped by the `astro_mine.hub` SDK; no bespoke protocol |
 | Blob egress scaling | Direct from registry; **CDN / pull-through cache** | **CDN / pull-through cache** — the dominant hot-path lever for fan-out pulls |
 | License / export gating | None; post-hoc; **policy-gated at download (OPA + capability tags)** | **OPA at the download boundary** against Core capability tags (conventions.md §12) |
 
@@ -484,7 +484,7 @@ want to enter and the place reproducibility lives or dies. This section is centr
   registry that **stores, signs, indexes (by Core manifest), and serves** worlds, SADF assets,
   ONNX policies, surrogate models, and plugins; faceted + full-text + semantic discovery; SemVer
   + Core-interface resolution; cosign/SLSA/SBOM verification at publish and pull; the REST API,
-  web UI, and `astro-mine-hub` client; tiered namespaces with verified publishers; and license/
+  web UI, and `astro_mine.hub` client; tiered namespaces with verified publishers; and license/
   export-control download gating. This is the **MVP** that lets the first public leaderboards and
   community plugins (charter §10, Phase 1) circulate.
 - **Phase 0 (pre-Hub).** Before Hub exists, content is content-addressed and consumable from a

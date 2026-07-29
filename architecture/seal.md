@@ -14,7 +14,7 @@
 / `SignatureKind` enums, the `Verifier` protocol, and the lightweight `hashing` primitive
 (`content_hash` / `content_hash_json` / `canonical_json`) — but deliberately ships **no crypto**:
 `cryptography` is exactly the kind of heavy dependency the narrow waist must never carry (core.md
-§2 principle 3). Seal is the crypto, factored into a thin package (`astro-mine-seal`, import `astro_mine.seal`)
+§2 principle 3). Seal is the crypto, factored into a thin companion (`astro_mine.seal`)
 that every producer and verifier depends on. Every producer signs a **seal** on its artifacts and the
 intactness of that seal is what verification tests — hence the name.
 
@@ -60,7 +60,7 @@ Sigstore/cosign bridge plainly.
 
 ## 2. Architecture principles
 
-1. **A thin Core companion, not an edge.** Seal depends only on `astro-mine-core` (the `Signature` /
+1. **A thin Core companion, not an edge.** Seal depends only on `astro_mine.core` (the `Signature` /
    `Verifier` types and `hashing`) plus `cryptography` and the SLSA/SBOM serializers. No other
    `astro-mine-*` package — deliberately, so [Fleet](fleet.md) and [Guard](guard.md) can sign without
    depending on heavyweight [Hub](hub.md) (registry, index, FastAPI), the very reason the signer was
@@ -175,7 +175,7 @@ unsigned `SafetySpec`/model never loads.
 Seal sits on the **Commons backbone** as a Core companion and integrates through plain package
 dependencies (no service plane, no side-channels — conventions.md §1.1):
 
-- **← [Core](core.md).** Depends on `astro-mine-core` for the `Signature` / `Verifier` types and
+- **← [Core](core.md).** Depends on `astro_mine.core` for the `Signature` / `Verifier` types and
   `hashing`. Core does **not** depend on Seal; the narrow waist stays crypto-free (core.md §2 principle 3).
 - **→ [Fleet](fleet.md), [Hub](hub.md), [Guard](guard.md).** Each adopts `astro_mine.seal` and
   **deletes its local signer copy** — Fleet's `packaging/signing.py`, Hub's `supply_chain/_signing.py`,
@@ -256,7 +256,7 @@ half of [guard.md §9.5](guard.md) as one shared implementation:
 
 | Decision | Options | Recommendation |
 |---|---|---|
-| **Home for signing/attestation** | Promote into Core; a companion package; fold into Hub; a `common`/`utils` bag | **A focused companion (`astro-mine-seal`)** — keeps Core crypto-free, lets Fleet/Guard sign without heavyweight Hub, and avoids a dependency-magnet utils grab-bag. |
+| **Home for signing/attestation** | Promote into Core; a companion package; fold into Hub; a `common`/`utils` bag | **A focused companion (`astro_mine.seal`)** — keeps Core crypto-free, lets Fleet/Guard sign without heavyweight Hub, and avoids a dependency-magnet utils grab-bag. |
 | **Package scope** | Sign-only (`astro-mine-sign`); the full artifact-integrity domain | **Full domain** (sign + verify + SLSA + SBOM + verify-twice) — SLSA/SBOM share the domain and dependency footprint; sign-only would force a rename within a phase. |
 | **Signing scheme** | Key-based cosign (offline); keyless Fulcio/Rekor | **Key-based ECDSA P-256, offline** now; keyless additive behind the same surface, with the trust-root decision. |
 | **SBOM format** | CycloneDX; SPDX | **CycloneDX** — the existing Hub `_attest.py` lineage; one format, not two. |

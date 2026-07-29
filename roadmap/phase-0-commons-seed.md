@@ -94,8 +94,8 @@ additions; Rust validator hardening.
 
 **Scope & deliverables**
 
-- **RM-P0-SPICE-01** — **Extract `astro-mine-spice`** (import `astro_mine.spice`): a thin
-  commons-backbone package depending only on `astro-mine-core` + `spiceypy` + `numpy`. Lifts the SPICE
+- **RM-P0-SPICE-01** — **Extract `astro_mine.spice`** (import `astro_mine.spice`): a thin
+  commons-backbone package depending only on `astro_mine.core` + `spiceypy` + `numpy`. Lifts the SPICE
   kernel pool (`load_metakernel`/`kernel_pool`/`clear_kernels`, fail-loud), time
   (`et`/`epoch_from_utc`/`epoch_range`), geometry primitives (`body_position`/`frame_transform`,
   `DEFAULT_ABCORR`), and topocentric site geometry (`Site`, `body_geometry`/`sun_geometry`/`earth_geometry`)
@@ -110,7 +110,7 @@ additions; Rust validator hardening.
   capability** — generic geometry over public ephemerides is open-commons science (conventions §12).
   *(trace: VERSIONING.md §5–7; conventions §12)*
 
-**Dependencies:** Core (`RM-P0-CORE-06`). **Exit criteria:** Worlds builds against `astro-mine-spice` with
+**Dependencies:** Core (`RM-P0-CORE-06`). **Exit criteria:** Worlds builds against `astro_mine.spice` with
 `astro_mine.worlds.spice` gone; illumination/PSR (WORLDS-03) and Link (LINK-01) resolve geometry through the
 shared package; one set of frame/aberration conventions and oracle cross-checks holds platform-wide.
 **Sequencing:** lands before LINK-01 and the WORLDS-02 refactor. **Deferred:** Sim's orbital engine
@@ -130,7 +130,7 @@ shared package; one set of frame/aberration conventions and oracle cross-checks 
   CRS (PROJ planetary `+R`); derived slope/aspect/roughness layers; carried vertical/void-fill
   uncertainty. *(trace: worlds.md §5, §12; `LUNAR-FR-001`, `LUNAR-TR-001`, `LUNAR-DR-001`)*
 - **RM-P0-WORLDS-02** — **SPICE frames, epochs, Sun/Earth geometry** via SpiceyPy (meta-kernel
-  management; TDB/ET). **Extracted into the shared [`astro-mine-spice`](../architecture/spice.md)
+  management; TDB/ET). **Extracted into the shared [`astro_mine.spice`](../architecture/spice.md)
   foundation** (RM-P0-SPICE; [Spice](../architecture/spice.md)) — Worlds consumes it as a
   dependency rather than hosting `astro_mine.worlds.spice`. *(trace: worlds.md §3, §6; conventions §5)*
 - **RM-P0-WORLDS-03** — **Illumination + PSR detection**: precomputed per-azimuth **horizon maps**
@@ -303,7 +303,7 @@ UI, Studio scoring integration. **Deferred → P3:** NEO/asteroid mission scenar
 **Scope & deliverables**
 
 - **RM-P0-LINK-01** — **Geometric LOS + terrain occlusion**: SPICE ephemeris geometry via the shared
-  [`astro-mine-spice`](../architecture/spice.md) foundation, composed with terrain occlusion through the
+  [`astro_mine.spice`](../architecture/spice.md) foundation, composed with terrain occlusion through the
   Core `WorldProvider` contract; degrade-loudly on missing kernels/providers/frames (never default
   "connected"). *(trace: link.md §2, §11, §12; [Spice](../architecture/spice.md))*
 - **RM-P0-LINK-02** — **Relay-orbiter contact windows + DSN ground-station windows** over an epoch
@@ -318,7 +318,7 @@ UI, Studio scoring integration. **Deferred → P3:** NEO/asteroid mission scenar
 
 **Dependencies:** Core (`RM-P0-CORE-02,06`), Spice (`RM-P0-SPICE`; ephemeris geometry), Fleet (SADF
 radios); terrain occlusion via the Core `WorldProvider` contract (an injected Worlds provider — **no
-`astro-mine-worlds` package dependency**, [Spice](../architecture/spice.md)).
+`astro_mine.worlds` package dependency**, [Spice](../architecture/spice.md)).
 **Exit criteria:** surface agents in/near PSRs lose LOS and Earth contact for real in the anchor
 scenario; masks flow into Sim; plans reproduce from pinned inputs. **Deferred → P1:** constellation
 geometry, multi-hop/CGR, store-and-forward `DeliveryModel`, full latency/bandwidth time-series to

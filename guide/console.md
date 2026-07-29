@@ -101,7 +101,7 @@ remains and the route says *"Studio is not configured."*
 Two flavours you will meet:
 
 - **Unconfigured backend** — the surface is installed, its endpoint is not set. Fix: point it at a
-  running backend (e.g. `astro-mine-studio serve`).
+  running backend (e.g. `astro-mine studio serve`).
 - **Capability-gated** — the surface is configured, but the backend does not grant the capability
   the route needs. Hub's Publish route is gated this way: it renders as unavailable rather than
   offering a button that will fail.
@@ -128,7 +128,7 @@ Run inspection — MCAP replay, the timeline, the 3D scene — renders through `
 widgets inside the surfaces that own the data. Produce a log first:
 
 ```bash
-astro-mine-sim run lunar-polar-ice-prospecting-sprint-v1 --seed 1001 --out run.mcap
+astro-mine sim run lunar-polar-ice-prospecting-sprint-v1 --seed 1001 --out run.mcap
 ```
 
 See [tutorial 02 §7](tutorials/02-run-it-in-the-simulator.md), including the SPICE prerequisite.

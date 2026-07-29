@@ -251,11 +251,11 @@ Worlds plugs into the platform exclusively through [Core](core.md) contracts
   ephemeris half of Link's geometry comes from [Spice](spice.md), not from here ([Spice](spice.md)).
 - **→ [View](view.md).** Worlds streams **3D Tiles** (LOD terrain) and raster overlays to View's
   Cesium/3D-Tiles renderer over HTTP.
-- **↔ [Core](core.md).** Worlds depends on `astro-mine-core` for the Environment-API contract,
+- **↔ [Core](core.md).** Worlds depends on `astro_mine.core` for the Environment-API contract,
   the plugin manifest/registry, units/frames/time conventions, and message schemas; body/world
   packs register via the Core manifest.
 - **← [Spice](spice.md).** Worlds resolves SPICE-backed frames, epochs, and Sun/Earth geometry
-  through the shared **`astro-mine-spice`** foundation (`astro_mine.spice`,
+  through the shared **`astro_mine.spice`** foundation (`astro_mine.spice`,
   [Spice](spice.md)) instead of embedding its own SPICE adapter — the
   illumination/PSR machinery (RM-P0-WORLDS-03) drives `sun_geometry`/`body_geometry` from it, and
   `worlds.crs` re-imports the body reference radius (`MOON_RADIUS_M`) from there. This replaces the

@@ -25,7 +25,7 @@
 > **Three of this report's own claims did not survive verification** and are corrected where they
 > were acted on, not here:
 >
-> - **G3.5** (committed `.venv` in `astro-mine-core`) — **false**. Untracked, gitignored, never
+> - **G3.5** (committed `.venv` in `astro-mine core`) — **false**. Untracked, gitignored, never
 >   committed. Struck; no issue was filed.
 > - **G3.1**'s companion claim that Hub's README *"omits `search`"* — **false**. It does not.
 > - **G3.2** (`1 - Planning` classifiers) named Hub and Seal; the drift was **15 of 18** repos.
@@ -46,7 +46,7 @@ capability. It is **assembly, distribution, and documentation**.
 
 Five findings dominate, in priority order:
 
-1. **The Phase-0 headline promise is not met in substance.** `astro-mine-bench score` runs from a
+1. **The Phase-0 headline promise is not met in substance.** `astro-mine bench score` runs from a
    clean clone in seconds and prints seven plausible physical quantities — but it scores a
    **deterministic hash-derived fixture, not the simulator**. The real Sim-backed path exists and
    works, but has no CLI, and with the shipped baseline policy it returns an **empty scorecard**
@@ -64,7 +64,7 @@ Five findings dominate, in priority order:
    five undocumented steps including a **private npm registry that hard-blocks anyone outside the
    org**, its backend 503s on 5 of 9 routes without hand-wiring, and nothing serves the bundle.
 
-4. **The Phase-1 flywheel is broken at the artifact.** `astro-mine-train` trains, then **discards
+4. **The Phase-1 flywheel is broken at the artifact.** `astro-mine learn` trains, then **discards
    the `PolicyExport`** (`report, _export = train(...)`). The ONNX `PolicyPackage` — the artifact
    Mind, Guard, and Bench all consume, and the unit of exchange for the entire commons — cannot be
    produced from the CLI at all.
@@ -114,13 +114,13 @@ use case the two objectives above do not imply.
 **Method.** Five parallel inventories across all 18 repos, reading `pyproject.toml`
 entry points, CLI modules, FastAPI/gRPC apps, `package.json`, and READMEs. Load-bearing claims
 were executed rather than inferred. Notable verifications:
-- Ran `astro-mine-bench score` from a clean env (works; fixture-scored).
+- Ran `astro-mine bench score` from a clean env (works; fixture-scored).
 - Ran the Sim-backed `run(..., runner=SimEpisodeRunner(...))` against the workspace registry
   (works; empty scorecard — §7 G1).
 - Verified all nine anchor pins resolve in the workspace registry (they do).
 - Verified Studio's FastAPI mounts world/asset caches but **not** `ui/dist`.
 - Verified `@astro-mine/view` requires a GitHub Packages token with `read:packages`.
-- Verified `astro-mine-train`'s `main()` binds the export to `_export` and drops it.
+- Verified `astro-mine learn`'s `main()` binds the export to `_export` and drops it.
 
 **Caveat retracted — the root cause is now known (2026-07-16, found while filing Wave 21).** The
 first draft hedged that "a longer episode or a real Mind-composed policy may score non-zero."
@@ -223,7 +223,7 @@ current state). Status uses: ✅ works · ⚠️ works with friction/caveat · �
 
 | ID | Use case | Personas | Interface | Status |
 |---|---|---|---|---|
-| UC-B1 | List available benchmark scenarios | P1 P6 | CLI | ✅ `astro-mine-bench list` |
+| UC-B1 | List available benchmark scenarios | P1 P6 | CLI | ✅ `astro-mine bench list` |
 | UC-B2 | Score the reference baseline offline, no account | P1 P6 | CLI | ⚠️ works — **but scores a fixture, not Sim** |
 | UC-B3 | **Obtain the anchor content (world/fleet/prior/link)** | P1 P3 P6 | CLI | ❌ **no fetch path exists** |
 | UC-B4 | **Run the anchor scenario in the actual simulator and score it** | P1 P6 | CLI | ❌ **no CLI; empty scorecard via Python** |
@@ -249,11 +249,11 @@ current state). Status uses: ✅ works · ⚠️ works with friction/caveat · �
 
 | ID | Use case | Personas | Interface | Status |
 |---|---|---|---|---|
-| UC-D1 | Train a baseline MARL policy on one workstation | P1 | CLI | ⚠️ `astro-mine-train` — but `--env-factory` has no shipped example |
+| UC-D1 | Train a baseline MARL policy on one workstation | P1 | CLI | ⚠️ `astro-mine learn` — but `--env-factory` has no shipped example |
 | UC-D2 | **Export a trained policy as an ONNX PolicyPackage** | P1 | CLI | ❌ **CLI discards the export** |
 | UC-D3 | Evaluate honestly (seed sweeps, comms-stress curves) | P1 | CLI/Python | ⚠️ Python only |
 | UC-D4 | Train against the anchor scenario specifically | P1 | CLI | ❌ depends on UC-B3 |
-| UC-D5 | Scale training to a cluster | P1 | CLI | ✅ `astro-mine-cloud` + `--num-workers` |
+| UC-D5 | Scale training to a cluster | P1 | CLI | ✅ `astro-mine cloud` + `--num-workers` |
 | UC-D6 | Track experiments | P1 | GUI | ⚠️ MLflow (third-party) |
 
 ### Stage E — Compose & assure
@@ -284,9 +284,9 @@ current state). Status uses: ✅ works · ⚠️ works with friction/caveat · �
 
 | ID | Use case | Personas | Interface | Status |
 |---|---|---|---|---|
-| UC-G1 | Publish an artifact to Hub, signed | P1–P5 | CLI | ✅ `astro-mine-hub publish` |
+| UC-G1 | Publish an artifact to Hub, signed | P1–P5 | CLI | ✅ `astro-mine hub publish` |
 | UC-G2 | Search/discover artifacts | all | CLI + GUI | ✅ CLI + Hub UI |
-| UC-G3 | Pull + verify an artifact fail-closed | all | CLI | ✅ `astro-mine-hub pull` |
+| UC-G3 | Pull + verify an artifact fail-closed | all | CLI | ✅ `astro-mine hub pull` |
 | UC-G4 | Submit a policy to the leaderboard | P1 | CLI | ❌ **no submit CLI; REST only** |
 | UC-G5 | **View the public leaderboard** | P1 P6 P7 | GUI | ❌ **no UI** (bench#27) |
 | UC-G6 | Reproduce someone else's published result | P1 P7 | CLI | ❌ depends on UC-B3/B4 |
@@ -316,9 +316,9 @@ phase objectives: running the anchor for real (B3/B4), the policy artifact (D2),
 
 ```
  1. Find the docs                    ❌ none exist → read architecture/bench.md
- 2. Clone astro-mine-bench           ⚠️ private repo; needs CORE_REPO_TOKEN for the uv Git source
+ 2. Clone astro-mine bench           ⚠️ private repo; needs CORE_REPO_TOKEN for the uv Git source
  3. conda create + uv sync           ✅
- 4. astro-mine-bench score           ✅ 7 metrics in seconds
+ 4. astro-mine bench score           ✅ 7 metrics in seconds
       ↳ but: "scored with the reference runner (deterministic fixture, not Sim)"
  5. "How do I run it for real?"      ❌ no --runner flag; no docs
  6. Read Sim's source docstring      ⚠️ discover the Python snippet
@@ -334,7 +334,7 @@ road is an empty scorecard. **Time-to-value: minutes to a fake score; unbounded 
 ### J2 — "Become the MARL commons" (P1) — **fails at the artifact**
 
 ```
-1. astro-mine-train --env-factory your_pkg:make_env   ⚠️ placeholder — no shipped factory exists
+1. astro-mine learn --env-factory your_pkg:make_env   ⚠️ placeholder — no shipped factory exists
 2. Write my own env factory                            ⚠️ Python, undocumented, no example
 3. Train                                               ✅ produces a run report
 4. Export the ONNX PolicyPackage                       ❌ CLI DISCARDS IT (`report, _export = ...`)
@@ -404,17 +404,17 @@ the *other* blockers do not resolve by themselves.
 | Repo | Command | Subcommands | Assessment |
 |---|---|---|---|
 | fleet | `fleet` | `new · validate · lint · resolve · package · keygen · verify · publish · catalog · import · export · render · fidelity · families · resolve-family` (15) | ✅ **The exemplar.** Complete authoring lifecycle |
-| bench | `astro-mine-bench` | `score · list · zoo-sync · zoo-search · eval-worker` | ⚠️ good, but no `--runner` |
-| cloud | `astro-mine-cloud` (+`-harness`) | `submit · expand · compile · sweep · workflow · backends` | ✅ solid |
-| hub | `astro-mine-hub` | `publish · search · resolve · pull · verify` | ✅ solid (README advertises a phantom `cache`) |
-| learn | `astro-mine-train` | *(flat flags)* | ⚠️ **discards the policy export** |
+| bench | `astro-mine bench` | `score · list · zoo-sync · zoo-search · eval-worker` | ⚠️ good, but no `--runner` |
+| cloud | `astro-mine cloud` (+`-harness`) | `submit · expand · compile · sweep · workflow · backends` | ✅ solid |
+| hub | `astro-mine hub` | `publish · search · resolve · pull · verify` | ✅ solid (README advertises a phantom `cache`) |
+| learn | `astro-mine learn` | *(flat flags)* | ⚠️ **discards the policy export** |
 | worlds | `worlds` | `publish · keygen` | ⚠️ publish-only; cannot build or validate |
 | link | `link` | `publish · keygen` | ⚠️ publish-only |
 | prospect | `prospect` | `publish` | ⚠️ one command |
 | **core, spice, seal, sim, surrogate, mind, allocate, guard, studio, view** | — | **none** | ❌ |
 
 **Naming is inconsistent:** bare (`fleet`, `worlds`, `link`, `prospect`) vs prefixed
-(`astro-mine-bench`, `astro-mine-hub`, `astro-mine-cloud`, `astro-mine-train`). All argparse — at
+(`astro-mine bench`, `astro-mine hub`, `astro-mine cloud`, `astro-mine learn`). All argparse — at
 least that is uniform. **There is no `astro-mine` umbrella command.**
 
 **The two most important components for their phases — `sim` (Phase 0) and `studio` (Phase 1) —
@@ -473,7 +473,7 @@ Severity: **G1** = blocks a phase objective · **G2** = major friction/credibili
 | **G1.2** | **Anchor content is never published.** 9 pins resolve only from a hand-built local registry. | No published registry; no `ghcr.io`/`oci://` reference in any README or zoo file; the workspace registry is a local convention | **Nobody outside this workspace can run the anchor for real.** Root blocker for J1, J2, J6 |
 | **G1.3** | **The real Sim path yields an empty scorecard.** ~~Structural, not incidental.~~ **Resolved 2026-07-18 — the stated cause was wrong** (§2). `water_mass` never read the ISRU tank: a dispatch bug routed the storage gauge to the ice-field sampler, so it scored a mass *fraction* as kilograms. | Measured `0.0848` (the ice under the plant), not `0.0`. Six `None`s were a missing-provider-package artifact | Fixed in astro-mine-sim#61 / astro-mine-bench#65; baseline is a capability-aware mode policy |
 | **G1.8** | **A fixture scorecard and a Sim scorecard are indistinguishable by provenance.** `Scorecard` carries only `scenario_id` + `metrics`; `content_hash` digests exactly those. No `runner` field exists. | `metrics/_score.py:86-88`; verified — my two scorecards differ only because the *values* differ | **The integrity hole under G1.1.** Two runs claiming the same score cannot be told apart by what produced them. `--json` omits the fixture disclaimer entirely, so **the machine-readable path that feeds leaderboards and papers is the least honest one.** Fixing it re-hashes every existing scorecard (version bump) |
-| **G1.4** | **`astro-mine-train` discards the PolicyExport.** | `run.py`: `report, _export = train(...)`; `export_policy_package` never imported in `train/` | **The Phase-1 flywheel's unit of exchange cannot be produced from the CLI** |
+| **G1.4** | **`astro-mine learn` discards the PolicyExport.** | `run.py`: `report, _export = train(...)`; `export_policy_package` never imported in `train/` | **The Phase-1 flywheel's unit of exchange cannot be produced from the CLI** |
 | **G1.5** | **No GUI front door.** Studio unreachable via 5 gates; private npm hard-blocks outsiders. | `.npmrc` requires `read:packages`; `app.py` mounts no `ui/dist`; `main.tsx` reads `?study=` | **P5 and P6 cannot use the platform at all** |
 | **G1.6** | **No leaderboard UI.** | bench#27 open | M1.2's public face is curl-only. "Public leaderboards" is unmet in the sense users mean |
 | **G1.7** | **No user documentation of any kind.** | `docs/` has no guide/tutorial/how-to | Every gap above is discoverable only by reading source |
@@ -832,7 +832,7 @@ Ordered by *unblocking power per unit effort*.
 4. **G2.2** — Sim CLI (`astro-mine run`) + a real README.
 
 ### Wave 2 — Make the Phase-1 flywheel turn
-5. **G1.4** — Wire `--export` through `astro-mine-train`. *One-line-ish; unblocks the entire
+5. **G1.4** — Wire `--export` through `astro-mine learn`. *One-line-ish; unblocks the entire
    commons exchange.*
 6. **G2.10** — Ship an anchor env factory so the Learn quickstart is copy-pasteable.
 7. **G1.6 / G2.14** — Leaderboard UI + `astro-mine submit`.
@@ -889,13 +889,13 @@ Ordered by *unblocking power per unit effort*.
 ## 10. Appendix — key evidence
 
 **Executed, not inferred:**
-- `astro-mine-bench score` → 7 metrics, seconds, trailing disclaimer "scored with the reference
+- `astro-mine bench score` → 7 metrics, seconds, trailing disclaimer "scored with the reference
   runner (deterministic fixture, not Sim)".
 - `run(load_scenario('lunar-polar-ice-prospecting-v1'), BaselinePolicy(),
   runner=SimEpisodeRunner(store=open_bundle_store('<local-hub-registry>')), seeds=(0,))`
   → `sha256:4c758c87…` · `water_mass 0.0 kg` · six metrics `None`.
 - All 9 anchor pins verified present in the workspace registry (22 artifacts).
-- `astro-mine-train` `main()`: `report, _export = train(...)` — export dropped.
+- `astro-mine learn` `main()`: `report, _export = train(...)` — export dropped.
 - Studio `app.py`: mounts `/worlds/files` + `/assets/files`; **no `ui/dist` mount**.
 - `astro-mine-studio/ui/.npmrc`: `@astro-mine:registry=https://npm.pkg.github.com`.
   **Correction:** this is **Studio's consumer-side** file. `astro-mine-view` has **no `ui/` dir and
@@ -930,7 +930,7 @@ Each was verified against code while drafting the backlog, and each is recorded 
 - **Bench has no entry-point precedent.** Its metric plugins resolve a `module:attribute` string off
   a verified Hub manifest — *not* entry points. `astro_mine.bench.runners` would be net-new surface;
   Learn's registry is the real precedent.
-- **Bench's `fetch` has a dependency conflict.** `astro-mine-hub` is **not** a Bench base dependency
+- **Bench's `fetch` has a dependency conflict.** `astro-mine hub` is **not** a Bench base dependency
   (only `[leaderboard]`/`dev`), and the core+pydantic floor is a defended line. Extra-vs-base is a
   blocking decision on that issue.
 - **Learn's registry is not the clean precedent claimed.** Its `_BUILTINS` dict is structurally the
@@ -953,7 +953,7 @@ Each was verified against code while drafting the backlog, and each is recorded 
 - **"The Studio UI calls none of the three" is imprecise** — `ui/src/api.ts:102` *does* define
   `publishCampaign()` → `POST /campaigns/publish`; it is dead code no component invokes. Only
   `/intent` and `/studies` have no client at all. Same outcome; a method to wire, not to write.
-- **Naming is a third wrinkle, not two.** Beyond bare-vs-prefixed, `astro-mine-learn` ships a binary
+- **Naming is a third wrinkle, not two.** Beyond bare-vs-prefixed, `astro-mine learn` ships a binary
   named `astro-mine-**train**` (package ≠ command), and `fleet`/`link`/`prospect` are generic
   `PATH` land-grabs.
 - **`bench#27`'s premise is doubly stale** — it says View is "Phase 2 with no repo yet" (View exists,
