@@ -91,7 +91,7 @@ lunar polar water-ice prospecting in comms-denied PSRs).
    (conventions.md §8).
 8. **Uncertainty is carried, not erased.** DEM vertical error, interpolation/void-fill flags,
    and regolith-parameter priors travel with the data as companion layers, so downstream
-   sim-to-real claims can be honest (charter §7, §11).
+   sim-to-real claims can be honest (charter §7, §10).
 9. **Library first, service second.** Worlds is importable on a workstation (open a world, query
    a tile, evaluate illumination) before it is a tile/field service (conventions.md §1.4).
 
@@ -395,7 +395,7 @@ message passing — workers stream the slices they need (conventions.md §8).
   penumbra fidelity does energy-survival planning ([Guard](guard.md)/[Allocate](allocate.md))
   actually need?
 - **DEM void-fill & uncertainty** — standard void-fill and how DEM vertical error propagates into
-  illumination/PSR/trafficability uncertainty (charter §7, §11).
+  illumination/PSR/trafficability uncertainty (charter §7, §10).
 - **Surrogate illumination** — could a learned surrogate replace ray casting for very large
   swarm-scale queries, with tracked error? Co-design with [Surrogate](surrogate.md).
 - **Microgravity regolith taxonomy** — which cohesion-dominated parameters (and
@@ -408,7 +408,7 @@ message passing — workers stream the slices they need (conventions.md §8).
 ## 12. Roadmap alignment
 
 - **Phase 0 (now) — MVP.** Worlds ships with [Core](core.md)/[Sim](sim.md)/[Fleet](fleet.md)/
-  [Bench](bench.md) for the **lunar polar water-ice reference scenario** (charter §10, §12):
+  [Bench](bench.md) for the **lunar polar water-ice reference scenario** (charter §10, §11):
   - ingest LOLA DEM for the Shackleton/south-polar region → COG/Zarr with explicit planetary CRS;
   - SPICE-backed lunar frames, epochs, and Sun/Earth geometry;
   - point-mass + low-order spherical-harmonic lunar gravity;
@@ -425,7 +425,7 @@ message passing — workers stream the slices they need (conventions.md §8).
   plugins (charter §9.2); deeper thermal fidelity.
 - **Phase 3 — ecosystem.** New environments (asteroids via polyhedral gravity, icy moons like
   Enceladus/Europa) arrive purely as community **body packs** — "support a new world" stays a
-  package, never a Worlds core change (charter §9.2, §10).
+  package, never a Worlds core change (charter §9.2, §9).
   - **Multi-regime missions.** The small / irregular-body extension — 3-D shape models,
     polyhedral/mascon non-central gravity, body rotation/tumbling, and microgravity-regolith
     fields for the `surface` and `proximity_orbit` regimes — lands here, alongside

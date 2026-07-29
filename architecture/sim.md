@@ -423,7 +423,7 @@ ingest): **ROS 2/DDS** at the [Bridge](bridge.md) boundary.
 - **Determinism vs. GPU performance** — how much reproducibility must be sacrificed for Brax/Isaac
   throughput, and where the tolerance line sits for [Bench](bench.md).
 - **Sim-to-real terramechanics** — calibrating low-gravity granular models against the scarce
-  available data and terrestrial analogs (charter §7, §8); a Phase-2 validation dependency.
+  available data and terrestrial analogs (charter §7, §7); a Phase-2 validation dependency.
 - **Environment API shape** for variable-fidelity + comms-masked observation — co-designed with
   [Core](core.md) and [Learn](learn.md) ([Core](core.md) §11).
 
@@ -439,7 +439,7 @@ ingest): **ROS 2/DDS** at the [Bridge](bridge.md) boundary.
   error tracking; baseline sensor models; power/thermal evolution; headless + interactive modes;
   MCAP output; and oracle-validated orbital regression. This, with [Worlds](worlds.md),
   [Fleet](fleet.md), and [Bench](bench.md), lets a researcher clone, run the scenario, and score a
-  baseline in an afternoon (charter §10, §12). **MVP priority:** correctness + determinism +
+  baseline in an afternoon (charter §10, §11). **MVP priority:** correctness + determinism +
   the always-works local tier over breadth of regimes.
 - **Phase 1.** Tighten [Surrogate](surrogate.md) integration (interactive-speed granular);
   Brax/MJX swarm-scale parallel training for [Learn](learn.md); richer sensor models; Ray fan-out

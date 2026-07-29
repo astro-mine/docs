@@ -1,6 +1,6 @@
 # Write a plugin
 
-Astro-Mine is a **thin, stable core with thick, swappable edges** ([charter §8](../../charter/Swarm_Exploration_ISRU_Orchestrator_OSS_Project.md)).
+Astro-Mine is a **thin, stable core with thick, swappable edges** ([charter §9.2](../../charter/Swarm_Exploration_ISRU_Orchestrator_OSS_Project.md)).
 Worlds, robots, sensors, planners, policies, solvers, metrics, and ISRU processes are all meant to
 arrive as plugins — contributed, versioned, and replaced *without touching the core*. Reference
 implementations ship as **replaceable examples, not privileged internals**

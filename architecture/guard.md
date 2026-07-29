@@ -341,7 +341,7 @@ correctness of its guarantee is the whole point of the package.
   the wrapped policy. A learned policy is treated as an **untrusted, adversarial input** that proposes
   an action; Guard's job is to certify or correct it. Therefore a buggy, mistrained, or maliciously
   crafted policy can degrade mission performance but **cannot cause a hard-constraint violation**.
-  This is what lets a learned controller be deployable in a no-recovery domain (charter §7, §8).
+  This is what lets a learned controller be deployable in a no-recovery domain (charter §7, §7).
 - **Minimal trusted computing base.** Only the Rust safety core (`arbiter`, `shields`, `monitors`,
   `backup`, `spec` evaluator) is trusted. It is small, deterministic, allocation-free on the hot path,
   and isolated from the Python orchestration and from the policy. The TCB's smallness is what makes

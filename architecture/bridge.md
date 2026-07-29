@@ -84,7 +84,7 @@ drive either the simulator or real flight hardware … without changing the laye
    epoch (TDB/ET) and reference frame (conventions.md §5). Clock and frame skew are measured,
    bounded, and surfaced — never assumed away.
 6. **Link-honest.** Bridge assumes intermittent, delayed, bandwidth-limited links by default
-   (charter §7, §8). Back-pressure and store-and-forward are baseline behavior, not an
+   (charter §7, §7). Back-pressure and store-and-forward are baseline behavior, not an
    add-on; the path degrades gracefully (conventions.md §8).
 7. **Capability-partitioned by construction.** The open, default-shipped adapters are sim and
    generic/standard interop (ROS 2, CCSDS basics). Adapters that bind to specific sensitive
@@ -265,7 +265,7 @@ the robots/flight stacks.
 - **Downstream — two interchangeable targets:**
   - **[Sim](sim.md)** (today / Phase 2): the `sim` adapter speaks to the [Sim](sim.md)
     Environment API so [Sim](sim.md) runs as the **digital-twin shadow** [Ops](ops.md) vets
-    plans against before commitment (charter §4.6, §5).
+    plans against before commitment (charter §4.6, §4).
   - **Real flight hardware** (Phase 3): ROS 2/DDS robots, or vehicles fronted by cFS / F´, and
     ground links via CCSDS — selected by the same switch.
 - **Core interfaces used:** the command/action and telemetry **message schemas**, the

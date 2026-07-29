@@ -413,7 +413,7 @@ alongside [Guard](guard.md) and [Bridge](bridge.md).
 | **Live-state store** | Redis; in-memory only; Postgres only | **Redis** for hot live state, rebuildable from the MCAP event log (conventions.md §5). |
 | **Ground eventing** | NATS/JetStream; Kafka; ROS 2 topics for everything | **NATS/JetStream** in the ground segment (conventions.md §4); **ROS 2/DDS only on the robot data plane** via [Bridge](bridge.md). Kafka only if a durable high-throughput replay log at scale is later required. |
 
-**Open questions / research dependencies (charter §7, §8).**
+**Open questions / research dependencies (charter §7, §7).**
 
 - **Delay-tolerant supervisory autonomy** — the interaction/trust model for one operator over
   many robots across minutes of latency is an open research problem; the intent-envelope model

@@ -545,7 +545,7 @@ only Phase-1 obligation is reserving the additive Mission/Phase/Regime Core sche
 - The **capability-tag taxonomy** for dual-use gating (Core ↔ governance/export-control).
 - **Evaluation science**: what "good" means for a multi-week ISRU campaign ([Bench](bench.md)).
 - **Sim-to-real credibility** without on-world data — the central trust problem the whole
-  stack must eventually answer (charter §9).
+  stack must eventually answer (charter §8).
 - **The edge install.** One wheel is the right answer for a workstation and an awkward one for an
   onboard-analog target (§8). Whether the assurance path eventually needs a distribution of its own
   is an open question, not a settled one.

@@ -340,7 +340,7 @@ for the cloud training/serving service and **NATS/JetStream** for job lifecycle 
   ([Guard](guard.md) and high-fidelity [Sim](sim.md) hold that role), but it carries a real
   **epistemic-safety** obligation: a surrogate that under-reports its error can silently corrupt
   a design or training result and break the sim-to-real credibility the whole platform depends on
-  (charter §8, §11). Mitigations are structural: calibrated, validated uncertainty; enforced
+  (charter §8, §10). Mitigations are structural: calibrated, validated uncertainty; enforced
   trust regions with OOD flagging; the validation gate before promotion; and drift monitoring
   that retires stale models. **Safety-relevant decisions never trust a surrogate alone** — they
   escalate to ground truth.
@@ -395,7 +395,7 @@ for the cloud training/serving service and **NATS/JetStream** for job lifecycle 
 **Open questions / research dependencies:**
 
 - **Trustworthy, calibrated error bounds for autoregressive contact rollouts** is an open
-  research problem (charter §7, §8). Conformal methods give marginal coverage; *conditional*,
+  research problem (charter §7, §7). Conformal methods give marginal coverage; *conditional*,
   long-horizon coverage that the scheduler can rely on is unresolved — co-developed with
   [Sim](sim.md) and [Bench](bench.md).
 - **The error-contract API with [Sim](sim.md)'s scheduler:** exact shape of the bound the

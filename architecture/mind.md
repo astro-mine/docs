@@ -272,7 +272,7 @@ Mind sits at the center of both charter loops; **every arrow crosses a [Core](co
   ONNX Runtime. Training is Learn's job; hosting/invoking is Mind's.
 - **[Guard](guard.md) (wrapped by):** the final, mandatory stage. Every action — whether from a
   classical controller or a learned policy — is filtered by [Guard](guard.md)'s shield/monitor
-  before becoming an Environment API action (charter §4.4, §8; conventions.md §9).
+  before becoming an Environment API action (charter §4.4, §7; conventions.md §9).
 - **[Studio](studio.md) (orchestrated by, design):** Studio authors stack specs and BTs, runs
   Mind-driven trade studies, and captures intent into a campaign. The
   **cross-phase replanning policy** (phase ordering, contingencies, window-miss responses) is

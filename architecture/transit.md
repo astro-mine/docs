@@ -393,4 +393,4 @@ reads (conventions.md §8).
 - **Phase 3+ — ecosystem.** New target bodies (asteroids, icy-moon systems), richer time-resolved SEP
   modeling, finer micrometeoroid environments, and learned force/hazard surrogates arrive purely as
   community **packs** — "support a new transit environment" stays a package, never a Transit core change
-  (charter §9.2, §10).
+  (charter §9.2, §9).

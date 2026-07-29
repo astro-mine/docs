@@ -1,7 +1,7 @@
 # Astro-Mine — Detailed Roadmap
 
 > **Status:** Phase-0 incubation — nothing is built yet. This is a *planning* document: it
-> elaborates the high-level [charter §9 phased roadmap](../charter/Swarm_Exploration_ISRU_Orchestrator_OSS_Project.md)
+> elaborates the high-level [charter §10 phased roadmap](../charter/Swarm_Exploration_ISRU_Orchestrator_OSS_Project.md)
 > and [system.md §11](../architecture/system.md) into per-phase, per-component **scope and
 > requirements** at a fidelity an implementation-planning session can turn into GitHub issues —
 > **without** prescribing implementation steps.
@@ -11,7 +11,7 @@ This roadmap is **derived from, and must stay aligned with**, four sources, in t
 1. the [project charter](../charter/Swarm_Exploration_ISRU_Orchestrator_OSS_Project.md) (vision — source of truth);
 2. the [flagship scenarios](../scenarios/README.md) (authoritative requirements: `LUNAR-*` / `AST-*` IDs);
 3. the per-component [architecture docs](../architecture/README.md) (the *how*; each carries a §11 options/recommendations and a §12 roadmap);
-4. [RFC-0001](../rfc/0001-multi-regime-missions.md) (the accepted multi-regime extension and its R1–R6 resolutions).
+4. [multi-regime missions](../architecture/mission-model.md) (the accepted multi-regime extension and its R1–R6 resolutions).
 
 Where this document and a source disagree, the source wins and this document is corrected.
 
@@ -109,10 +109,10 @@ platform grows (system.md §11; charter §8).
 | | [Sizing](../architecture/sizing.md) | · | · | · | ● OpenMDAO closure, staging, manifesting, SADF emit |
 | | [Ledger](../architecture/ledger.md) | · | (○ objective hook) | · | ● ValueModel, CERs, MC uncertainty |
 
-‡ [Spice](../architecture/spice.md) added by [RFC-0002](../rfc/0002-shared-spice-foundation.md)
+‡ [Spice](../architecture/spice.md) added by [Spice](../architecture/spice.md)
 (accepted) — the shared SPICE foundation; a Phase-0 deliverable sequenced before the Link MVP.
 
-¶ [Seal](../architecture/seal.md) added by [RFC-0005](../rfc/0005-seal-supply-chain-companion.md)
+¶ [Seal](../architecture/seal.md) added by [Seal](../architecture/seal.md)
 (accepted) — the shared artifact-integrity companion (signing / verification / SLSA / SBOM); a Phase-1
 deliverable, additive and non-urgent, that must not gate the lunar MVP.
 
@@ -132,17 +132,17 @@ not owned by one component, but they gate the phase exit.
 - **CX-SEC — Security & supply chain.** Sigstore/cosign signing, SLSA provenance, SBOMs, OPA
   capability gating, org defaults (Dependabot/secret-scanning/push-protection); plugin isolation
   (out-of-process/gVisor; WASM forward-looking) (conventions.md §9). The signing / provenance / SBOM
-  implementation is consolidated in [Seal](../architecture/seal.md) ([RFC-0005](../rfc/0005-seal-supply-chain-companion.md),
+  implementation is consolidated in [Seal](../architecture/seal.md) ([Seal](../architecture/seal.md),
   Phase 1) — one shared companion, the single home for `cryptography`, rather than a signer copied per
   producer.
 - **CX-GOV — Governance, license, export-control posture** established **up front**, before the
-  community forms (charter §11): Apache-2.0, the RFC process in `astro-mine/.github`, and a
+  community forms (charter §11): Apache-2.0, the governance defaults in `astro-mine/.github`, and a
   documented EAR/ITAR posture and capability-tag taxonomy.
-- **CX-RFC0001 — Multi-regime schema hooks.** The *only* early obligation of the opt-in
+- **CX-MISSION — Multi-regime schema hooks.** The *only* early obligation of the opt-in
   mission-architecture track is **reserving the additive Core schema hooks in Phase 1**
   (`MissionSpec`/`regime`/`PhaseTransition`, `ObjectiveSpec`, propulsion/return SADF capabilities,
   `operational_targeting` tag). Implementations land in Phase 3 and **must not gate the lunar MVP**
-  (RFC-0001 R5; mission-model §3).
+  (mission-model §3; mission-model §3).
 - **CX-S2R — Sim-to-real credibility.** Uncertainty-honest claims from P0; physics validation against
   external oracles with explicit error budgets; terrestrial-analog validation in P2 (charter §8).
 - **CX-OBS — Observability.** OpenTelemetry traces/metrics/logs, Prometheus/Grafana/Loki, in every
@@ -161,7 +161,7 @@ ambiguity and are pinned here. Each phase file follows these.
 2. **Cloud's container-first principle is Phase 0; the hosted scale-out platform is Phase 1.** Every
    P0 workload is built container-first and cluster-ready, but the dependency-free local tier is all
    P0 actually requires (cloud.md §12).
-3. **Prospect is Phase 0.** Though absent from the charter §9 "ships" prose, the anchor scenario's
+3. **Prospect is Phase 0.** Though absent from the charter §10 "ships" prose, the anchor scenario's
    belief field + ground-truth isolation are P0 deliverables (system.md §11; scenario §15).
 4. **Surrogate is early-Phase-1, ordered after the minimum runnable loop** — it consumes Phase-0 Sim
    (surrogate.md §12). **View** has a sanctioned **thin-slice reuse from P0/1** (globe + MCAP replay

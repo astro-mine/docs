@@ -310,7 +310,7 @@ costly. Performance claims ship with reproducible benchmarks (conventions.md §8
   high-resolution ground-truth resource map of an actual prospect — is **partitioned** into
   access-controlled storage and tagged with export-control capability flags, not committed to
   the open commons. Public ⇒ open; operational ⇒ gated.
-- **Scientific safety:** uncertainty must be **honest** (charter §8, §11). Over-confident
+- **Scientific safety:** uncertainty must be **honest** (charter §8, §10). Over-confident
   fields are a credibility hazard for downstream ISRU decisions; calibration gates in CI guard
   against shipping mis-calibrated priors.
 
@@ -352,7 +352,7 @@ costly. Performance claims ship with reproducible benchmarks (conventions.md §8
 
 **Open questions / research dependencies:**
 
-- *Decision-making under deep uncertainty* (charter §7, §8): the right active-perception
+- *Decision-making under deep uncertainty* (charter §7, §7): the right active-perception
   objective coupling prospecting to ISRU yield (information vs production) — co-designed with
   [Allocate](allocate.md) and [Mind](mind.md) and benchmarked in [Bench](bench.md).
 - *Prior fidelity & sim-to-real* (charter §8): how faithfully public datasets (LOLA/Diviner/
@@ -376,7 +376,7 @@ costly. Performance claims ship with reproducible benchmarks (conventions.md §8
   - **Zarr** field IO, Core message schemas, calibration + golden-field validation;
   - one [Bench](bench.md) prospecting scenario with scored belief-quality metrics.
   This is enough for `Sim + Worlds + Fleet + Bench` to run the reference loop end-to-end
-  (charter §10, §12) — a researcher can prospect a synthetic crater on a workstation.
+  (charter §10, §11) — a researcher can prospect a synthetic crater on a workstation.
 - **Phase 1+ (later).** GMRF and deep-generative backends; richer active-perception objectives
   (EVPI tied to ISRU yield) for [Learn](learn.md)/[Allocate](allocate.md); Martian fields; the
   distributed field service; [Hub](hub.md)-published community priors and prior-recipes.

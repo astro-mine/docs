@@ -14,7 +14,7 @@
 streams and artifacts produced everywhere else in the platform into something a human can watch,
 inspect, and trust: a 3D geospatial picture of the swarm on the body, time-aligned dashboards of
 fleet state, and — as a first-class feature, not a tooltip — **plan explanations** that answer
-"why is the swarm doing this?" (charter §4.6, §7 "delay-tolerant supervisory autonomy").
+"why is the swarm doing this?" (charter §4.6, §6 "delay-tolerant supervisory autonomy").
 
 It does, and only does:
 

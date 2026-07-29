@@ -34,11 +34,11 @@ survival, granular excavation physics, and decision-making under deep resource-f
 
 - **It is where the users already are.** Researchers in multi-agent autonomy, planetary robotics,
   terramechanics, and planetary science can use this scenario today; it needs no flight market to
-  be valuable (charter §2, §10). This is the academic-flywheel ignition point.
+  be valuable (charter §2, §9). This is the academic-flywheel ignition point.
 - **It defines "done" for Phase 0.** The MVP loop — [Core](../architecture/core.md) +
   [Sim](../architecture/sim.md) + [Worlds](../architecture/worlds.md) +
   [Fleet](../architecture/fleet.md) + [Bench](../architecture/bench.md) on this scenario — is the
-  concrete deliverable the roadmap is organized around (charter §9, §11; system.md §11).
+  concrete deliverable the roadmap is organized around (charter §9, §10; system.md §11).
 - **It is rich in the hard problems.** Resource uncertainty, comms-denied PSRs, and energy survival
   are all present in one concrete, valued task (charter §11), so it is an honest benchmark, not a toy.
 - **It is the one-phase case of the whole platform.** Because a single-`surface`-phase Mission is
@@ -268,7 +268,7 @@ comparable.
 
 ## 9. Hard problems exercised
 
-| Problem (charter §6 research / §8 engineering) | How this scenario stresses it |
+| Problem (charter §7 research / §8 engineering) | How this scenario stresses it |
 |---|---|
 | Cooperative MARL under partial observability & intermittent comms (§7) | PSR comms-denied coordination; relay-window-gated cooperation |
 | Decision-making under deep resource-field uncertainty (§7) | plan-to-learn: active perception vs. production trade-off over an uncertain ice field |
