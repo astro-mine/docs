@@ -1,0 +1,162 @@
+# Astro-Mine-CLI — the command-line distribution
+
+> Distribution: **`astro-mine-cli`** (Python wheel) · Repository: `astro-mine-cli`
+> One executable, `astro-mine`, under one grammar: `astro-mine <component> <verb>`.
+> Depends on [`astro-mine-platform`](platform.md); installing it installs the platform.
+> Cross-cutting standards: see [conventions.md](conventions.md) §13 (CLI naming, normative).
+
+## 1. Purpose
+
+The platform's only command line, and the only executable any Astro-Mine distribution installs:
+
+```console
+$ pip install astro-mine-cli        # brings the platform with it
+$ astro-mine <component> <verb> [options]
+```
+
+Everything the platform can do from a terminal is reached by naming the component that owns it and
+then the action. Thirteen names are components; three are *routers*, which exist because they answer
+a question no single component can — *who owns this?*
+
+## 2. Why it is a separate distribution
+
+It would be simpler to ship the commands inside the platform wheel. Two reasons not to, and they are
+the reasons this document exists:
+
+**The library stops having a user interface.** Argument parsing, help strings, output formatting and
+exit-code policy are a different concern from resource fields and rigid-body physics. With them gone,
+the platform's only boundary is its Python API, and "is this exported?" acquires a real answer — the
+export audit for the move found exactly one function that had been reachable only through a command
+handler.
+
+**A surface decision is made once.** Help text, argument naming, exit-code conventions and `--json`
+output shape are cross-cutting. They used to be decided thirteen times independently, which is how
+the platform acquired three different addressing rules and seven verbs that could not be typed at
+all.
+
+## 3. Why it is not a zero-dependency dispatcher
+
+The umbrella was originally built with **no** runtime dependencies — not even Core — federating every
+first-party verb through the `astro_mine.cli` entry-point group. That design's rejected alternative
+was "one umbrella package depending on all components", on the grounds that `pip install` for one
+verb would drag Ray, CP-SAT, SPICE and a Rust toolchain onto the machine.
+
+Consolidation dissolved the premise. The platform is one wheel already carrying all of it, so there
+is no install this dependency makes heavier — the cost the original design refused to pay is now paid
+by the platform simply existing. Meanwhile the indirection decoupled nothing: every component is
+always present, so first-party federation was a metadata round-trip that hid which function ran.
+
+What the original design actually protected — *you should not pay for what you did not run* — is kept
+by a mechanism that still works (§5).
+
+## 4. The grammar
+
+```
+astro-mine <component> <verb> [options]      # 13 components
+astro-mine validate <file>...                # routed to the format's owner
+astro-mine new <kind> <out>                  # scaffold an authored document
+astro-mine plugin new <kind> <out>           # scaffold a plugin package
+```
+
+**Components:** `core` · `fleet` · `worlds` · `prospect` · `link` · `sim` · `bench` · `learn` ·
+`mind` · `guard` · `hub` · `cloud` · `studio`.
+
+**The three routers.** `validate` dispatches a document to whichever component owns its schema
+`$id` — four components own an authored format (`core`, `guard`, `mind`, `worlds`), and a collision
+between two claimants is an error rather than a coin flip. `new` writes one of four authored-document
+kinds (`asset`, `world`, `stack`, `safety`), each templated by the component that owns the format and
+validated by that component's own loader. `plugin new` writes a package against a live extension
+group — seven kinds today (`tier`, `provider`, `field-model`, `runner`, `solver`, `algorithm`,
+`curriculum`); the eighth group is `astro_mine.cli` itself.
+
+`new` and `validate` are two ends of one contract: what `new` writes, `validate` accepts. A scaffold
+that emits a document its owner's validator rejects is a defect in the pair, not in either half.
+
+## 5. Laziness — you pay for the command you ran
+
+`astro-mine --help` imports **no** component. The listing comes from a static table of plain strings,
+and dispatch imports exactly one module: the one the user named.
+
+That is what the two-phase parse buys. Phase one parses only *which* component; everything after it
+is `argparse.REMAINDER`. Phase two imports that component's module and lets it parse its own tail. A
+single-phase parser would have to call every component's `add_arguments` to build the tree, importing
+all thirteen to render a help screen.
+
+The cost is that top-level `--help` cannot show a component's verbs; `astro-mine <component> --help`
+is where the real help lives. That is the trade, and it is the right way round: the top level is read
+once, a component's help is read repeatedly.
+
+## 6. Two sources, one shape
+
+**First-party commands are dispatched statically.** **Third-party commands are discovered** from the
+entry-point groups, because that is the no-pull-request-to-extend guarantee and consolidation does
+not touch it. Both are wrapped so the dispatcher cannot tell them apart.
+
+Four groups stay live for third parties:
+
+| Group | Extends |
+|---|---|
+| `astro_mine.cli` | a new top-level name |
+| `astro_mine.cli.validators` | `astro-mine validate` |
+| `astro_mine.cli.scaffolds` | `astro-mine new` |
+| `astro_mine.cli.plugin_scaffolds` | `astro-mine plugin new` |
+
+The platform registers into **none** of them: its entries used to shadow the component names at the
+top level. A third-party entry point that claims a name the platform owns is **reported, not
+silently honoured** — named by package, version and entry point — because a shadowed `fleet` that
+quietly does something else is the worst failure this surface can have.
+
+## 7. The thin-wrapper rule (normative)
+
+A command module MAY declare argparse arguments, read a `Namespace`, call a platform function, format
+output, and map a result to an exit status.
+
+It MUST NOT implement domain logic, define a schema or data model, hold state between invocations, or
+import a platform private (`_`-prefixed) name.
+
+Anything a command needs that the platform does not export is a **platform change**. This is not
+style: `astro-mine fleet package` and Fleet's own packaging manifest must produce byte-identical
+canonical JSON, and they only do that by calling the same exported function.
+
+## 8. Parser parity
+
+A committed fixture records all **50 verbs and 189 arguments** as the platform's own binaries
+declared them, captured before any code moved: option strings, defaults, `nargs`, `choices`,
+`required`, help text. A test asserts the current parsers still match.
+
+Regenerating that fixture to make the test pass is not a fix. The fixture *is* the old behaviour, and
+the old behaviour is the requirement; a verb that genuinely must change is a separate change with its
+own justification, and the fixture moves in that commit.
+
+## 9. Honest degradation
+
+A verb whose backing capability is absent MUST report what is missing and how to get it — never a
+traceback, never "unknown command". The case that survives consolidation is a surface in another
+distribution: `astro-mine studio serve` reaches the Studio REST application, which lives in
+[`astro-mine-api`](api.md), so the command names what to install rather than failing obscurely. That
+is also why `studio` keeps its group.
+
+## 10. What is deliberately not a verb
+
+Two platform entry points are not exposed here, because neither is typed by a person and both are
+invoked as `python -m` by machinery that already depends on them: Bench's per-seed `eval-worker`
+(Cloud fans it out) and Sim's container entrypoint. They stay in the platform, where their callers
+look for them (`platform.md` §4).
+
+## 11. What this distribution must not do
+
+1. **No second executable.** One binary, one grammar. The prefixed per-component binaries
+   (`astro-mine-<component>`) and the bare legacy aliases (`fleet`, `worlds`, `link`, `prospect`,
+   `astro-mine-train`) are gone and MUST NOT come back (`conventions.md` §13).
+2. **No domain logic** (§7).
+3. **No eager imports** (§5).
+4. **No component may depend on it.** The dependency runs one way; a layering test asserts it
+   (`conventions.md` §11).
+
+## 12. Roadmap alignment
+
+The CLI ships. Known gaps are tracked as issues rather than described here as design — notably that
+Seal has no verbs yet, and that the `astro_mine.cli` group has no `plugin new` scaffold of its own
+(structurally impossible under the old design, merely unwritten under this one). See the
+[roadmap](../roadmap/README.md) and the [CLI reference](../guide/reference/cli.md) for the
+user-facing surface.
