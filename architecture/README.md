@@ -4,8 +4,10 @@ Technology architecture for the [Astro-Mine](https://github.com/astro-mine) plat
 open-source commons for designing, simulating, and operating planetary robotic swarms for
 exploration and in-situ resource utilization (ISRU).
 
-> **Status:** Phase-0 draft. These documents describe *intended* architecture; nothing is built
-> yet. They are derived from, and must stay aligned with, the
+> **Status:** Phases 0 and 1 are **built** — the commons seed and the autonomy-and-studio stack ship
+> and run. Phase 2 (operations bridge) is next. These documents describe what exists where they
+> describe Phases 0–1, and intended design where they describe Phases 2–3; each component doc's
+> header says which. They are derived from, and must stay aligned with, the
 > [project charter](../charter/Swarm_Exploration_ISRU_Orchestrator_OSS_Project.md).
 
 ## How these documents fit together
@@ -17,93 +19,101 @@ exploration and in-situ resource utilization (ISRU).
 - **[system.md](system.md)** — the **integration view**: every component, where it runs, who
   uses it, what data it touches, and exactly how the pieces communicate. **Start here.**
 - **[conventions.md](conventions.md)** — the **cross-cutting technology standards** (languages,
-  schemas, transport, data, deployment, security, observability). Normative for every component;
-  the per-component docs reference it rather than restating it.
-- **One file per component** (below) — detailed architecture for each `Astro-Mine-*` package,
+  schemas, transport, data, deployment, security, observability, naming). Normative for every
+  component and every distribution; the per-component docs reference it rather than restating it.
+- **One file per distribution** — what ships, how it is built, and what each repository must not do.
+- **One file per component** — detailed architecture for each `Astro-Mine-*` component,
   using a shared 12-section template: purpose, architecture principles, application, runtime,
   data, integration, infrastructure, performance, security/safety, observability, options &
   recommendations, and roadmap alignment.
+
+## Distributions — what actually ships
+
+A **component** is a unit of design. A **distribution** is a unit of release. There are four, and
+every component belongs to at least one:
+
+| Distribution | Kind | What it is |
+|---|---|---|
+| **[platform.md](platform.md)** | Python wheel | `astro-mine-platform` — every component as `astro_mine.<name>`. A library; no commands, no server, no front end. |
+| **[cli.md](cli.md)** | Python wheel | `astro-mine-cli` — the one executable, `astro-mine <component> <verb>`. |
+| **[api.md](api.md)** | wheel + image | `astro-mine-api` — every REST surface as route modules over the library. *Not yet stood up.* |
+| **[ui.md](ui.md)** | npm `@astro-mine/*` | `astro-mine-ui` — the console shell, the surface contract, the design system, View, and the per-component surfaces. *Not yet stood up.* |
+
+Read the distribution docs when the question is *how does this ship, get built, or get released*, and
+the component docs when the question is *how does this work*.
 
 ## Components by layer
 
 | Layer | Components |
 |---|---|
-| **Commons backbone** | [Core](core.md) · [Spice](spice.md) ‡ · [Seal](seal.md) ¶ · [Bench](bench.md) · [Hub](hub.md) · [Cloud](cloud.md) |
+| **Commons backbone** | [Core](core.md) · [Spice](spice.md) ‡ · [Seal](seal.md) ‡ · [Bench](bench.md) · [Hub](hub.md) · [Cloud](cloud.md) |
 | **World & environment** | [Worlds](worlds.md) · [Prospect](prospect.md) · [Link](link.md) · [Transit](transit.md) † |
 | **Assets** | [Fleet](fleet.md) |
 | **Simulation** | [Sim](sim.md) · [Surrogate](surrogate.md) |
 | **Autonomy & coordination** | [Mind](mind.md) · [Learn](learn.md) · [Allocate](allocate.md) · [Guard](guard.md) |
 | **Mission architecture & logistics** † | [Trajectory](trajectory.md) · [Sizing](sizing.md) · [Ledger](ledger.md) |
-| **Design & operations** | [Studio](studio.md) · [Ops](ops.md) · [Bridge](bridge.md) · [View](view.md) · [Console](console.md) ◊ |
+| **Design & operations** | [Studio](studio.md) · [Ops](ops.md) † · [Bridge](bridge.md) † · [View](view.md) ◊ · [Console](console.md) ◊ |
 
-† Added by [RFC-0001](../rfc/0001-multi-regime-missions.md) (accepted; implementation Phase 3). [Core](core.md) is the "narrow waist" — the single most important package; if only one thing is designed superbly, it must be Core.
+[Core](core.md) is the "narrow waist" — the single most important component; if only one thing is
+designed superbly, it must be Core.
 
-‡ Added by [RFC-0002](../rfc/0002-shared-spice-foundation.md) (accepted; implementation Phase 0). [Spice](spice.md) is the SPICE-backed realization of [Core](core.md)'s frame/time vocabulary, factored out as a *Core companion* so Worlds, Link, Sim, and Transit share **one** SPICE implementation rather than re-deriving it per package.
+† **Not yet built.** [Ops](ops.md) and [Bridge](bridge.md) are Phase 2; [Transit](transit.md),
+[Trajectory](trajectory.md), [Sizing](sizing.md) and [Ledger](ledger.md) are the Phase-3
+mission-architecture track (see [mission-model.md](mission-model.md) and [system.md](system.md) §13).
+Each lands as a subpackage of [`astro-mine-platform`](platform.md) — a new layer, and no new
+distribution.
 
-¶ Added by [RFC-0005](../rfc/0005-seal-supply-chain-companion.md) (accepted; implementation Phase 1). [Seal](seal.md) is the artifact-integrity realization of [Core](core.md)'s `Signature`/`Verifier` surface, factored out as a *Core companion* so Fleet, Hub, and Guard share **one** signing/verification/SLSA/SBOM implementation rather than re-copying it per package — the single home for the `cryptography` dependency Core deliberately never carries.
+‡ **Core companions.** [Spice](spice.md) and [Seal](seal.md) each realize a vocabulary Core defines
+but cannot host — frame/time resolution needs SPICE, artifact integrity needs crypto, and both are
+exactly the heavy dependencies the narrow waist excludes ([core.md](core.md) §2 principle 3). Each is
+the platform's *single* implementation of its concern, so an aberration convention or a signature
+encoding is decided once. Consolidation does not weaken the argument: the point was never that a user
+could avoid installing SPICE or crypto, it is that exactly one code path resolves a frame and exactly
+one decides whether a signature is valid.
 
-◊ Added by [RFC-0010](../rfc/0010-console-surface-contract.md) (accepted; implementation Phase 1). **Console** is the platform's single GUI shell — `@astro-mine/console` composing per-component *surfaces* over the zero-dependency `@astro-mine/surface` contract and the `@astro-mine/ui` design system, so one front door spans every component without any of them importing another. Unlike the other rows it is a **front-end package set** (TypeScript, repo `astro-mine-console`), not a Python component — `conventions.md` §2's Python-reachability rule binds components, and a front-end package renders capability a component already exposes rather than adding its own. It changes nothing in [Core](core.md): contributions are keyed by Core's existing `PluginKind` vocabulary, consumed by its published `$id` rather than extended. See [console.md](console.md).
+◊ **Front-end packages.** [View](view.md) and [Console](console.md) are TypeScript packages of
+[`astro-mine-ui`](ui.md), not Python components. `conventions.md` §2's Python-reachability rule binds
+components; a front-end package renders capability a component already exposes rather than adding its
+own. **Console** is the platform's single GUI shell — one front door composing per-component
+*surfaces* over the zero-dependency `@astro-mine/surface` contract and the `@astro-mine/ui` design
+system, so one application spans every component without any of them importing another. It changes
+nothing in [Core](core.md): contributions are keyed by Core's existing `PluginKind` vocabulary,
+consumed by its published `$id` rather than extended.
 
-## Multi-regime missions (RFC-0001, accepted)
+## Multi-regime missions
 
-> **Status: Accepted** ([RFC-0001: Multi-regime missions](../rfc/0001-multi-regime-missions.md)) —
-> implementation lands in **Phase 3**; the additive Core schema hooks are reserved in **Phase 1**.
+> Implementation lands in **Phase 3**; the additive Core schema hooks were reserved in **Phase 1**.
 > The extension supports end-to-end interplanetary resource missions (asteroid mining, NEO
 > sample-return, cislunar logistics) by generalizing "a campaign on a world" into a **Mission** of
-> **Phases** across **Regimes**. A single-body surface campaign is the degenerate one-phase case,
-> so the change is additive and existing scenarios are unchanged.
+> **Phases** across **Regimes**. A single-`surface`-phase Mission is exactly today's campaign, so the
+> change is additive and existing scenarios are unchanged. It is **opt-in and must not gate the
+> lunar MVP**.
 
 - **[mission-model.md](mission-model.md)** — the Mission/Phase/Regime model and the additive
   Core schema sketch (SADF, Environment API, message schemas). Start here for the extension.
 - **New components:** [Transit](transit.md) (deep-space environment) and the **Mission
   architecture & logistics** layer — [Trajectory](trajectory.md), [Sizing](sizing.md),
   [Ledger](ledger.md).
-- **Extended (not replaced):** the existing components above gained multi-regime scope for small
+- **Extended (not replaced):** the existing components above gain multi-regime scope for small
   bodies, microgravity, deep-space comms, propulsion, and multi-phase operations — see
-  [RFC-0001](../rfc/0001-multi-regime-missions.md) §4 for the per-component list.
-
-## Shared SPICE foundation (RFC-0002, accepted)
-
-> **Status: Accepted** ([RFC-0002: A shared SPICE foundation package](../rfc/0002-shared-spice-foundation.md))
-> — implementation lands in **Phase 0**, sequenced before the Link MVP.
-
-[Core](core.md) defines the frame/time *vocabulary* (`Epoch`, `ReferenceFrame`, `PlanetaryCRS`) but
-deliberately cannot host the *resolution* of names into geometry — `spiceypy`/`numpy` are exactly the
-heavy dependencies the narrow waist must never carry ([core.md](core.md) §2 principle 3). [Spice](spice.md)
-(`astro-mine-spice`, import `astro_mine.spice`) is that resolution, factored into a thin **Core
-companion** on the Commons backbone: it turns Core's vocabulary into positions (`spkpos`), rotations
-(`pxform`), and topocentric site geometry, and **stops there** — window search stays in
-[Link](link.md), terrain occlusion stays in [Worlds](worlds.md) (served through the Core
-`WorldProvider` contract). Every SPICE consumer ([Worlds](worlds.md), [Link](link.md), Sim's orbital
-engine, and later [Transit](transit.md)) depends on this one implementation, so frame/aberration
-conventions and oracle cross-checks are written once and trusted everywhere
-([conventions.md](conventions.md) §5, §11).
-
-## Shared artifact-integrity foundation (RFC-0005, accepted)
-
-> **Status: Accepted** ([RFC-0005: A shared artifact-integrity (signing / provenance / SBOM) companion](../rfc/0005-seal-supply-chain-companion.md))
-> — implementation lands in **Phase 1**; additive and non-urgent, it must not gate the lunar MVP.
-
-[Core](core.md) owns the *shape* of integrity — the `Signature` envelope, the `Verifier` protocol, and
-the lightweight `hashing` primitive — but deliberately ships **no crypto** (`cryptography` is exactly
-the heavy dependency the narrow waist must never carry, [core.md](core.md) §2 principle 3). [Seal](seal.md)
-(`astro-mine-seal`, import `astro_mine.seal`) is that crypto, factored into a thin **Core companion**
-on the Commons backbone: it owns the *single* implementation of signing, verification, SLSA provenance,
-SBOM, and verify-twice orchestration, built on Core's frozen `Signature`/`Verifier` surface. Every
-producer and verifier ([Fleet](fleet.md), [Hub](hub.md), [Guard](guard.md), and the growing publisher
-frontier) depends on this one implementation instead of re-copying the signer, so a `cryptography`
-upgrade or an encoding change can never silently reject a valid signature in a security-critical path
-([conventions.md](conventions.md) §9; [guard.md](guard.md) §9.5). It founds by **extracting** Hub's
-`supply_chain/` module and deleting the duplicated signer copies — Core stays crypto-free.
+  [system.md](system.md) §13.2 for the per-component list.
+- **Dual use:** [Trajectory](trajectory.md) is design-time only. Reference trajectories and Δv
+  budgets are descriptive artifacts; operational maneuver targeting and guided atmospheric entry are
+  out of scope and gated by an `operational_targeting` capability tag (`conventions.md` §12).
 
 ## Conventions for these docs
 
-- Each component doc carries an H1 title and a blockquote (layer · phase · one-line role · link
-  to conventions).
+- Each component doc carries an H1 title and a blockquote (layer · phase · which distribution it
+  ships in · one-line role · link to conventions).
 - Cross-references use relative links (e.g. `[Sim](sim.md)`); cross-cutting decisions cite
   `conventions.md` by section.
 - Where there is genuine uncertainty, options are documented with a marked recommendation
   (see each doc's §11).
+- **This directory is where a decision is recorded.** There is no separate proposal archive: a
+  cross-cutting decision lands in `conventions.md`, a component's own contract lands in its
+  document, and scope lands in the charter. A change to any of them is an ordinary pull request, and
+  what protects a published interface is the machinery in `conventions.md` §3 and §11, not a process
+  gate.
 - Per project policy, no AI-authorship attribution appears in any file. (References to the
   Anthropic Claude API in [Studio](studio.md) are a deliberate *technology choice* for optional
   LLM-assisted intent capture, not attribution.)

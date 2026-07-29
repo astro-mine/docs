@@ -9,11 +9,18 @@
 
 ## 1. How to read this document
 
-The platform is a set of independently useful `Astro-Mine-*` packages bound by a small,
-stable contract layer ([Core](core.md)). Each package has its own architecture doc; this
-document is the **integration view** — it describes the system as a running whole rather than
-any single part. The governing idea is the charter's **thin, stable core with thick, swappable
-edges**: the contracts in §3 change slowly and deliberately; everything else is a plugin.
+The platform is a set of independently useful components bound by a small, stable contract layer
+([Core](core.md)). Each component has its own architecture doc; this document is the **integration
+view** — it describes the system as a running whole rather than any single part. The governing idea is
+the charter's **thin, stable core with thick, swappable edges**: the contracts in §3 change slowly and
+deliberately; everything else is a plugin.
+
+**Components are not distributions.** A component — `Core`, `Sim`, `Worlds` — is a unit of design,
+imported as `astro_mine.<name>`. What ships is four things (§4.1):
+[`astro-mine-platform`](platform.md) (every component, one wheel, a library),
+[`astro-mine-cli`](cli.md) (one executable), [`astro-mine-api`](api.md) (the REST tier), and
+[`astro-mine-ui`](ui.md) (the browser front end). Everything below about *how components integrate* is
+unchanged by that; what it changes is what enforces the integration, which is §3's last note.
 
 The platform runs in **two modes over one shared core** (charter §3):
 
@@ -36,25 +43,33 @@ Both modes drive the **same** simulation core and the **same** autonomy componen
       planning,    (agencies,     startups
        science)      primes)
           │             │             │             │           │
-          ▼             ▼             ▼             ▼           │
-   ┌──────────────────────────────────────────┐                 │
-   │  CONSOLE — the single GUI front door     │                 │
-   │  (static SPA, Phase 1) composing         │                 │
-   │  bench-ui · studio-ui · hub-ui · …       │                 │
-   └───────────────────┬──────────────────────┘                 │
-                       │ surfaces call their own REST edges     │
-                       ▼                                        ▼
+          ├─────────────┴──────┬──────┴─────────────┤           │
+          ▼                    ▼                    ▼           │
+   ┌────────────────────┐  ┌──────────────────────────┐         │
+   │  astro-mine <comp> │  │  CONSOLE — the single    │         │
+   │  <verb>            │  │  GUI front door (SPA)    │         │
+   │  · the CLI         │  │  composing bench-ui ·    │         │
+   │  · Python API      │  │  studio-ui · hub-ui · …  │         │
+   └─────────┬──────────┘  └────────────┬─────────────┘         │
+             │ in-process               │ HTTP                  │
+             │                          ▼                       │
+             │              ┌──────────────────────────┐        │
+             │              │  astro-mine-api          │        │
+             │              │  Hub · Studio · Cloud ·   │        │
+             │              │  Bench REST surfaces     │        │
+             │              └────────────┬─────────────┘        │
+             ▼                           ▼                       ▼
    ┌──────────────────────────────────────────┐   ┌────────────────────────────┐
    │  DESIGN MODE                             │   │  OPERATE MODE              │
-   │  Studio (web) · Bench (leaderboards)     │   │  Ops console · View        │
+   │  Studio · Bench (leaderboards)           │   │  Ops console · View        │
    │  Hub (registry) · View (embedded)        │   │  (3D + dashboards)         │
    └───────────────────┬──────────────────────┘   └─────────────┬──────────────┘
                        │  Core contracts (SADF, Env/Policy API) │
                        ▼                                        ▼
    ┌───────────────────────────────────────────────────────────────────────────┐
-   │  SHARED SUBSTRATE                                                         │
+   │  SHARED SUBSTRATE — astro-mine-platform                                   │
    │  Sim (+Surrogate)  ·  Mind · Learn · Allocate · Guard                     │
-   │  Worlds · Prospect · Link · Fleet                                         │
+   │  Worlds · Prospect · Link · Fleet  ·  Core · Spice · Seal                 │
    │  run at scale on Cloud · artifacts in Hub · scored by Bench               │
    └───────────────────────────────────────────────────────────────────────────┘
                                         │ Bridge (ROS 2 / cFS / F´ / CCSDS)
@@ -62,20 +77,23 @@ Both modes drive the **same** simulation core and the **same** autonomy componen
                              Simulator today  →  real flight hardware (Phase 3)
 ```
 
-Two clarifications on that picture. First, the two "console"s are different things:
-**[Console](console.md)** is the platform's single GUI front door, added by
-[RFC-0010](../rfc/0010-console-surface-contract.md) and shipping in Phase 1; the **Ops console** is
-the operations supervisory surface in [Ops](ops.md), Phase 2. Second, the console is the **GUI**
-front door, not the only door — every capability it surfaces is reachable from the CLI and from
-Python, and for several audiences that remains the primary path. The arrows show where a *human
-without a terminal* enters.
+Three clarifications on that picture.
 
-Each audience enters through a different *surface* but everything below it is shared. The table
-below names the surface each audience ultimately drives — but note what it also shows: **before the
+First, the two "console"s are different things: **[Console](console.md)** is the platform's single GUI
+front door, shipping in Phase 1 as a package of [`astro-mine-ui`](ui.md); the **Ops console** is the
+operations supervisory surface in [Ops](ops.md), Phase 2.
+
+Second, the console is the **GUI** front door, not the only door. The CLI and the Python API reach the
+platform *in process* — no HTTP, no service, nothing running — and for several audiences that is the
+primary path. The GUI's HTTP hop through [`astro-mine-api`](api.md) is what a browser requires, not
+what the platform requires.
+
+Third, each audience enters through a different *surface* but everything below it is shared. The table
+below names the surface each audience ultimately drives — and note what it also shows: **before the
 console, every row named a different entry point and there was no shared one at all.** Two audiences
 the charter names explicitly (mission designers, educators/students) could not reach the platform
-without one, which is the gap RFC-0010 exists to close. The console does not replace these surfaces;
-it is the one door that leads to all of them.
+without one, which is the gap the console exists to close. The console does not replace these
+surfaces; it is the one door that leads to all of them.
 
 | Audience | Primary surface | What they ultimately drive |
 |---|---|---|
@@ -108,89 +126,126 @@ nothing else:
    FlatBuffers/Cap'n Proto for per-tick hot paths — see conventions.md §3). Includes the
    **`ObjectiveSpec`** and the objective→metric **binding** — the shared objective contract
    authored by [Studio](studio.md), measured/valued by [Bench](bench.md)/[Ledger](ledger.md), and
-   tracked by [Ops](ops.md)/[View](view.md).
+   tracked by [Ops](ops.md)/[View](view.md) — and the **`Plan`/`ContingentPlan`** vocabulary that
+   [Mind](mind.md) produces, [Guard](guard.md) clears, and [Ops](ops.md) executes.
 5. **Plugin manifest & registry** — how content is discovered, version-negotiated, signed, and
    loaded. Indexed by [Hub](hub.md); capability tags here are the substrate for export-control
    gating.
 
 **Contribute once, use everywhere**: a new world, robot, planner, policy, or ISRU process is
 authored against these contracts and is then immediately usable in design, training,
-operations, and benchmarks — without touching Core or any other package. That single property
+operations, and benchmarks — without touching Core or any other component. That single property
 is what makes the collection an ecosystem rather than a bundle.
 
 **Versioning:** interface versions are independent of implementation versions; each component
 declares the Core interface major versions it supports, and `Core`'s `compat` layer refuses
-incompatible loads (conventions.md §3, §13). Changes to Core go through the RFC process.
+incompatible loads (conventions.md §3, §13). The contract evolves under a strict **additive,
+append-only, never-break** rule, and CI enforces it — see below.
 
-**Multi-regime missions (RFC-0001).** These five contracts gained *additive* extensions — the
+**What enforces the waist now that components share one distribution.** An arrow crossing a Core
+contract used to be, in part, a fact about packaging: reaching into another component's internals
+meant declaring a dependency on another package. That friction is gone, and the enforcement moved into
+the build (conventions.md §3.1, §11):
+
+- Schemas are addressed by published **`$id`** and resolved through Core's registry — never by a
+  path that happens to work inside one tree.
+- Proto fields are append-only and `buf breaking` fails the build; a Core change runs every
+  consumer's schema tests in the same job.
+- The schema set has a **content address** a scenario pins, so a run against a different contract is
+  a different task rather than silently the same one.
+- **Layering tests** assert the import graph: no component imports another's private modules, no
+  component imports the CLI or API distribution, Core imports nothing above its dependency floor.
+
+A contributor can still write a shortcut past the waist. CI is what refuses it — which is a better
+guarantee than a repository boundary was, because a repository boundary never stopped anyone who was
+willing to add a dependency.
+
+**Multi-regime missions.** These five contracts gained *additive* extensions — the
 Mission/Phase/Regime schema, a bounded `regime` dimension and `PhaseTransition` events on the
 Environment API, propulsion/return SADF capabilities, and the descriptive design-time
 `TrajectoryRef` schema — reserved in Core in Phase 1. They generalize "a campaign on a world"
 into a **Mission** of **Phases** across **Regimes** without widening the waist into per-regime
 interfaces; see [mission-model.md](mission-model.md) and §13.
 
-**Shared SPICE foundation (RFC-0002).** Core defines the frame/time *vocabulary* (`Epoch`,
+**Shared SPICE foundation.** Core defines the frame/time *vocabulary* (`Epoch`,
 `ReferenceFrame`, `PlanetaryCRS`) but defers name→geometry *resolution* (kernels, `spkpos`, `pxform`)
-because `spiceypy`/`numpy` are the heavy dependencies the waist must never carry (core.md §2 principle 3). That
-resolution lives in **[Spice](spice.md)** (`astro_mine.spice`), a thin **Core companion** that every
-SPICE consumer — [Worlds](worlds.md), [Link](link.md), [Sim](sim.md)'s orbital engine, later
+because `spiceypy`/`numpy` are the heavy dependencies the waist must never carry (core.md §2 principle
+3). That resolution lives in **[Spice](spice.md)** (`astro_mine.spice`), a thin **Core companion** that
+every SPICE consumer — [Worlds](worlds.md), [Link](link.md), [Sim](sim.md)'s orbital engine, later
 [Transit](transit.md) — depends on, so the waist stays thin while frame/aberration conventions stay
 singular across the platform. Spice resolves Core's vocabulary into positions/rotations/topocentric
 scalars and nothing more (window search stays in Link, terrain occlusion in Worlds via the Core
-`WorldProvider` contract); Core does not depend on it. See [spice.md](spice.md) and conventions.md §5.
+`WorldProvider` contract); Core does not depend on it. That every install now carries `spiceypy`
+regardless is beside the point: the rule was never that a user could avoid the dependency, it is that
+exactly one code path resolves a frame. See [spice.md](spice.md) and conventions.md §5.
 
-**Shared artifact-integrity foundation (RFC-0005).** Core owns the *shape* of integrity (the
+**Shared artifact-integrity foundation.** Core owns the *shape* of integrity (the
 `Signature` envelope, the `Verifier` protocol, the `hashing` primitive) but ships **no crypto** —
-`cryptography` is another heavy dependency the waist must never carry (core.md §2 principle 3). That crypto lives
-in **[Seal](seal.md)** (`astro_mine.seal`), a thin **Core companion** that every producer and verifier
-— [Fleet](fleet.md), [Hub](hub.md), [Guard](guard.md), later [Learn](learn.md)/[Worlds](worlds.md)/[Prospect](prospect.md)
-— depends on, so signing/verification/SLSA/SBOM is one byte-stable implementation instead of three
-hand-copied signers (conventions.md §9). Seal owns the *mechanism* of integrity and stops there (the
-production trust-root policy is decided with Hub); Core does not depend on it. See [seal.md](seal.md)
-and [guard.md](guard.md) §9.5.
+`cryptography` is another heavy dependency the waist must never carry (core.md §2 principle 3). That
+crypto lives in **[Seal](seal.md)** (`astro_mine.seal`), a thin **Core companion** that every producer
+and verifier — [Fleet](fleet.md), [Hub](hub.md), [Guard](guard.md), later
+[Learn](learn.md)/[Worlds](worlds.md)/[Prospect](prospect.md) — depends on, so
+signing/verification/SLSA/SBOM is one byte-stable implementation instead of three hand-copied signers
+(conventions.md §9). Seal owns the *mechanism* of integrity and stops there (the production trust-root
+policy is decided with Hub); Core does not depend on it. See [seal.md](seal.md) and
+[guard.md](guard.md) §9.5.
 
 ---
 
-## 4. Component catalog — role · runtime · data · talks-to
+## 4. Component catalog
 
-| Component | Layer | Role (one line) | Runtime / where it runs | Key data it touches | Talks to (via) |
-|---|---|---|---|---|---|
-| [Core](core.md) | Backbone | The narrow-waist contracts | In-process library, everywhere | Schemas only (SADF, messages, manifests) | (depended on by all) |
-| [Spice](spice.md) ‡ | Backbone | SPICE-backed frame/time/geometry resolution (Core companion) | In-process library; kernels furnished locally | NAIF kernels (SPK/PCK/FK/LSK) → positions/rotations | Worlds, Link, Sim, Transit; depends on Core |
-| [Seal](seal.md) ¶ | Backbone | Artifact integrity: signing, verification, SLSA, SBOM (Core companion) | In-process library; keys furnished by host | Content digests + keys → Signature / provenance / SBOM | Fleet, Hub, Guard (+ producer frontier); depends on Core |
-| [Worlds](worlds.md) | World | Celestial-body environments from real DEMs | Library; data prep on Cloud | COG/Zarr terrain, SPICE frames, 3D Tiles | Sim, Prospect, Link, View (Env API) |
-| [Prospect](prospect.md) | World | Probabilistic resource fields w/ uncertainty | Library; inference on Cloud | Zarr ground-truth + belief fields | Sim, Mind, Allocate, Bench (Env API) |
-| [Link](link.md) | World | Comms environment (LOS, windows, latency) | Library; precompute on Cloud | SPICE geometry, contact graphs, time-series | Sim, Allocate, Mind, Ops (Env API) |
-| [Transit](transit.md) † | World | Deep-space / free-space dynamical + hazard environment | Library; precompute on Cloud | n-body ephemerides, gravity, radiation/thermal/MMOD fields | Sim, Trajectory, Link (Env API) |
-| [Fleet](fleet.md) | Assets | SADF asset library (orbiters→ISRU plants) | Library + content artifacts | SADF docs, USD/glTF geometry | Sim, Mind, Studio, Hub, Bridge (SADF) |
-| [Sim](sim.md) | Simulation | Multi-physics engine + scenario runtime | Library (local) / Ray workers (Cloud) | Env state, MCAP recordings | implements Env API; consumes Worlds/Prospect/Link/Fleet; Surrogate |
-| [Surrogate](surrogate.md) | Simulation | Learned fast physics w/ error bounds | GPU train (Cloud); ONNX inference in Sim | Training sets, ONNX models, error reports | Sim (fidelity tier), Learn, Hub |
-| [Mind](mind.md) | Autonomy | Hierarchical autonomy (plan→TAMP→control) | Library; ground+edge in Ops | Plans, behavior trees, capability decls | implements Policy API; Allocate, Learn, Guard, Sim |
-| [Learn](learn.md) | Autonomy | MARL toolkit (PettingZoo, RLlib) | Ray training on Cloud | Rollouts, ONNX policies, MLflow runs | wraps Sim as RL env; Surrogate, Hub, Bench |
-| [Allocate](allocate.md) | Autonomy | Task allocation & scheduling (CP-SAT + learned) | Library; large solves on Cloud | Constraint models, assignments | implements Policy API; Mind, Link/Worlds/Prospect |
-| [Guard](guard.md) | Autonomy | Runtime assurance / safety shields | Rust core; edge + central in Ops | Safety specs, verdicts | wraps Policy API outputs; Sim, Ops→Bridge |
-| [Trajectory](trajectory.md) † | Mission arch. | Design-time trajectory & maneuver optimization | Library; sweeps on Cloud | Reference trajectories, Δv/ToF budgets (descriptive) | Transit, Allocate, Sizing, Studio, Sim (validate) |
-| [Sizing](sizing.md) † | Mission arch. | Spacecraft & payload systems-engineering sizing | Library (OpenMDAO); sweeps on Cloud | Mass/power/propellant budgets → sized SADF | Trajectory, Fleet, Ledger, Studio |
-| [Ledger](ledger.md) † | Mission arch. | Open techno-economic value model (uncertainty) | Library (OpenMDAO/MC); on Cloud | Cost/value/risk distributions | Sizing, Trajectory, Prospect, Studio, Bench |
-| [Studio](studio.md) | Design | Goal-in/design-out authoring + trade studies | Web app (React + FastAPI) on Cloud | ObjectiveSpec, DesignCandidate, Campaign | orchestrates Sim/Learn/Mind/Allocate/Guard; Hub, Bench, View |
-| [Ops](ops.md) | Operations | Online orchestration + digital-twin shadow | Stateful service; ground + edge | Event-sourced state, telemetry, SLAM map | Sim (shadow), Mind/Allocate/Guard, Bridge, View |
-| [Bridge](bridge.md) | Operations | Hardware/flight-software abstraction | Adapters: ground + flight-adjacent | Core msgs ↔ ROS 2/cFS/F´/CCSDS | Ops; targets Sim or real hardware |
-| [View](view.md) | Operations | Visualization, telemetry, plan explanation | Embeddable React library (Cesium/OpenMCT) + stateless gateway | Telemetry, 3D Tiles, MCAP replays | Ops, Sim, Worlds; embedded in Studio and Console |
-| [Console](console.md) ◊ | Design & ops | The single GUI front door: composes per-component surfaces | Static SPA (TypeScript + React); no server | None owned — renders other components' REST edges | Studio, Hub, Bench (their own REST APIs); embeds View |
-| [Bench](bench.md) | Backbone | Benchmarks, scenario zoo, leaderboards | FastAPI + Postgres; eval on Cloud | Scenario specs, metrics, results | pins Core; runs Sim; Hub submissions; Cloud |
-| [Hub](hub.md) | Backbone | Registry for policies/worlds/assets/plugins | OCI registry + Postgres on Cloud | OCI artifacts, manifests, provenance | indexed by Core manifest; all producers/consumers |
-| [Cloud](cloud.md) | Backbone | Distributed sim/training orchestration | Kubernetes + Ray + Argo | Content-addressed datasets/artifacts | runs Sim/Learn/Allocate/Surrogate/Bench |
-| astro-mine-cli ◊◊ | Backbone | The discoverable umbrella CLI: `astro-mine <verb>` | Thin console script (near-zero deps); local everywhere | None owned — dispatches to component CLIs | discovers component CLIs via the `astro_mine.cli` entry-point group |
+### 4.1 What ships
 
-† Added by [RFC-0001](../rfc/0001-multi-regime-missions.md) (accepted; implementation Phase 3). "Mission arch." = the **Mission architecture & logistics** layer. Existing components are also *extended* for multi-regime scope — see §13.
+| Distribution | Kind | Contains | Doc |
+|---|---|---|---|
+| `astro-mine-platform` | Python wheel | every component below whose runtime is a library or a gRPC service | [platform.md](platform.md) |
+| `astro-mine-cli` | Python wheel | the one `astro-mine` executable, `astro-mine <component> <verb>` | [cli.md](cli.md) |
+| `astro-mine-api` | wheel + image | the Hub, Studio, Cloud and Bench REST surfaces | [api.md](api.md) |
+| `astro-mine-ui` | npm `@astro-mine/*` | the console shell, the surface contract, the design system, View, and the per-component surfaces | [ui.md](ui.md) |
 
-◊◊ Added by [RFC-0011](../rfc/0011-umbrella-cli.md) (accepted). `astro-mine-cli` (import `astro_mine.cli`) is a **thin dispatcher**, not a dependency-heavy super-package: it discovers subcommands from the `astro_mine.cli` entry-point group (the platform's established extension mechanism) and imports a component only when its verb runs, so the local tier stays light (CX-LOCAL). It makes **no** change to Core. Every component CLI keeps working directly; the umbrella is the discoverable front door.
+A component with more than one kind of surface is split by *kind*, not forked: Hub's client, index and
+registry are library code in the platform; its registry API is a route module in the API distribution;
+its browser surface is a package in the UI distribution. The design of all three lives in
+[hub.md](hub.md).
 
-‡ Added by [RFC-0002](../rfc/0002-shared-spice-foundation.md) (accepted; implementation Phase 0). [Spice](spice.md) is a **Core companion** — the SPICE-backed realization of Core's frame/time vocabulary that Core cannot host (heavy deps; core.md §2 principle 3). See §3 and [spice.md](spice.md).
+### 4.2 Role · runtime · data · talks-to
 
-¶ Added by [RFC-0005](../rfc/0005-seal-supply-chain-companion.md) (accepted; implementation Phase 1). [Seal](seal.md) is a **Core companion** — the artifact-integrity (signing / verification / SLSA / SBOM) realization of Core's `Signature`/`Verifier` surface that Core cannot host (crypto deps; core.md §2 principle 3). The single home for `cryptography`. See §3 and [seal.md](seal.md).
+| Component | Layer | Role (one line) | Runtime / where it runs | Ships in | Key data it touches | Talks to (via) |
+|---|---|---|---|---|---|---|
+| [Core](core.md) | Backbone | The narrow-waist contracts | In-process library, everywhere | platform | Schemas only (SADF, messages, manifests) | (depended on by all) |
+| [Spice](spice.md) | Backbone | SPICE-backed frame/time/geometry resolution (Core companion) | In-process library; kernels furnished locally | platform | NAIF kernels (SPK/PCK/FK/LSK) → positions/rotations | Worlds, Link, Sim, Transit; depends on Core |
+| [Seal](seal.md) | Backbone | Artifact integrity: signing, verification, SLSA, SBOM (Core companion) | In-process library; keys furnished by host | platform | Content digests + keys → Signature / provenance / SBOM | Fleet, Hub, Guard (+ producer frontier); depends on Core |
+| [Worlds](worlds.md) | World | Celestial-body environments from real DEMs | Library; data prep on Cloud | platform | COG/Zarr terrain, SPICE frames, 3D Tiles | Sim, Prospect, Link, View (Env API) |
+| [Prospect](prospect.md) | World | Probabilistic resource fields w/ uncertainty | Library + gRPC service; inference on Cloud | platform | Zarr ground-truth + belief fields | Sim, Mind, Allocate, Bench (Env API) |
+| [Link](link.md) | World | Comms environment (LOS, windows, latency) | Library; precompute on Cloud | platform | SPICE geometry, contact graphs, time-series | Sim, Allocate, Mind, Ops (Env API) |
+| [Transit](transit.md) † | World | Deep-space / free-space dynamical + hazard environment | Library; precompute on Cloud | platform (P3) | n-body ephemerides, gravity, radiation/thermal/MMOD fields | Sim, Trajectory, Link (Env API) |
+| [Fleet](fleet.md) | Assets | SADF asset library (orbiters→ISRU plants) | Library + content artifacts | platform | SADF docs, USD/glTF geometry | Sim, Mind, Studio, Hub, Bridge (SADF) |
+| [Sim](sim.md) | Simulation | Multi-physics engine + scenario runtime | Library (local) / Ray workers (Cloud) / gRPC service | platform | Env state, MCAP recordings | implements Env API; consumes Worlds/Prospect/Link/Fleet; Surrogate |
+| [Surrogate](surrogate.md) | Simulation | Learned fast physics w/ error bounds | GPU train (Cloud); ONNX inference in Sim | platform | Training sets, ONNX models, error reports | Sim (fidelity tier), Learn, Hub |
+| [Mind](mind.md) | Autonomy | Hierarchical autonomy (plan→TAMP→control) | Library; ground+edge in Ops | platform | Plans, behavior trees, capability decls | implements Policy API; Allocate, Learn, Guard, Sim |
+| [Learn](learn.md) | Autonomy | MARL toolkit (PettingZoo, RLlib) | Ray training on Cloud | platform | Rollouts, ONNX policies, MLflow runs | wraps Sim as RL env; Surrogate, Hub, Bench |
+| [Allocate](allocate.md) | Autonomy | Task allocation & scheduling (CP-SAT + learned) | Library; large solves on Cloud | platform | Constraint models, assignments | implements Policy API; Mind, Link/Worlds/Prospect |
+| [Guard](guard.md) | Autonomy | Runtime assurance / safety shields | Rust core in the wheel; edge + central in Ops | platform | Safety specs, verdicts | wraps Policy API outputs; Sim, Ops→Bridge |
+| [Trajectory](trajectory.md) † | Mission arch. | Design-time trajectory & maneuver optimization | Library; sweeps on Cloud | platform (P3) | Reference trajectories, Δv/ToF budgets (descriptive) | Transit, Allocate, Sizing, Studio, Sim (validate) |
+| [Sizing](sizing.md) † | Mission arch. | Spacecraft & payload systems-engineering sizing | Library (OpenMDAO); sweeps on Cloud | platform (P3) | Mass/power/propellant budgets → sized SADF | Trajectory, Fleet, Ledger, Studio |
+| [Ledger](ledger.md) † | Mission arch. | Open techno-economic value model (uncertainty) | Library (OpenMDAO/MC); on Cloud | platform (P3) | Cost/value/risk distributions | Sizing, Trajectory, Prospect, Studio, Bench |
+| [Studio](studio.md) | Design | Goal-in/design-out authoring + trade studies | Library + orchestration worker; REST + surface | platform · api · ui | ObjectiveSpec, DesignCandidate, Campaign | orchestrates Sim/Learn/Mind/Allocate/Guard; Hub, Bench, View |
+| [Ops](ops.md) | Operations | Online orchestration + digital-twin shadow | Stateful service; ground + edge | platform (P2) | Event-sourced state, telemetry, SLAM map | Sim (shadow), Mind/Allocate/Guard, Bridge, View |
+| [Bridge](bridge.md) | Operations | Hardware/flight-software abstraction | Adapters: ground + flight-adjacent | platform (P2) | Core msgs ↔ ROS 2/cFS/F´/CCSDS | Ops; targets Sim or real hardware |
+| [View](view.md) | Operations | Visualization, telemetry, plan explanation | Embeddable React library (Cesium/OpenMCT) | ui | Telemetry, 3D Tiles, MCAP replays | embedded by the console and by surfaces; reads Ops/Sim/Worlds data |
+| [Console](console.md) | Design & ops | The single GUI front door: composes per-component surfaces | Static SPA (TypeScript + React); no server | ui | None owned — renders what the API serves | the API distribution; embeds View |
+| [Bench](bench.md) | Backbone | Benchmarks, scenario zoo, leaderboards | Library + eval workers; REST + surface | platform · api · ui | Scenario specs, metrics, results | pins Core; runs Sim; Hub submissions; Cloud |
+| [Hub](hub.md) | Backbone | Registry for policies/worlds/assets/plugins | Tier-1 local OCI client; hosted registry + Postgres | platform · api · ui | OCI artifacts, manifests, provenance | indexed by Core manifest; all producers/consumers |
+| [Cloud](cloud.md) | Backbone | Distributed sim/training orchestration | Kubernetes + Ray + Argo; local backend | platform · api | Content-addressed datasets/artifacts | runs Sim/Learn/Allocate/Surrogate/Bench |
 
-◊ Added by [RFC-0010](../rfc/0010-console-surface-contract.md) (accepted; implementation Phase 1). [Console](console.md) is a **front-end package set** (TypeScript, repo `astro-mine-console`), not a Python component — `conventions.md` §2's Python-reachability rule binds components, and a front-end package renders capability a component already exposes rather than adding its own. It creates **no** platform capability, **no** REST surface, and **no** change to [Core](core.md): contributions are keyed by Core's existing `PluginKind` vocabulary, read by its published `$id` rather than extended. See [console.md](console.md).
+† Not yet built — the **mission architecture & logistics** layer and [Transit](transit.md) are Phase 3
+(§13). Existing components are also *extended* for multi-regime scope; see §13.2.
+
+**Where a component has no runtime of its own.** [Core](core.md), [Spice](spice.md) and
+[Seal](seal.md) are libraries other components call; they own no service and no user surface, which is
+the whole point of a companion (§3). The CLI is not in this table because it is not a component: it
+owns no capability, defines no schema, and holds no state — it is a surface over the components that
+do ([cli.md](cli.md)).
 
 ---
 
@@ -200,20 +255,30 @@ The system uses **three communication planes**, chosen per latency and criticali
 (conventions.md §4). Keeping them distinct is a deliberate architectural decision: a research
 laptop never needs DDS, and a flight-adjacent controller never needs Kafka.
 
-### 5.1 Control plane — synchronous, typed (gRPC / REST)
-Service-to-service calls (Studio→Sim, Ops→Mind, Bench→Sim, etc.) use **gRPC over HTTP/2** with
-Protobuf contracts generated from Core schemas. Browser- and tool-facing edges
-([Studio](studio.md), [Hub](hub.md), [Bench](bench.md), [View](view.md)) expose **REST +
-OpenAPI 3.1** via FastAPI. mTLS between services; OIDC + OPA for authz.
+Before any of them: **in-process is a plane too, and it is the default.** The CLI and the Python API
+call library functions directly. A local workflow — score the anchor, run an episode, validate an
+asset, train a policy — crosses no network at all, and that is a requirement rather than an
+optimization (§12 principle 1).
 
-**The GUI adds no edge of its own.** [Console](console.md) is a **static SPA configured with
-per-surface base URLs**: each surface it composes receives its own injected client and calls its own
-component's existing FastAPI directly. There is **no unified REST gateway and no
-backend-for-frontend in front of the platform** — a gateway is Phase 2 at the earliest, if it is
-ever justified ([RFC-0010](../rfc/0010-console-surface-contract.md)). Endpoint configuration is
-loaded at boot rather than compiled in, so one build is deployable by someone other than its
-builder. Note that [View](view.md)'s own `gateway/` is View's telemetry/tile fan-out backend, not a
-platform API gateway; the two are unrelated and neither exists in Phase 1.
+### 5.1 Control plane — synchronous, typed (gRPC / REST)
+Service-to-service calls between running services use **gRPC over HTTP/2** with Protobuf contracts
+generated from Core schemas; [Sim](sim.md) and [Prospect](prospect.md) serve theirs from the platform
+wheel. Browser- and tool-facing edges are **REST + OpenAPI 3.1** via FastAPI, and they all live in
+[`astro-mine-api`](api.md): the Hub registry, the Studio API, Cloud's submission service, and the Bench
+leaderboard. mTLS between services; OIDC + OPA for authz.
+
+**The API distribution is a composition, not a gateway.** It mounts each component's route modules
+into one deployable so REST conventions, auth, and telemetry are decided once. It adds **no**
+aggregation endpoint, **no** request rewriting, and **no** backend-for-frontend: a console surface
+still calls the routes of the component it is a surface for. The practical difference from the earlier
+per-component services is operational — one image, and one origin to configure instead of four. A true
+gateway, with its own composed API, remains a Phase-2-at-the-earliest question and would need its own
+justification.
+
+**The GUI adds no edge of its own.** [Console](console.md) is a static SPA; endpoint configuration is
+loaded at boot rather than compiled in, so one build is deployable by someone other than its builder.
+Note that [View](view.md)'s telemetry/tile fan-out backend, where it exists, is View's own and is not a
+platform API gateway; the two are unrelated.
 
 ### 5.2 Eventing / orchestration plane — asynchronous (NATS / Kafka)
 Job lifecycles, hub events, bench-result ingestion, and Studio's long-running design jobs flow
@@ -269,6 +334,10 @@ hold. [Bench](bench.md) scores candidates on shared scenarios; [Hub](hub.md) sto
 everything produced; [Cloud](cloud.md) runs it all at scale. **Wall-clock and cost are governed
 by Sim's multi-fidelity scheduler trusting Surrogate's tracked error bounds.**
 
+Every arrow in that diagram is an **in-process call** in a local run: the loop is library code
+calling library code, in one process, from one wheel. The service tiers change where it runs, not what
+calls what.
+
 For complete multi-regime missions, [Studio](studio.md)'s **Mission Architect** mode wraps this
 loop in an outer **trajectory ⇄ fleet ⇄ swarm ⇄ economics** co-optimization that adds
 [Trajectory](trajectory.md), [Sizing](sizing.md), and [Ledger](ledger.md) — detailed in §13.
@@ -305,7 +374,8 @@ intent-envelope approval (delay-tolerant adjustable autonomy).
 
 **The reuse is the point:** Mind, Allocate, Guard, and Sim appear in *both* loops. A planner
 improved for design improves operations; a scenario validated in design becomes the shadow twin
-in operations.
+in operations. One wheel makes that literal — the operations loop imports the same modules the
+design loop did, at the same version, with no possibility of the two drifting apart.
 
 ---
 
@@ -330,45 +400,61 @@ Datasets, policies, surrogates, and scenarios are **content-addressed**, so any
 [Bench](bench.md) result can be reproduced byte-for-byte. This is the technical foundation of
 the academic flywheel — a leaderboard number is meaningless if it cannot be reproduced.
 
+**One consequence of one wheel worth stating.** "Producing code version" used to mean a set of
+component versions, and reproducing a result meant reconstructing that set. It is now a single
+version, which is a real simplification — and it is *not* what the reproducibility guarantee rests on.
+That still rests on the content addresses and the pinned schema digest, because an environment pin is
+over-sensitive (any unrelated dependency bump changes it) and unavailable to a non-Python consumer.
+
 ---
 
 ## 8. Deployment topology
 
 The platform is designed so the **local/dev tier always works without the cloud** — a
-researcher can clone, run a scenario, and score a baseline in an afternoon (charter §13).
+researcher can install, run a scenario, and score a baseline in an afternoon (charter §12).
 Higher tiers are accelerators and operational surfaces, never hard dependencies.
 
-| Tier | What runs | Substrate | Notes |
-|---|---|---|---|
-| **Local / dev** | Core + Sim + Worlds + Fleet + Bench (+ Mind/Learn at small scale) | One workstation, `docker compose` / single Python env | The MVP loop; `Cloud` not required |
-| **Cloud** | Sim sweeps, Learn training, Allocate solves, Surrogate training, Bench eval; Hub + Studio backends | Kubernetes + Ray (KubeRay) + Argo; GPU Operator | Horizontal scale-out ([Cloud](cloud.md)); spot/preemptible + checkpointing |
-| **Operations / ground** | Ops, View, Studio; Bridge (ground side); Guard central supervisor | K8s or on-prem; ROS 2/DDS data plane | Operator-facing; delay-tolerant |
-| **Edge / onboard-analog** | Per-agent Mind executive + controllers + Guard shield | Edge runtime (ONNX Runtime, Rust Guard core) | Runs off-network for hard-constraint enforcement |
-| **Flight-adjacent** (Phase 3) | Bridge flight adapters (cFS/F´/CCSDS) | Ground systems near mission | Mostly out of open scope; access-controlled |
+| Tier | What runs | Distributions | Substrate | Notes |
+|---|---|---|---|---|
+| **Local / dev** | Core + Sim + Worlds + Fleet + Bench (+ Mind/Learn at small scale) | platform · cli | One workstation, one Python environment | The MVP loop; no service, no account, no cloud |
+| **Cloud** | Sim sweeps, Learn training, Allocate solves, Surrogate training, Bench eval; the hosted registry, leaderboard and Studio backends | platform · api | Kubernetes + Ray (KubeRay) + Argo; GPU Operator | Horizontal scale-out ([Cloud](cloud.md)); spot/preemptible + checkpointing |
+| **GUI** | The console SPA, served statically against a configured API origin | ui (+ api) | Any static host / CDN | No server of its own (§5.1) |
+| **Operations / ground** | Ops, View, Studio; Bridge (ground side); Guard central supervisor | platform · api · ui | K8s or on-prem; ROS 2/DDS data plane | Operator-facing; delay-tolerant |
+| **Edge / onboard-analog** | Per-agent Mind executive + controllers + Guard shield | platform | Edge runtime (ONNX Runtime, Guard's Rust core) | Runs off-network for hard-constraint enforcement |
+| **Flight-adjacent** (Phase 3) | Bridge flight adapters (cFS/F´/CCSDS) | platform (partitioned) | Ground systems near mission | Mostly out of open scope; access-controlled |
+
+The edge tier is the one place one wheel is a genuine cost: an onboard-analog install carries the
+whole base dependency set to run a shield and a controller. That is a known tension and the reason
+Guard's trusted core is a self-contained compiled extension rather than a Python stack — the
+assurance path does not depend on the rest of the wheel being reachable, only on being installed.
 
 ---
 
 ## 9. Cross-cutting concerns, realized system-wide
 
 - **Identity & authz:** OIDC across services; **OPA** policy decisions gate sensitive actions
-  and, crucially, *capability-tagged* artifacts and adapters (export-control gating).
+  and, crucially, *capability-tagged* artifacts and adapters (export-control gating). The two places
+  a tag is actually checked are [Hub](hub.md) admission and [Bridge](bridge.md) dispatch — the
+  boundaries where a capability leaves the commons (conventions.md §12).
 - **The safety chain:** learned/planned decisions are never actuated raw. Every action crosses
   [Guard](guard.md) — an independent, Rust-cored, fail-safe assurance layer that does **not**
   depend on the components it protects — before reaching [Sim](sim.md) (design) or
   [Bridge](bridge.md) (operations). In operations, dispatch additionally requires a shadow-twin
-  verdict from [Ops](ops.md).
+  verdict from [Ops](ops.md). Guard's independence is now an import-graph property a layering test
+  asserts, not a fact about which repository it lived in.
 - **Supply-chain integrity:** all shared artifacts are signed (Sigstore/cosign), carry SLSA
   provenance + SBOMs, and are re-verified at pull by [Hub](hub.md); plugins load only after
-  manifest signature + Core version checks. Untrusted plugins run sandboxed (containers/gVisor;
-  WASM later).
+  manifest signature + Core version checks. One implementation of all of it, in [Seal](seal.md).
+  Untrusted plugins run sandboxed (containers/gVisor; WASM later).
 - **Observability:** OpenTelemetry traces span both loops, so a replan in [Ops](ops.md) is
   traceable through [Mind](mind.md)/[Allocate](allocate.md)/[Guard](guard.md); Prometheus +
   Grafana + Loki for metrics/logs.
 - **Export control / dual use (conventions.md §12):** the open commons is the science,
   simulation, and coordination layer. Genuinely sensitive operational capability concentrates
   at [Bridge](bridge.md) (and parts of [Ops](ops.md)/[Mind](mind.md)/[Allocate](allocate.md)),
-  is partitioned into access-controlled repos, and the certification-grade flight-code/targeting
-  generator is structurally excluded from scope.
+  is gated by capability tag and partitioned out of the open library where the code itself is the
+  concern, and the certification-grade flight-code/targeting generator is structurally excluded from
+  scope.
 
 ---
 
@@ -402,6 +488,9 @@ Higher tiers are accelerators and operational surfaces, never hard dependencies.
 7. **Close the loop.** Field/sim telemetry refines [Prospect](prospect.md)'s belief field and
    feeds new [Bench](bench.md) scenarios — the commons compounds.
 
+Steps 1–5 run today, on one workstation, from `astro-mine-cli` and the console; the
+[guide](../guide/README.md) walks them. Step 6 is Phase 2.
+
 ---
 
 ## 11. Roadmap view — how the system grows
@@ -410,18 +499,22 @@ Higher tiers are accelerators and operational surfaces, never hard dependencies.
 > stable `RM-*` item IDs — lives in [roadmap/](../roadmap/README.md). This section is the integration
 > summary.
 
-| Phase | Components stood up | System capability |
-|---|---|---|
-| **0 · 0–12 mo** | [Core](core.md) v0.1, [Sim](sim.md), [Worlds](worlds.md), [Fleet](fleet.md), [Bench](bench.md) (+ [Prospect](prospect.md), local [Cloud](cloud.md)) | A runnable, reproducible benchmark on the anchor scenario |
-| **1 · 12–30 mo** | [Mind](mind.md), [Learn](learn.md), [Allocate](allocate.md), [Guard](guard.md), [Studio](studio.md), [Hub](hub.md), [Surrogate](surrogate.md), [Link](link.md), full [Cloud](cloud.md) | The MARL + planning commons; public leaderboards & plugins |
-| **2 · 30–54 mo** | [Ops](ops.md), [Bridge](bridge.md), [View](view.md) | Cross the sim→operations threshold on Earth analogs |
-| **3 · 54 mo+** | [Bridge](bridge.md) flight adapters; the **mission-architecture track** ([Transit](transit.md), [Trajectory](trajectory.md), [Sizing](sizing.md), [Ledger](ledger.md)) + small-body/microgravity extensions; **NEO sample-return** then **asteroid-mining** scenarios; new bodies as plugins | Default stack — surface ISRU *and* interplanetary resource missions — as the cislunar economy matures |
+| Phase | Components stood up | System capability | State |
+|---|---|---|---|
+| **0** | [Core](core.md) v0.1, [Spice](spice.md), [Sim](sim.md), [Worlds](worlds.md), [Fleet](fleet.md), [Bench](bench.md) (+ [Prospect](prospect.md), [Link](link.md) MVP, local [Cloud](cloud.md)) | A runnable, reproducible benchmark on the anchor scenario | **built** |
+| **1** | [Mind](mind.md), [Learn](learn.md), [Allocate](allocate.md), [Guard](guard.md), [Studio](studio.md), [Hub](hub.md), [Surrogate](surrogate.md), [Seal](seal.md), full [Link](link.md) and [Cloud](cloud.md); the [console](console.md) and the [CLI](cli.md) | The MARL + planning commons; public leaderboards & plugins | **built** |
+| — | *(no new components)* | The four distributions: consolidate the components into one wheel, move the CLI out, then stand up [`astro-mine-api`](api.md) and [`astro-mine-ui`](ui.md) | **in progress** |
+| **2** | [Ops](ops.md), [Bridge](bridge.md), the full [View](view.md) ops viewer | Cross the sim→operations threshold on Earth analogs | next |
+| **3** | [Bridge](bridge.md) flight adapters; the **mission-architecture track** ([Transit](transit.md), [Trajectory](trajectory.md), [Sizing](sizing.md), [Ledger](ledger.md)) + small-body/microgravity extensions; **NEO sample-return** then **asteroid-mining** scenarios; new bodies as plugins | Default stack — surface ISRU *and* interplanetary resource missions — as the cislunar economy matures | later |
 
 The narrow waist is what makes this sequencing safe: later phases add edges, not core
-rewrites. Success is measured by how *little* [Core](core.md) changes as the platform grows.
-The multi-regime mission-architecture track (RFC-0001, §13) is **opt-in and gated behind the
-lunar MVP**; its only Phase-1 obligation is reserving the additive Mission/Phase/Regime Core
-schema hooks.
+rewrites. Success is measured by how *little* [Core](core.md) changes as the platform grows — and the
+consolidation is evidence for the claim rather than against it: eighteen repositories collapsed into
+four distributions with import paths, schemas, `$id`s, entry points and public APIs unchanged, which
+is only possible if the contracts were where the value was.
+
+The multi-regime mission-architecture track (§13) is **opt-in and gated behind the lunar MVP**; its
+only Phase-1 obligation is reserving the additive Mission/Phase/Regime Core schema hooks.
 
 ---
 
@@ -430,14 +523,18 @@ schema hooks.
 **Principles** (in addition to each component's own):
 
 1. The local/dev loop is sacred — it must run with no cloud, no accounts, no services.
-2. One contract per concern, owned by Core; no private side-channels between components.
+2. One contract per concern, owned by Core; no private side-channels between components — and now
+   that there is no packaging barrier, that is asserted by a layering test rather than assumed.
 3. Decisions are never actuated unassured — Guard is on every path to actuation.
 4. Reproducibility is a system property, not a feature of Bench — content-addressing and
    provenance are pervasive.
 5. The three communication planes stay separate; Bridge is the only door between the platform
-   and the robotics/flight plane.
+   and the robotics/flight plane. In-process is the default plane, not a degraded one.
 6. Capability is declared and gated, not assumed — the same mechanism serves autonomy
-   negotiation and export control.
+   negotiation and export control, and it is checked at a boundary rather than honoured by
+   convention.
+7. A component owns capability; a distribution owns release. Confusing the two is what produced
+   eighteen release processes for one platform.
 
 **Cross-cutting open questions** (each elaborated in the relevant component doc):
 
@@ -449,16 +546,18 @@ schema hooks.
 - **Evaluation science**: what "good" means for a multi-week ISRU campaign ([Bench](bench.md)).
 - **Sim-to-real credibility** without on-world data — the central trust problem the whole
   stack must eventually answer (charter §9).
+- **The edge install.** One wheel is the right answer for a workstation and an awkward one for an
+  onboard-analog target (§8). Whether the assurance path eventually needs a distribution of its own
+  is an open question, not a settled one.
 
 ---
 
-## 13. Multi-regime missions (RFC-0001)
+## 13. Multi-regime missions
 
-[RFC-0001](../rfc/0001-multi-regime-missions.md) (accepted) extends the platform from single-body
-surface campaigns to complete **interplanetary missions** — asteroid mining, NEO sample-return,
-cislunar logistics — without becoming a different system. The generalization is additive and
-specified in [mission-model.md](mission-model.md); this section shows how it threads through the
-system above.
+The platform extends from single-body surface campaigns to complete **interplanetary missions** —
+asteroid mining, NEO sample-return, cislunar logistics — without becoming a different system. The
+generalization is additive and specified in [mission-model.md](mission-model.md); this section shows
+how it threads through the system above. Implementation is Phase 3.
 
 ### 13.1 The Mission / Phase / Regime model
 A **Mission** is an ordered set of **Phases**, each in a **Regime** (`launch_ascent ·
@@ -481,7 +580,11 @@ phase-sequencing **mechanism** lives in the [Sim](sim.md)/[Ops](ops.md) runtime 
   ([Link](link.md)), propulsion ([Fleet](fleet.md)), window-gated planning
   ([Mind](mind.md)/[Allocate](allocate.md)/[Guard](guard.md)), multi-phase ops
   ([Ops](ops.md)/[Bridge](bridge.md)/[View](view.md)), mission scenarios ([Bench](bench.md)),
-  and artifacts ([Hub](hub.md)/[Cloud](cloud.md)). See [RFC-0001](../rfc/0001-multi-regime-missions.md) §4.
+  and artifacts ([Hub](hub.md)/[Cloud](cloud.md)). See [mission-model.md](mission-model.md).
+- All four new components land as subpackages of [`astro-mine-platform`](platform.md). The track
+  adds a *layer* to the architecture and **no** distribution — which is a useful test of the
+  distribution model: if a whole new layer needs no new release process, the model is carrying its
+  weight.
 
 ### 13.3 The mission-architecture loop
 [Studio](studio.md)'s **Mission Architect** mode wraps the design loop (§6.1) in an outer
@@ -514,9 +617,10 @@ vehicle⇄economics inner loop; the result is a declarative `MissionSpec` handed
 
 ### 13.5 What stays out
 Operational maneuver targeting, guided atmospheric entry/recovery, and proprietary mission
-economics are deliberately excluded or partitioned (charter §10.5, conventions.md §12).
+economics are deliberately excluded or partitioned (charter §9.5, conventions.md §12).
 [Trajectory](trajectory.md) is design-time exploration only; its `TrajectoryRef` artifacts omit
-any executable-guidance fields by schema.
+any executable-guidance fields by schema — which is the strongest form of the gate, because a field
+that does not exist cannot be populated by a caller who means well.
 
 ### 13.6 Deployment & roadmap
 The mission-architecture engines are design-time **batch** workloads — trajectory window /
