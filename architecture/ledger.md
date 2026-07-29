@@ -1,6 +1,7 @@
 # Astro-Mine-Ledger — Technology Architecture
 
-> Status: **Accepted** ([RFC-0001: Multi-regime missions](../rfc/0001-multi-regime-missions.md)) — implementation Phase 3.
+> Status: **Designed, not built** — the [multi-regime mission track](mission-model.md) lands in Phase 3.
+> Ships in: [`astro-mine-platform`](platform.md), as a new subpackage.
 > Layer: **Mission architecture & logistics** (NEW layer) · Phase: **3** (proposed)
 > Open techno-economic & logistics modeling — cost / value / risk under explicit uncertainty: the mission-level objective / value function for trade studies.
 > Cross-cutting standards: see [conventions.md](conventions.md).
@@ -85,7 +86,7 @@ proprietary layer that sustains the commons).
 6. **It is the objective, not the optimizer.** Ledger exposes a differentiable-where-possible
    `ValueModel`; [Studio](studio.md) and the OpenMDAO MDO graph *call* it as the objective.
    Search strategy, Pareto computation, and design-of-experiments live in [Studio](studio.md).
-7. **Library first.** An analyst can `pip install astro-mine-ledger`, load public CERs, feed a
+7. **Library first.** An analyst can `pip install astro-mine-cli`, load public CERs, feed a
    `MissionSpec` plus a Prospect field, and Monte-Carlo an ROI distribution on a laptop — before
    any service exists (conventions.md §1.4).
 8. **Composable accounting, traceable to source.** Mission value decomposes into per-phase,
@@ -191,7 +192,7 @@ against one consistent economic model; orchestrated over **NATS/JetStream** when
   (conventions.md §3).
 - **Runtime model:** importable library; optional **FastAPI** (admin/REST) + **gRPC** objective
   service (conventions.md §3, §4).
-- **Build/packaging:** Python wheel `astro-mine-ledger`; OCI image for the objective service;
+- **Build/packaging:** ships in the [`astro-mine-platform`](platform.md) wheel; OCI image for the objective service;
   cost/value/price backends distributed as **OCI plugin artifacts**, **access-gated for proprietary
   models** (conventions.md §7, §12).
 
@@ -428,7 +429,7 @@ Performance claims ship with reproducible benchmarks (conventions.md §8).
 
 ## 12. Roadmap alignment
 
-- **Phase 3 (proposed — gated on [RFC-0001](../rfc/0001-multi-regime-missions.md)).**
+- **Phase 3 (proposed — gated behind the lunar MVP; see [mission-model.md](mission-model.md)).**
   Ledger is part of the multi-regime/interplanetary extension and lands with its siblings
   ([Sizing](sizing.md), [Trajectory](trajectory.md)) once the [mission-model](mission-model.md)
   `MissionSpec`/`objective` schema hooks exist in Core. Initial deliverable:

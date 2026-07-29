@@ -1,6 +1,7 @@
 # Astro-Mine-Trajectory — Technology Architecture
 
-> Status: **Accepted** ([RFC-0001: Multi-regime missions](../rfc/0001-multi-regime-missions.md)) — implementation Phase 3.
+> Status: **Designed, not built** — the [multi-regime mission track](mission-model.md) lands in Phase 3.
+> Ships in: [`astro-mine-platform`](platform.md), as a new subpackage.
 > Layer: **Mission architecture & logistics (NEW layer)** · Phase: **3** (proposed)
 > Design-time trajectory & maneuver optimization across mission regimes — the platform's first component that *optimizes* trajectories rather than merely propagating them.
 > Cross-cutting standards: see [conventions.md](conventions.md).
@@ -185,7 +186,8 @@ worker fleet with **NATS+JetStream** job lifecycle (conventions.md §4), deploye
 - **Runtime model:** synchronous library call for a single leg/scan; async streaming gRPC for
   large sweeps. Search is CPU-bound and **embarrassingly parallel** across window cells, seeds,
   and pygmo islands.
-- **Build/packaging:** Python wheel `astro-mine-trajectory`; OCI image bundling pinned pykep/
+- **Build/packaging:** ships in the [`astro-mine-platform`](platform.md) wheel, with pykep/pygmo behind a
+  `trajectory-*` extra so the local tier stays installable without a global optimizer; OCI image bundling pinned pykep/
   pygmo/poliastro and a JVM for Orekit, for reproducible builds (conventions.md §7). GMAT/STK/
   Copernicus shipped as optional, license-gated extras, never default dependencies.
 
@@ -205,7 +207,7 @@ arcs and budgets — and persists little beyond results and provenance.
     the tabular porkchop/Pareto data for [Studio](studio.md) and [View](view.md);
   - **verification residuals** — the oracle/Sim re-propagation deltas attached to each `TrajectoryRef`.
 - **Consumes:** **force models + ephemerides** from [Transit](transit.md) and SPICE geometry via the
-  shared **`astro-mine-spice`** foundation ([RFC-0002](../rfc/0002-shared-spice-foundation.md); frames,
+  shared **`astro-mine-spice`** foundation ([Spice](spice.md); frames,
   TDB/ET epochs); **propulsion/Δv capability** from [Fleet](fleet.md) SADF
   (mission-model.md §2.1); **body shape/gravity field** from [Worlds](worlds.md) for proximity
   legs. All states carry an explicit planetary/inertial CRS resolved via SPICE/PROJ and SI units
@@ -272,7 +274,7 @@ Core contracts (conventions.md §1.1); it creates no private side-channels.
 ## 7. Infrastructure & deployment
 
 - **Deployment tiers (conventions.md §7):**
-  1. **Local/dev** — `pip install astro-mine-trajectory`; a Lambert solve, a single low-thrust
+  1. **Local/dev** — `pip install astro-mine-cli`; a Lambert solve, a single low-thrust
      leg, or a modest porkchop grid runs in-process on a workstation in seconds to minutes. **This
      tier MUST always work** — a designer scans a launch window in an afternoon.
   2. **Cloud** — a gRPC optimizer service plus **Ray** for parallel window sweeps and pygmo
@@ -341,7 +343,7 @@ This section is **central** to Trajectory; the dual-use boundary is the defining
      construction* (§5): boundary states + maneuver budget + coarse-epoch reference control
      envelope, and it **omits** the fields a command format needs (no actuator command channel, no
      closed-loop gains, no flight-clock execution binding). The schema is where the back-door
-     command format (mission-model.md §6) is foreclosed; any RFC that would add such fields is
+     command format (mission-model.md §6) is foreclosed; any change that would add such fields is
      where the dual-use review happens.
   2. **Capability tag (the gate).** Trajectory declares only design-time capability tags in its
      Core manifest; it does **not** declare `operational_targeting` (mission-model.md §2.4). The
@@ -416,7 +418,7 @@ This section is **central** to Trajectory; the dual-use boundary is the defining
 
 - **`TrajectoryRef` structure (mission-model.md §6):** the exact minimal field set that supports
   trade studies *and* Sim validation while provably excluding a command format — resolved in
-  [RFC-0001](../rfc/0001-multi-regime-missions.md)
+  [multi-regime missions](mission-model.md)
   and co-designed with [Core](core.md) and governance/export-control.
 - **Co-optimization coupling (mission-model.md §6):** how tightly to couple trajectory ⇄ fleet ⇄
   Δv/propellant ⇄ swarm ⇄ economics — a fully-coupled global optimum vs. iterated fixed-point

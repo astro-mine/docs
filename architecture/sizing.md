@@ -1,6 +1,7 @@
 # Astro-Mine-Sizing — Technology Architecture
 
-> Status: **Accepted** ([RFC-0001: Multi-regime missions](../rfc/0001-multi-regime-missions.md)) — implementation Phase 3.
+> Status: **Designed, not built** — the [multi-regime mission track](mission-model.md) lands in Phase 3.
+> Ships in: [`astro-mine-platform`](platform.md), as a new subpackage.
 > Layer: **Mission architecture & logistics (NEW layer)** · Phase: **3** (proposed)
 > Spacecraft & payload systems-engineering sizing: mass/power/propellant/staging budgets, payload packing, launch manifesting, reusable-LEO accounting.
 > Cross-cutting standards: see [conventions.md](conventions.md).
@@ -181,10 +182,10 @@ never sits on a simulation or operations hot path.
 - **SADF emit.** Reuses [Fleet](fleet.md)'s authoring helpers and Core SADF Pydantic types so a
   `SizedConfiguration` produces a *valid* SADF document that [Fleet](fleet.md) lints and packages —
   Sizing does not re-implement SADF serialization.
-- **Build/packaging.** Python wheel `astro-mine-sizing` (import `astro_mine.sizing`,
-  conventions.md §13); **SemVer**. Subsystem-model and launch-curve *data* are versioned and
-  distributed independently as **OCI artifacts** via [Hub](hub.md) (conventions.md §7), so model
-  updates don't require a toolchain release.
+- **Build/packaging.** Ships in the [`astro-mine-platform`](platform.md) wheel as
+  `astro_mine.sizing` (conventions.md §13). Subsystem-model and launch-curve *data* are versioned and
+  distributed independently as **OCI artifacts** via [Hub](hub.md) (conventions.md §7), so a model
+  update is not a code release.
 
 ---
 

@@ -1,6 +1,7 @@
 # Astro-Mine-Ops — Technology Architecture
 
-> Layer: **Operations runtime (online mode)** · Phase: **2** · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
+> Layer: **Operations runtime (online mode)** · Phase: **2** · **Designed, not built.**
+> Ships in: [`astro-mine-platform`](platform.md), as a new subpackage (its supervisory GUI as a console surface in [`astro-mine-ui`](ui.md)) · Extended for multi-regime missions (Phase 3)
 > The threshold from simulation to reality — one operator supervising many robots across minutes of latency.
 > Cross-cutting standards: see [conventions.md](conventions.md).
 
@@ -32,9 +33,9 @@ Concretely, Ops:
 - operates under **delay-tolerant supervisory autonomy**: the operator approves intent on the
   ground, the edge executes it autonomously across the comms gap.
 
-**Multi-phase mission operations (RFC-0001).** Beyond a single-body campaign, Ops *runs the live
+**Multi-phase mission operations.** Beyond a single-body campaign, Ops *runs the live
 phases* of a multi-regime [Mission](mission-model.md) — an ordered set of phases each in its own
-regime (transit, proximity, surface, ascent/return). Per RFC-0001 Resolution R2, Ops owns the
+regime (transit, proximity, surface, ascent/return). By the mission model's division of labour, Ops owns the
 **operational** half of phase sequencing: a per-phase executor mirrors [Sim](sim.md)'s
 scenario-runtime sequencer mechanism, performs the `PhaseTransition` handoff (the terminal state
 of one phase seeds the next), and applies cross-phase replanning *policy* authored in
@@ -127,9 +128,9 @@ astro_mine.ops
 - **Mission session** — a running campaign instance: its plan, fleet roster (SADF assets via
   [Fleet](fleet.md)), bound world ([Worlds](worlds.md)/[Prospect](prospect.md)/[Link](link.md)),
   current belief state, the event-log stream, and the shadow-twin handle. Reconstructable from
-  the event log alone. **Multi-regime (RFC-0001):** a session may span an ordered set of phases;
+  the event log alone. **Multi-regime:** a session may span an ordered set of phases;
   it then carries the active phase, its regime, and the bound environment for that phase.
-- **Phase executor (RFC-0001)** — the per-phase operational sequencer: it runs the live phase,
+- **Phase executor** — the per-phase operational sequencer: it runs the live phase,
   evaluates its entry/exit conditions against the fleet belief, emits the typed `PhaseTransition`
   handoff, and re-binds the world/autonomy posture for the successor regime. It is the
   operations-side mirror of [Sim](sim.md)'s scenario-runtime sequencer (mechanism); the
@@ -192,7 +193,7 @@ shadow twin's prediction; a flagged deviation re-enters the command path at `pro
 - **APIs.** External/console surface is **REST + OpenAPI 3.1 via FastAPI**; internal
   service-to-service is **gRPC** over HTTP/2; high-rate telemetry uses FlatBuffers/Cap'n Proto
   encodings (conventions.md §3). GraphQL only where the console's query shape demands it.
-- **Build/packaging.** Python wheel `astro-mine-ops`; OCI images for the orchestrator,
+- **Build/packaging.** Ships in the [`astro-mine-platform`](platform.md) wheel; OCI images for the orchestrator,
   estimator, shadow-manager, and console-backend services; the React console as a static
   bundle. SemVer; declares the Core interface major versions it supports (conventions.md §7,
   §13).
@@ -254,10 +255,10 @@ through Core contracts — never private side-channels (conventions.md §1.1):
 - **Depends on** [Core](core.md) for SADF, the Environment and Policy/Planner contracts, and
   message schemas; uses [Worlds](worlds.md)/[Prospect](prospect.md) as the bound world model.
 
-**Multi-phase mission operations (RFC-0001).** For multi-regime missions, Ops consumes a
+**Multi-phase mission operations.** For multi-regime missions, Ops consumes a
 validated `MissionSpec` from [Studio](studio.md) (referenced via [Hub](hub.md) by content hash)
 and runs its phases live through the phase executor, which **mirrors [Sim](sim.md)'s
-scenario-runtime sequencer mechanism** (RFC-0001 R2): it performs each `PhaseTransition` handoff
+scenario-runtime sequencer mechanism** ([mission-model.md](mission-model.md)): it performs each `PhaseTransition` handoff
 on the Core Environment API and applies cross-phase replanning policy authored in
 [Studio](studio.md). The shadow twin is multi-regime — it spans transit, proximity, and surface
 phases and **vets each phase's plan via [Sim](sim.md) before commit**, switching the bound
@@ -407,7 +408,7 @@ alongside [Guard](guard.md) and [Bridge](bridge.md).
 | **Shadow-twin sync & vetting gate** | Continuous lock-step twin; on-demand vet per replan; ahead-of-time predictive twin | **Predictive twin run ahead of real time + a mandatory on-demand vet at each commit.** Continuous lock-step is too costly at fidelity; the twin predicts forward from the live belief and every replan must clear a fresh vet before dispatch. |
 | **Shadow-twin fidelity** | Always high-fidelity; always surrogate; adaptive | **Adaptive multi-fidelity** (conventions.md §8): [Surrogate](surrogate.md) for routine vetting to stay ahead of real time; escalate to high-fidelity [Sim](sim.md) for high-risk/low-margin plans. |
 | **HITL supervisory model** | Direct teleoperation; supervised autonomy; adjustable/sliding autonomy | **Adjustable autonomy with intent-envelope approval** as default; teleoperation only for short-latency analog/contingency cases. Operator approves bounded intent; edge executes within it (charter §7). |
-| **Phase-gated autonomy posture (RFC-0001)** | Fixed posture all mission; per-phase manual; **regime-gated automatic ratchet** | **Regime-gated ratchet:** the autonomy level steps up automatically for high-latency deep-space phases (`interplanetary_transit`/`proximity_orbit`) — the operator approves an intent envelope over tens-of-minutes light-time and the onboard-analog/edge executes it; it steps back down for low-latency surface/analog phases. Posture is bound to the phase's regime and re-evaluated at each `PhaseTransition`. |
+| **Phase-gated autonomy posture** | Fixed posture all mission; per-phase manual; **regime-gated automatic ratchet** | **Regime-gated ratchet:** the autonomy level steps up automatically for high-latency deep-space phases (`interplanetary_transit`/`proximity_orbit`) — the operator approves an intent envelope over tens-of-minutes light-time and the onboard-analog/edge executes it; it steps back down for low-latency surface/analog phases. Posture is bound to the phase's regime and re-evaluated at each `PhaseTransition`. |
 | **Deployment locus** | Pure ground-station; pure edge/onboard; ground+edge split | **Ground+edge split:** heavy estimation/shadow/replanning on the ground; a thin `Guard`-wrapped intent executor at the edge for delay tolerance (conventions.md §7 tier 3). |
 | **Live-state store** | Redis; in-memory only; Postgres only | **Redis** for hot live state, rebuildable from the MCAP event log (conventions.md §5). |
 | **Ground eventing** | NATS/JetStream; Kafka; ROS 2 topics for everything | **NATS/JetStream** in the ground segment (conventions.md §4); **ROS 2/DDS only on the robot data plane** via [Bridge](bridge.md). Kafka only if a durable high-throughput replay log at scale is later required. |
@@ -448,10 +449,10 @@ alongside [Guard](guard.md) and [Bridge](bridge.md).
   adapters (cFS/F´/CCSDS), with the genuinely sensitive/flight-specific capability **partitioned
   out of the open core** per the dual-use posture (charter §9.5, conventions.md §12). The open
   Ops runtime remains the general, sim-and-analog-grade supervisory orchestrator.
-  - **Multi-regime mission operations (RFC-0001, Phase 3).** The phase executor, multi-regime
+  - **Multi-regime mission operations (Phase 3).** The phase executor, multi-regime
     shadow twin, and phase-gated adjustable autonomy land here; Ops's only Phase-1 obligation is
     that Core reserves the `MissionSpec`/`PhaseTransition` schema hooks the executor consumes
-    (RFC-0001 R5). The track is opt-in and must not gate the Phase-2 lunar/analog MVP.
+    ([mission-model.md](mission-model.md)). The track is opt-in and must not gate the Phase-2 lunar/analog MVP.
 
 The discipline (charter §11 "scope explosion"): Ops must resist re-implementing planning,
 physics, or safety. Its job is to *orchestrate* the components that already exist — that

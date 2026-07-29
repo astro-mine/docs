@@ -1,6 +1,7 @@
 # Astro-Mine-Transit — Technology Architecture
 
-> Status: **Accepted** ([RFC-0001: Multi-regime missions](../rfc/0001-multi-regime-missions.md)) — implementation Phase 3.
+> Status: **Designed, not built** — the [multi-regime mission track](mission-model.md) lands in Phase 3.
+> Ships in: [`astro-mine-platform`](platform.md), as a new subpackage.
 > Layer: **World & environment models** · Phase: **3** (proposed)
 > The deep-space / free-space environment *between* bodies: the n-body dynamical substrate
 > and the long-cruise hazard environment (radiation, thermal/eclipse, micrometeoroid) for the
@@ -160,7 +161,7 @@ Aligned with conventions.md §2:
   per-step force evaluation, polyhedral-gravity summation, ray/occultation — that a propagator calls
   millions of times. **Rust** optional for the content-addressed bundle packing/verification tool.
 - **Astrodynamics & force models:** ephemerides, frames, epochs (TDB/ET), and Sun/Earth/body geometry
-  via the shared **`astro-mine-spice`** foundation ([RFC-0002](../rfc/0002-shared-spice-foundation.md); SpiceyPy/CSPICE under the hood) — the charter §6 standard, the same resolver Worlds and Link use. **Orekit** (py-wrapped)
+  via the shared **`astro-mine-spice`** foundation ([Spice](spice.md); SpiceyPy/CSPICE under the hood) — the charter §6 standard, the same resolver Worlds and Link use. **Orekit** (py-wrapped)
   and/or **Basilisk** supply validated force models (harmonics, SRP, third-body, drag); **GMAT/STK**
   serve as external verification oracles. Small-body **polyhedral gravity** via an established C++
   kernel; spherical harmonics via a `pyshtools`-class evaluator, mirroring Worlds' gravity stack.
@@ -174,7 +175,7 @@ Aligned with conventions.md §2:
   §5); USD/glTF only where a proximity scene is visualized in [View](view.md).
 - **Service layer:** **FastAPI** (REST/OpenAPI 3.1) + **gRPC** service-to-service (conventions.md §3,
   §4).
-- **Build/packaging:** Python wheel `astro-mine-transit` (Pybind11 native extension, manylinux); OCI
+- **Build/packaging:** ships in the [`astro-mine-platform`](platform.md) wheel (with a Pybind11 native extension); OCI
   image for the service; **environment bundles are OCI artifacts** discovered via [Hub](hub.md).
   SemVer on the package; content hashes on bundles (conventions.md §7).
 
@@ -258,7 +259,7 @@ reads (conventions.md §8).
 ## 7. Infrastructure & deployment
 
 - **Deployment tiers** (conventions.md §7):
-  1. **Local/dev** — `pip install astro-mine-transit`; assemble a force model, query dose along an
+  1. **Local/dev** — `pip install astro-mine-cli`; assemble a force model, query dose along an
      arc on a workstation. *This tier MUST work* (charter §12).
   2. **Cloud** — the stateless field/force service on **Kubernetes** reading immutable bundles from
      S3-compatible storage; **Argo Workflows**/**Ray** on [Cloud](cloud.md) for batch precompute.

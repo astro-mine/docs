@@ -1,7 +1,9 @@
 # Mission / Phase / Regime Model — Core Schema Sketch
 
-> Status: **Accepted** ([RFC-0001: Multi-regime missions](../rfc/0001-multi-regime-missions.md)) — implementation Phase 3.
-> Layer: **Commons backbone** (extends [Core](core.md)) · Phase: schema hooks in **1**, implementation **3**.
+> Status: **Designed, not built** — the additive Core schema hooks were reserved in Phase 1; the
+> implementations land in Phase 3, and the track is opt-in and must not gate the lunar MVP.
+> Layer: **Commons backbone** (extends [Core](core.md)) · Ships in: [`astro-mine-platform`](platform.md)
+> (the schema in Core; the new components as new subpackages).
 > Cross-cutting standards: see [conventions.md](conventions.md).
 
 This document sketches the one conceptual change that lets Astro-Mine support end-to-end
@@ -50,7 +52,7 @@ switch per phase — without any of them needing to know about regimes they don'
 
 ### 1.2 The Regime enumeration
 
-A **small, closed, RFC-governed enum** — deliberately not an open type, to protect the waist:
+A **small, closed, append-only enum** — deliberately not an open type, to protect the waist:
 
 | Regime | Environment | Example |
 |---|---|---|
@@ -171,7 +173,7 @@ itself:
 
 ---
 
-## 6. Open questions (deferred to the RFC / implementation)
+## 6. Open questions (deferred to implementation)
 
 - **Regime completeness:** is the §1.2 enum sufficient for icy-moon and multi-target tours, or do
   we need `aerobraking` / `formation` regimes? (Resolve via reference scenarios, not speculation.)
