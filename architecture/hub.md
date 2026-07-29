@@ -395,7 +395,7 @@ want to enter and the place reproducibility lives or dies. This section is centr
   self-published, signed but unreviewed) and **curated/verified** (reviewed, verified-publisher,
   promoted only after admission checks pass). The trust tier is a first-class facet so consumers
   and [Bench](bench.md) can require, e.g., "verified-publisher + valid SLSA provenance." Yank
-  and deprecation are auditable governance actions (charter §9.4 RFC/governance posture).
+  and deprecation are auditable governance actions (charter §9.4).
 - **Plugin execution isolation.** Hub **never executes** artifact code — it stores, indexes,
   verifies, and serves. Untrusted-plugin sandboxing (seccomp/gVisor, out-of-process gRPC, the
   forward-looking WASM path) is the *consuming* component's responsibility (conventions.md §9,

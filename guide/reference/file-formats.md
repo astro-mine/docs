@@ -98,7 +98,7 @@ astro-mine-platform/examples/objectives/lunar-polar-ice-prospecting.objective.ya
 **What:** an ordered set of phases, each in a regime (`launch_ascent`, `interplanetary_transit`,
 `proximity_orbit`, `surface`, `ascent_return`, `earth_interface`). A single-`surface`-phase mission
 is exactly today's campaign, which is why the schema is additive
-([RFC-0001](../../rfc/0001-multi-regime-missions.md)). **Schema `$id`:**
+([mission-model](../../architecture/mission-model.md)). **Schema `$id`:**
 `.../core/mission/v0.1/mission.schema.json`
 
 ```
@@ -111,7 +111,7 @@ The multi-phase example is the shape Phase 3 fills in; the single-phase one is w
 ### 4. Plan / ContingentPlan
 
 **What:** a plan as data — Core-owned so Mind, Guard, and Allocate exchange one representation
-([RFC-0006](../../rfc/0006-plan-contingentplan.md)). **Schema `$id`:**
+([core.md](../../architecture/core.md)). **Schema `$id`:**
 `.../core/plan/v0.1/plan.schema.json`
 
 ```
@@ -172,7 +172,7 @@ file you write.
 ### 9. Units, frames and time
 
 **What:** not a standalone document but a **cross-cutting contract**
-([RFC-0007](../../rfc/0007-units-frames-wire-schema.md)) that the other formats reference: every
+([conventions.md §5](../../architecture/conventions.md)) that the other formats reference: every
 physical quantity on the wire carries its unit, every position its frame, every epoch its time
 scale. A CRS with an implicit Earth datum on a lunar body is rejected outright, not defaulted.
 
@@ -209,7 +209,7 @@ grid pinned by a digest the repo does not contain. See
 ### SafetySpec — `astro-mine guard`
 
 **What:** the safety contract — keep-out volumes, scalar bounds, temporal-logic monitors, admissible
-modes and tasks, and a safe pose ([RFC-0004](../../rfc/0004-safetyspec-safety-contract.md)).
+modes and tasks, and a safe pose ([Guard](../../architecture/guard.md)).
 Compiles to a content-addressed IR the Rust safety core executes.
 
 ```

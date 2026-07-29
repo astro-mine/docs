@@ -386,6 +386,6 @@ costly. Performance claims ship with reproducible benchmarks (conventions.md §8
 - **Deferred → Phase 3 (contract-widening).** **Multi-species and depth-resolved (3-D) resource
   fields.** The shipped `ResourceField` is single-species and 2-D surface-only
   (`FieldMetadata.species` is scalar; `FieldGrid` carries no depth axis), so adding a species/depth
-  axis changes the Core `ResourceField`/`FieldMetadata` **contract shape** — it is RFC-gated and
+  axis changes the Core `ResourceField`/`FieldMetadata` **contract shape** — it needs a named consumer and
   scheduled with the other contract-widening Prospect work as `RM-P3-PROSPECT-30`. Deferred from P0 as
   "P1+"; Phase 1 shipped without it.

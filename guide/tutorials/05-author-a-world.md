@@ -84,7 +84,7 @@ reference_datetime: '2025-01-01T00:00:00Z'
 
 **`crs` has no defaults, deliberately.** You state the body, the body-fixed frame, and the
 reference radius explicitly. An implicit Earth datum on a lunar body is a defaulting bug, and the
-loader rejects one outright rather than guessing ([RFC-0007](../../rfc/0007-units-frames-wire-schema.md),
+loader rejects one outright rather than guessing ([conventions.md §5](../../architecture/conventions.md),
 LUNAR-TR-001). See [concepts/uncertainty.md](../concepts/uncertainty.md) for the same principle
 applied to fields.
 

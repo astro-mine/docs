@@ -240,7 +240,7 @@ orange-red glyphs and that status line.
 ## 8. Publish the campaign (UC-F6)
 
 Publishing writes a **Campaign** — a Core artifact kind
-([RFC-0008](../../rfc/0008-design-campaign-artifact-kinds.md)) — signed with `--signing-key` and
+([core.md](../../architecture/core.md)) — signed with `--signing-key` and
 content-addressed like everything else.
 
 That is the deliverable: not a screenshot in a slide deck, but an artifact carrying the objective,

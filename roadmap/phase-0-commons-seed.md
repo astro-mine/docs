@@ -105,10 +105,12 @@ additions; Rust validator hardening.
   **delete** `astro_mine.worlds.spice` (hard cut — Worlds is pre-1.0, all consumers in-tree, no shim);
   `worlds.crs` re-imports `MOON_RADIUS_M`. SPICE oracle tests move with the code.
   *(trace: [Spice](../architecture/spice.md) "Migration")*
-- **RM-P0-SPICE-03** — **Distribution**: version-from-Git-tag, pinned downstream via a `uv` Git source +
-  CI token during private incubation (identical to the Core pattern); carries **no operational-targeting
-  capability** — generic geometry over public ephemerides is open-commons science (conventions §12).
-  *(trace: VERSIONING.md §5–7; conventions §12)*
+- **RM-P0-SPICE-03** — **Distribution**: delivered as version-from-Git-tag, pinned downstream via a `uv`
+  Git source + CI token, identical to the Core pattern of the time. *(Superseded by the distribution
+  track: Spice is a subpackage of the platform wheel and has no distribution of its own —
+  [README](README.md#the-distribution-track).)* Carries **no operational-targeting capability** —
+  generic geometry over public ephemerides is open-commons science, then and now.
+  *(trace: VERSIONING.md; conventions §12)*
 
 **Dependencies:** Core (`RM-P0-CORE-06`). **Exit criteria:** Worlds builds against `astro_mine.spice` with
 `astro_mine.worlds.spice` gone; illumination/PSR (WORLDS-03) and Link (LINK-01) resolve geometry through the

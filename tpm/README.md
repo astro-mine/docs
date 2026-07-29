@@ -12,7 +12,9 @@ superseded by later work rather than continuously maintained.
 > they are normative rather than in a parallel archive of proposals. Where these documents say
 > "install `astro-mine-<component>`", "the `docs` repo's RFCs", or count issues per component repo,
 > that is what was true when they were written. The analysis and the record of what execution found
-> are why they are kept; the plumbing they describe is not current.
+> are why they are kept; the plumbing they describe is not current. Issue references appear as plain
+> `repo#number` labels rather than links, because the repositories they point into are being retired
+> (`RM-DIST-05`).
 
 ## Contents
 

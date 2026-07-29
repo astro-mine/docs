@@ -41,7 +41,7 @@ Fail-closed means an unverifiable artifact is an error, never a warning. `--trus
 further: pin *whose* signature you accept, not merely that one exists.
 
 Signing lives in `astro-mine seal`, the one home for the `cryptography` dependency
-([RFC-0005](../../rfc/0005-seal-supply-chain-companion.md)), so Core stays crypto-free and every
+([Seal](../../architecture/seal.md)), so Core stays crypto-free and every
 producer shares one signer.
 
 ## It works offline

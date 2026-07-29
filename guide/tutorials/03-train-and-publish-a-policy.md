@@ -77,8 +77,8 @@ astro-mine learn \
   --output train-report.json
 ```
 
-> The binary is `astro-mine learn`. `astro-mine learn` still works and prints a deprecation warning:
-> it is a **mis-nouned legacy alias kept for one cycle**, removed at the public flip (RFC-0011 §5).
+> The command is `astro-mine learn`. An `astro-mine-train` binary once existed as a deprecated,
+> mis-nouned alias; it is gone (`conventions.md` §13).
 
 The run report carries the learning curve, throughput, and the produced policy's provenance:
 

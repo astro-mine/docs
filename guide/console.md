@@ -11,7 +11,7 @@ a run). Personas: **P5** Mission Designer, **P6** Educator/Student, **P1** Bench
 
 Before the console, each component that had a web face had its own application, its own navigation,
 and its own visual language. The console replaces that with **one shell** into which components
-contribute **surfaces** ([RFC-0010](../rfc/0010-console-surface-contract.md), plus Amendments 1
+contribute **surfaces** ([console.md](../architecture/console.md)
 and 2).
 
 A surface is a package — `@astro-mine/<component>-ui` — that declares what it contributes: nav
@@ -153,6 +153,6 @@ are in the gallery. The console is the shell with nav, surfaces, and configurabl
 - [reference/cli.md](reference/cli.md) — the command-line half of everything above.
 - **Writing a surface** is developer documentation, not user documentation: it lives in the
   `astro-mine-console` repository's `ARCHITECTURE.md` and
-  [RFC-0010](../rfc/0010-console-surface-contract.md).
+  [console.md](../architecture/console.md).
 - **The operator/ops viewer** — a Phase 2 deliverable. Nothing in this guide covers operating a live
   mission.

@@ -149,7 +149,7 @@ stable FFI / in-process binding (PyO3); on the edge the Rust core can run with n
 ### Extension points
 
 New `Shield`s, `Monitor`s, and `BackupController`s are Core plugins discovered via the registry. New
-constraint *kinds* extend the `SafetySpec` schema (an additive, RFC-gated change because the spec is
+constraint *kinds* extend the `SafetySpec` schema (an additive, deliberately gated change because the spec is
 a safety contract). Reachability/barrier *models* are pluggable adapters so a body, robot, or process
 can ship its own verified safe-set representation.
 
@@ -221,7 +221,7 @@ models, not from accumulated history. It owns, produces, and consumes:
 - **Owns:** the **`SafetySpec` schema** (versioned JSON Schema + Protobuf), the **`SafetyVerdict`**
   message schema, and the **safe-set / barrier model** interchange formats. These are registered in
   the [Core](core.md) message catalog (conventions.md §3); the `SafetySpec` schema is a *safety
-  contract* and evolves only additively, RFC-gated.
+  contract* and evolves only additively, and a change to it is argued as a change to a safety contract.
 - **Produces:** per-tick `SafetyVerdict` records and **intervention/certificate logs**. Verdict and
   telemetry streams are written to **MCAP** (timestamped, schema-tagged) per conventions.md §4/§5, so
   a shielded run's safety behavior is replayable channel-by-channel alongside [Sim](sim.md)/[Ops](ops.md)

@@ -70,6 +70,6 @@ side-channels**. In the console the same rule reads: a surface never imports ano
 
 Where a capability is heavy but genuinely shared, it becomes a **Core companion** rather than
 entering Core: `astro-mine spice` for frames, time, and geometry
-([RFC-0002](../../rfc/0002-shared-spice-foundation.md)); `astro-mine seal` for signing and SBOM
-([RFC-0005](../../rfc/0005-seal-supply-chain-companion.md)). Thin waist, thick edges, and a named
+([Spice](../../architecture/spice.md)); `astro-mine seal` for signing and SBOM
+([Seal](../../architecture/seal.md)). Thin waist, thick edges, and a named
 place for the things that are neither.

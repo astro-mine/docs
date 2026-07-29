@@ -27,7 +27,7 @@ code; the group names and constants are quoted from source, with the file that d
 
 That last row is the important one.
 
-### When it is an RFC instead
+### When it is a Core change instead
 
 Core's `PluginKind` vocabulary is **closed and Core-owned**
 ([`core/registry/enums.py`](https://github.com/astro-mine/astro-mine-platform/blob/main/src/astro_mine/core/registry/enums.py)):
@@ -39,10 +39,10 @@ asset · policy · metric · design · campaign
 ```
 
 If your extension **implements one of these contracts**, ship a plugin — that is what this guide is
-for, and no Core change is needed. If it needs a *new* kind, that is a **Core change and therefore
-an RFC** ([GOVERNANCE.md](https://github.com/astro-mine/.github/blob/main/GOVERNANCE.md)): every
-addition to Core is a permanent liability, and the default answer to "should this go in Core?" is
-no ([core.md §2](../../architecture/core.md)).
+for, and no Core change is needed. If it needs a *new* kind, that is a **Core change**, and Core's bar
+is high: every addition is a permanent liability, the vocabulary is append-only, and the default
+answer to "should this go in Core?" is no ([core.md §2](../../architecture/core.md)). Bring a named
+consumer that cannot be served by an existing kind, or you do not have a case.
 
 Note what is *not* on that list: several groups below (`bench.runners`, `allocate.solvers`,
 `learn.algorithms`, `learn.curricula`) deliberately add nothing to Core. A Bench runner or a MARL
@@ -176,7 +176,7 @@ is a one-liner over a package-data manifest — the cleanest shape. Allocate's
 [`allocate/mind.py`](https://github.com/astro-mine/astro-mine-platform/blob/main/src/astro_mine/allocate/mind.py)
 builds its manifest programmatically and shows the cross-package pattern: the module that knows
 *both* vocabularies lives on Allocate's side of the waist, the only side permitted to know both, so
-there is still no `mind → allocate` dependency in either base package (RFC-0006).
+there is still no `mind → allocate` dependency in either component.
 
 ---
 
@@ -593,5 +593,6 @@ a prerequisite.
 - [conventions.md §7](../../architecture/conventions.md) — plugin transport and distribution
 - [core.md](../../architecture/core.md) — the manifest, the registry, and what Core will not do
 - [hub.md](../../architecture/hub.md) — publication, verification, and the trust tiers
-- [GOVERNANCE.md](https://github.com/astro-mine/.github/blob/main/GOVERNANCE.md) — the RFC process,
+- [conventions.md](../../architecture/conventions.md) — the normative cross-cutting standards,
+  including where a Core change has to clear its bar (§3, §13)
   for when a plugin is not enough

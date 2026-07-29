@@ -32,7 +32,8 @@ A **Bench metric** is the exception: it is a Hub artifact resolved by a scenario
 entry point. Recipe in the how-to.
 
 If your change does not fit any of these, it may belong in Core — which means an
-[RFC](../../rfc/), not a plugin. The how-to's *"When it is an RFC instead"* section is the test.
+change to a **Core contract**, not a plugin. The how-to's *"When it is a contract change instead"*
+section is the test.
 
 ## 2. Scaffold it (UC-H2)
 

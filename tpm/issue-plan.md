@@ -354,9 +354,9 @@ documented path end to end:
 
 | Defect | Why it mattered |
 |---|---|
-| [`astro-mine-sim#80`](https://github.com/astro-mine/astro-mine-sim/issues/80) | **No CLI furnished a SPICE kernel pool.** `bench score --runner sim` — the platform's central claim — could not be run from a shell at all. |
-| [`astro-mine-bench#79`](https://github.com/astro-mine/astro-mine-bench/issues/79) | The provider refusal escaped as a traceback, so integrity read as breakage. |
-| [`astro-mine-learn#33`](https://github.com/astro-mine/astro-mine-learn/issues/33) | `--export` with a relative path left a half-written content-addressed entry — a model resolvable by digest with no provenance beside it. |
+| `astro-mine-sim#80` | **No CLI furnished a SPICE kernel pool.** `bench score --runner sim` — the platform's central claim — could not be run from a shell at all. |
+| `astro-mine-bench#79` | The provider refusal escaped as a traceback, so integrity read as breakage. |
+| `astro-mine-learn#33` | `--export` with a relative path left a half-written content-addressed entry — a model resolvable by digest with no provenance beside it. |
 
 All three are fixed, and the guide's caveats about them removed. Plus a fourth class found in the
 same pass: **five CLIs printed a deprecated command name in their own `--help`**, and Fleet's `new`
@@ -370,13 +370,13 @@ followed the instructions.
 
 - **G2.15** — whether Prospect priors should have a hand-authored file format. A design question, not
   a doc gap; the guide records the state truthfully and invents no schema.
-- **G3.6** — Hub artifact naming ([`astro-mine-hub#44`](https://github.com/astro-mine/astro-mine-hub/issues/44)).
+- **G3.6** — Hub artifact naming (`astro-mine-hub#44`).
   Now a content migration rather than a rename, since the anchor set is published with immutable
   digests. Cheaper before the public flip than after.
-- **G3.7** — Seal has no CLI ([`astro-mine-seal#13`](https://github.com/astro-mine/astro-mine-seal/issues/13)).
+- **G3.7** — Seal has no CLI (`astro-mine-seal#13`).
   A feature, and correctly kept out of a Low/Small sweep.
 - **UC-E3's single-command form** — `astro-mine mind run`
-  ([`astro-mine-mind#25`](https://github.com/astro-mine/astro-mine-mind/issues/25)). The narrow waist
+  (`astro-mine-mind#25`). The narrow waist
   says Mind cannot own an Environment; the guide documents the Bench/Sim hop instead.
 
 ### The standing constraint

@@ -243,7 +243,8 @@ Phase-0 deliverable, sequenced **before the Link MVP** (see [roadmap/phase-0](..
 
 - **RM-P0-SPICE-01** — extract `astro_mine.spice` near-verbatim from `astro_mine.worlds.spice`.
 - **RM-P0-SPICE-02** — cut Worlds over (hard cut, delete the in-package module; oracle tests move).
-- **RM-P0-SPICE-03** — distribution (Git-tag versioning, pinned downstream; no operational-targeting tag).
+- **RM-P0-SPICE-03** — distribution (delivered as its own tagged package; it has since become a
+  subpackage of the platform wheel — §7). No operational-targeting tag, then or now.
 
 **Consumed by** RM-P0-WORLDS-02/03 (illumination/PSR) and RM-P0-LINK-01 (LOS geometry) in Phase 0.
 **Deferred:** Sim's orbital engine (SIM-03, Phase 0), [Bridge](bridge.md) (Phase 2), and
