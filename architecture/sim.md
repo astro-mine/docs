@@ -278,6 +278,13 @@ Sim is the hub of the design/training loop and the shadow of the operations loop
 - **Executes policies/planners from** [Mind](mind.md), [Allocate](allocate.md), and
   [Guard](guard.md): they implement the Core Policy/Planner API and drive `step` actions; Guard's
   shield wraps actions before they enter the physics.
+- **Lateral dependency — `sim → bench` (runtime, declared per `conventions.md` §3.2, and the one that
+  most wants inverting).** Confined to `astro_mine.sim.bench`, which imports Bench's metric and
+  harness types (`EpisodeTrace`, `ScoringContext`, `RunOutcome`, `BeliefSnapshot`, `ScoringRefused`) so
+  Sim can satisfy Bench's runner contract. The arrow is backwards from the design: **Bench runs Sim**
+  through the `EpisodeRunner` seam, and Bench deliberately never imports Sim. What makes the import go
+  the other way is that the scoring vocabulary lives in Bench rather than at the waist. Moving those
+  types to Core inverts it, and is tracked with the other two.
 - **Scored by** [Bench](bench.md): Sim runs pinned scenarios deterministically; Bench ingests the
   MCAP recording + provenance and computes metrics.
 - **Streamed to** [View](view.md): live frames over gRPC server-streaming during interactive runs;

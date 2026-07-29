@@ -28,7 +28,8 @@ for both, and says which it means whenever the difference matters.
    registry). Components MUST NOT create private side-channels that bypass Core contracts.
    Sharing one distribution is not permission to couple: a component MUST NOT import another
    component's underscore-private modules, and MUST NOT depend on a name absent from the other's
-   `__all__` (§13).
+   `__all__` (§13). Which dependencies between components are *allowed* is §3.2; how a component
+   gets a collaborator without depending on it is §3.3.
 2. **Contribute once, use everywhere.** A world, asset, planner, policy, or ISRU process is
    authored against Core interfaces and is then usable in design, training, operations, and
    benchmarks without modification.
@@ -207,6 +208,111 @@ distributions it still requires a check: the CLI, API, and front-end builds **MU
 platform at `HEAD`, not against a released pin. A downstream job that resolves its dependency from
 an old release cannot fail for any change, which makes a green board actively misleading rather than
 merely uninformative.
+
+---
+
+### 3.2 Dependencies between components (normative)
+
+One distribution removed the packaging friction that used to discourage a component from reaching
+into another. These are the rules that replace it. They are **positive rules** — they say what is
+allowed, not only what is forbidden — because "no private imports" was never a dependency policy.
+
+**Three tiers.**
+
+| Tier | Members | May depend on | Depended on by |
+|---|---|---|---|
+| **0 — the waist** | [Core](core.md) | nothing | everything |
+| **1 — companions** | [Spice](spice.md) · [Seal](seal.md) | Core only | anything, freely |
+| **2 — components** | every other component | tiers 0 and 1 freely; tier 2 under the rules below | — |
+
+- **Any component MAY depend on Core, Spice, or Seal without justification.** All three are the
+  platform's *single* implementation of something that must not disagree — the contract vocabulary,
+  frame and epoch resolution, and artifact integrity (charter §9.6). Duplicating any of them is the
+  failure mode; depending on them is the design.
+- **A companion MUST depend on Core only.** It MUST NOT depend on another companion, and MUST NOT
+  depend on a tier-2 component. A companion that needs a component is not a companion.
+- **Core depends on nothing.** No heavy dependency, no crypto, no service, no component.
+
+**Lateral dependencies (tier 2 → tier 2) are permitted, and constrained.**
+
+1. **Acyclic, always.** The component import graph **MUST** be a DAG. A cycle is not a
+   dependency problem to be managed; it is two components that are one component, or a missing
+   Core contract. Asserted by test (§11).
+2. **Minimal, and argued.** A lateral edge **MUST** be recorded in the depending component's
+   document, §6 (integration architecture), with the reason. *Convenient* is not a reason. The test
+   is simple: **could the collaborator be a Protocol the caller passes in?** If yes, the edge should
+   not exist — see dependency inversion below.
+3. **Pointing down, never up.** Dependencies follow the layer table in
+   [README.md](README.md): a lower layer MUST NOT import a higher one. An upward edge is a design
+   defect, and the fix is inversion rather than permission. (Live example: `sim → bench`. Bench runs
+   Sim through the `EpisodeRunner` seam, so Sim importing the benchmark harness has the arrow
+   backwards.)
+4. **Runtime and type-only edges are both edges, and are not the same edge.** An import under
+   `TYPE_CHECKING`, or inside a function body, still counts for acyclicity — it is still a design
+   dependency. It does **not** count against import cost (§8), which is why deferring one is a
+   legitimate way to keep the local tier light. The layering test reports the two separately, because
+   a component with many type-only edges and no runtime edges is telling you it wants its
+   collaborators injected.
+
+**The shape a lateral edge should have, when it must exist.** All three of today's genuine edges
+share it, and it is worth naming as the acceptable form: the dependency is **confined to a single
+adapter module named for the other component** (`allocate/mind.py`, `guard/mind/plugin.py`,
+`sim/bench/`), and it exists so the *provider* can implement the *host's* plugin protocol. That is
+dependency inversion in the classic sense — the plugin depends on the host's abstraction, never the
+reverse — with one defect left: the abstraction lives in a component instead of at the waist. A
+lateral edge scattered across a component's modules is a different thing entirely, and is not
+permitted.
+
+**Where this stands today.** Nine runtime module-scope lateral edges exist, six of them to
+companions. The three genuine component-to-component edges — `allocate → mind`, `guard → mind`,
+`sim → bench` — each have the shape above and each disappear when their protocol moves to Core;
+`TierPlugin` already has two implementors, which by §3.3 makes it Core's to own today. Separately,
+[Hub](hub.md) is referenced by eight components and imported at runtime module scope by **none**:
+every edge is `TYPE_CHECKING` or deferred. That is dependency inversion already being done by hand,
+with the crudest available tool, and it is the case the next section exists to serve properly.
+
+### 3.3 Dependency inversion (normative)
+
+**A component MUST NOT reach for a collaborator it can be given.**
+
+- Where a component needs a capability another component provides, the contract is a **Protocol**,
+  and the concrete implementation is **passed in by the caller** — constructor argument or factory
+  parameter, never a module-level lookup, never an import at the point of use.
+- **Core owns the Protocol when two or more components share it.** A Protocol used by one component
+  and implemented by another may live with the consumer. Once a second consumer appears it belongs
+  at the waist, by the same rule that governs schemas (§3.1).
+- A component **MUST NOT** import a concrete implementation in order to type against it. `from
+  astro_mine.cloud.artifacts.store import ArtifactStore` is a Core Protocol wearing a component's
+  address.
+
+**Wiring happens at composition roots, and only there.** The platform uses
+[`svcs`](https://svcs.hynek.me/) — a small, explicit, typed registry, no decorators and no
+import-time magic — at the four places that compose the platform into an application:
+[`astro-mine-cli`](cli.md), [`astro-mine-api`](api.md), the Cloud in-pod worker, and Studio's
+orchestration worker.
+
+```python
+# a component: no container, no framework, no import of an implementation
+class SimEpisodeRunner:
+    def __init__(self, store: ArtifactStore, resolver: Resolver) -> None: ...
+
+# a composition root: the only place that knows both halves
+reg = svcs.Registry()
+reg.register_factory(ArtifactStore, make_hub_store)
+```
+
+Three prohibitions make that boundary real, and they matter more than the library choice:
+
+- A component **MUST NOT** import `svcs`, construct a `Registry` or a `Container`, or resolve
+  anything from one. A container inside a component is a service locator: it converts a dependency
+  from something a signature declares into something only a run reveals, which defeats §3.2's DAG
+  rule and the test that enforces it.
+- There is **no global container**, and no module-level singleton standing in for one. A composition
+  root builds its container, uses it, and drops it.
+- **The library is replaceable and the inversion is not.** Protocols plus constructor injection are
+  the architecture; `svcs` is a convenience at four call sites. If it were removed tomorrow, the
+  wiring would become four hand-written functions and nothing else would change. Any proposal that
+  makes that untrue is a proposal to be refused.
 
 ---
 
@@ -432,10 +538,19 @@ Normative consequences:
 - **Golden tests & determinism gates:** seeded runs compared to stored references; CI fails on
   non-reproducibility.
 - **Layering tests (normative).** Because components no longer sit behind package boundaries, the
-  rules of §1 and §3.1 MUST be asserted by test: no component imports another's private modules, no
-  component imports the CLI or API distribution, Core imports nothing heavier than its declared
-  floor, and the front end's surface packages do not import each other. A layering rule that is only
-  written down is a layering rule that has already been broken somewhere.
+  rules of §1, §3.1, §3.2 and §3.3 MUST be asserted by test. A layering rule that is only written
+  down is a layering rule that has already been broken somewhere. The suite MUST fail on:
+  - a **cycle** in the component import graph (§3.2 rule 1);
+  - a **companion** (Spice, Seal) importing another companion or a tier-2 component;
+  - **Core** importing any component, or any dependency above its declared floor;
+  - an import of another component's **underscore-private** module, or of a name absent from its
+    `__all__`;
+  - a component importing the **CLI or API** distribution, or importing **`svcs`** (§3.3);
+  - a front-end **surface** package importing another surface.
+
+  It MUST also *report* — without failing — the runtime and type-only lateral edges separately, and
+  fail on a **new runtime lateral edge** that is not recorded in the depending component's §6. The
+  point is not to forbid lateral edges but to make adding one a deliberate, visible act.
 - **CI/CD:** GitHub Actions (read-only default workflow permissions, per org policy); artifacts
   signed on release.
 - **Contract tests:** every component proves it honors the Core interface versions it claims, and

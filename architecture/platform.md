@@ -119,8 +119,10 @@ self-skip. Whole-platform coverage runs via `scripts/coverage_sweep.sh` against 
 Two properties the single tree makes CI responsible for, since no package boundary enforces them any
 more (`conventions.md` §11):
 
-- **Layering.** No component imports another's private modules; no component imports the CLI or API
-  distribution; Core imports nothing above its declared dependency floor.
+- **Layering.** The tier rules of `conventions.md` §3.2 — the component graph is a DAG, Core depends
+  on nothing, Spice and Seal depend only on Core, no component imports another's private modules or
+  the CLI/API distributions, and no component imports the DI container (§3.3). New runtime lateral
+  edges fail the build unless the depending component's doc records them.
 - **Cross-component compatibility.** A change to a Core schema runs every consumer's schema tests in
   the same job. This is stronger than the cross-repo canary it replaced, which resolved Core from a
   stale release and could not fail.

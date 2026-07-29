@@ -20,10 +20,10 @@ pip install astro-mine-cli
 One line, one version, everything ([getting-started](../getting-started.md) has the
 install-from-source path you need until the public flip).
 
-Bench is still **architecturally** light — it depends on Core and pydantic and never imports the
-simulator, which is why `bench` and `sim` can be swapped independently. What changed is that "light"
-no longer means "a smaller install": one wheel carries every component. Bench ships the scenario zoo
-in-package, so the next two steps work with nothing downloaded.
+Bench is still **architecturally** light — it never imports the simulator, which is why `bench` and
+`sim` can be swapped independently. What changed is that "light" no longer means "a smaller install":
+one wheel carries every component. Bench ships the scenario zoo in-package, so the next two steps work
+with nothing downloaded.
 
 ## 2. List the scenarios (UC-B1)
 

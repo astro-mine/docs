@@ -246,6 +246,13 @@ models, not from accumulated history. It owns, produces, and consumes:
 Guard integrates **entirely through [Core](core.md)** contracts — it adds no private side-channels
 (conventions.md §1).
 
+- **Lateral dependency — `guard → mind` (runtime, declared per `conventions.md` §3.2).** Confined to
+  one adapter module, `astro_mine.guard.mind.plugin`, which imports Mind's `TierPlugin` protocol and
+  its `ShieldReport`/`InterventionKind` vocabulary so Guard can register as a Mind tier. Correct
+  dependency inversion with the abstraction in the wrong place: `TierPlugin` has two implementors
+  (Guard and [Allocate](allocate.md)), so by `conventions.md` §3.3 it is Core's to own, and moving it
+  deletes this edge. Guard's **independence from the components it protects** is unaffected — this is
+  Guard being *hosted by* Mind, not Guard depending on what it shields (§9).
 - **Wrapping policies (the primary integration).** `PolicyShield` implements the [Core](core.md)
   Policy/Planner API and wraps the outputs of [Mind](mind.md), [Allocate](allocate.md), and learned
   policies from [Learn](learn.md). Because the wrapper *is* a Policy/Planner, it composes anywhere a

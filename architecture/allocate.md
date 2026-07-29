@@ -243,6 +243,13 @@ Allocate sits inside the autonomy layer and integrates entirely through Core con
 - **Implements (provides):** the **allocation/scheduling sub-interface** of the
   [Core](core.md) Policy/Planner API. Allocate is registered as a planner plugin via a Core
   manifest declaring the Core interface major versions it supports and its capability tags.
+- **Lateral dependency — `allocate → mind` (runtime, declared per `conventions.md` §3.2).** Confined
+  to one adapter module, `astro_mine.allocate.mind`, which imports Mind's `TierPlugin` protocol and
+  its allocation-request model so Allocate can register as a Mind tier. The direction is correct
+  dependency inversion — the plugin depends on the host's abstraction, not the reverse — and the
+  remaining defect is only that the abstraction lives in a component instead of at the waist.
+  `TierPlugin` has two implementors ([Guard](guard.md) is the other), which by `conventions.md` §3.3
+  makes it Core's to own; moving it deletes this edge.
 - **Called by [Mind](mind.md):** Mind's hierarchical planner assigns roles/regions, then
   **delegates the assignment problem to Allocate** through the Core sub-interface — the boundary
   fixed by the charter (§5.4). Mind composes; Allocate decides the combinatorics.

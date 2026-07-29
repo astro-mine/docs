@@ -153,8 +153,11 @@ the build (conventions.md §3.1, §11):
   consumer's schema tests in the same job.
 - The schema set has a **content address** a scenario pins, so a run against a different contract is
   a different task rather than silently the same one.
-- **Layering tests** assert the import graph: no component imports another's private modules, no
-  component imports the CLI or API distribution, Core imports nothing above its dependency floor.
+- **Layering tests** assert the import graph against the tiers of `conventions.md` §3.2: the graph
+  is a DAG, Core depends on nothing, the companions (Spice, Seal) depend only on Core, and any
+  component may depend on those three freely. A lateral component-to-component edge is allowed but
+  must be argued and recorded; **dependency inversion** (§3.3) is the standing alternative, and the
+  reason there are only three such edges today.
 
 A contributor can still write a shortcut past the waist. CI is what refuses it — which is a better
 guarantee than a repository boundary was, because a repository boundary never stopped anyone who was

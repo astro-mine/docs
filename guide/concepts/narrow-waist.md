@@ -25,8 +25,9 @@ benchmark, with no PR to any Astro-Mine repository.
 
 ## Three consequences you will actually hit
 
-**Bench never imports Sim.** Bench depends on Core and pydantic and nothing else. It discovers
-runners through the `astro_mine.bench.runners` entry-point group; Sim registers one.
+**Bench never imports Sim.** It discovers runners through the `astro_mine.bench.runners`
+entry-point group; Sim registers one. Bench's own imports are Core, pydantic, and — lazily, never at
+module scope — Hub and Cloud.
 
 This is the clearest case of the waist doing work you can check. Bench and Sim now ship in the *same
 wheel*, so nothing in the packaging stops Bench from importing Sim — and it still does not. A layering
