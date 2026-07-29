@@ -1,8 +1,10 @@
 # Cross-Cutting Technology Conventions
 
-> **Status:** Phase-0 draft. Normative for all `Astro-Mine-*` components.
-> Changes to anything in this document that affects a published interface go through the
-> [RFC process](https://github.com/astro-mine/.github/blob/main/GOVERNANCE.md).
+> **Status:** Normative for every Astro-Mine component and every distribution that ships one.
+> Changes land as ordinary pull requests against this document. What protects a published
+> interface is not a process gate but the machinery of §3 and §11 — append-only schemas,
+> machine-checked wire compatibility, a pinnable contract digest, and layering tests that fail
+> the build.
 
 This document defines the technology decisions that are shared across **every** Astro-Mine
 component. Component architecture docs in this directory **reference** these decisions rather
@@ -12,6 +14,11 @@ slowly and deliberately; everything else can evolve independently.
 
 When this document says **MUST / SHOULD / MAY**, read them in the RFC-2119 sense.
 
+**Component vs. distribution.** A *component* is a unit of design — `Core`, `Sim`, `Worlds` — and
+is a subpackage, `astro_mine.<name>`. A *distribution* is a unit of release. There are four
+(§7): the platform library, the CLI, the REST tier, and the front end. This document is normative
+for both, and says which it means whenever the difference matters.
+
 ---
 
 ## 1. Architecture tenets (apply to all components)
@@ -19,6 +26,9 @@ When this document says **MUST / SHOULD / MAY**, read them in the RFC-2119 sense
 1. **Narrow waist.** Everything integrates through a small set of stable contracts owned by
    `Astro-Mine-Core` (SADF, environment API, policy/planner API, message schemas, plugin
    registry). Components MUST NOT create private side-channels that bypass Core contracts.
+   Sharing one distribution is not permission to couple: a component MUST NOT import another
+   component's underscore-private modules, and MUST NOT depend on a name absent from the other's
+   `__all__` (§13).
 2. **Contribute once, use everywhere.** A world, asset, planner, policy, or ISRU process is
    authored against Core interfaces and is then usable in design, training, operations, and
    benchmarks without modification.
@@ -27,7 +37,8 @@ When this document says **MUST / SHOULD / MAY**, read them in the RFC-2119 sense
    implementations ship as *replaceable examples*, not privileged internals.
 4. **Library first, service second.** Every component is usable as an importable library on a
    single workstation before it is a network service. The service is a deployment of the
-   library, not a separate codebase.
+   library, not a separate codebase — which is why the REST tier is its own distribution over an
+   unchanged library rather than routes woven through it (§7).
 5. **Determinism & reproducibility by default.** Same inputs + same seed + same pinned
    environment ⇒ same result. This is a hard requirement for `Bench` and a strong default
    everywhere.
@@ -46,9 +57,9 @@ When this document says **MUST / SHOULD / MAY**, read them in the RFC-2119 sense
 |---|---|---|
 | Control plane, APIs, ML, orchestration glue, most component logic | **Python 3.12+** | The research community's lingua franca; PyTorch/JAX/Gymnasium ecosystem. Type-hinted, checked with `mypy`/`pyright`. |
 | Performance-critical kernels (physics, contact, granular, hot inner loops) | **C++20** | Pybind11 bindings exposed to Python. Integrates with Drake / MuJoCo / Isaac / BehaviorTree.CPP. |
-| High-assurance & safety-critical logic, schema/codegen tooling, CLIs | **Rust** | Recommended where memory safety + performance matter most: `Guard` runtime monitors, `Core` schema validation/codegen, content-addressed registry tooling. Optional elsewhere. |
+| High-assurance & safety-critical logic, schema/codegen tooling | **Rust** | Recommended where memory safety + performance matter most: `Guard`'s runtime monitors (a PyO3 extension the platform wheel bundles), `Core` schema validation/codegen, content-addressed registry tooling. Optional elsewhere. |
 | GPU kernels | **CUDA** (+ vendor-neutral fallback) | Used inside Sim/Surrogate; abstracted behind device-agnostic interfaces where feasible. |
-| Web front-ends | **TypeScript + React** | Console, Studio, View, Hub, Bench. The full baseline is §2.1. |
+| Web front-ends | **TypeScript + React** | The console shell, the design system, the visualization library, and every per-component surface. The full baseline is §2.1. |
 
 **Rule:** the *public* API surface of any component MUST be reachable from Python. Native code
 sits behind Python bindings or a gRPC service.
@@ -61,6 +72,12 @@ a front-end package renders capability that a component already exposes from Pyt
 of its own. A front-end package that needed its own Python API would be a component wearing the
 wrong clothes.
 
+**The library ships no commands.** The platform distribution declares **no** console scripts. Every
+command lives in the CLI distribution (§7, §13), which is a thin wrapper over library functions: a
+command module MAY declare arguments, read a namespace, call a platform function, format output,
+and map a result to an exit status — and MUST NOT implement platform behaviour of its own. A
+capability reachable only by running a command is a capability the library failed to export.
+
 ### 2.1 The front-end baseline
 
 Normative for every front-end package. This is the **only** place it is stated; a component doc
@@ -70,7 +87,7 @@ cites it rather than restating it, and documents only where it deviates and why 
 |---|---|
 | Language / framework | **TypeScript 5.5** · **React 18.3** |
 | Runtime | **Node >= 20.19** (Vite 8 and Vitest 4 require it) |
-| Package manager | **pnpm 11.10.0**, pinned per repo via `package.json` `packageManager` |
+| Package manager | **pnpm 11.10.0**, pinned in the workspace root's `package.json` `packageManager` |
 | Build | **Vite 8** — library mode for published packages, app mode for the console |
 | Unit tests | **Vitest 4** + Testing Library, `jsdom` environment |
 | Browser tests | **Playwright** against the built artifact, not the dev server |
@@ -82,7 +99,7 @@ cites it rather than restating it, and documents only where it deviates and why 
 **On the package manager.** One pinned version, everywhere. Three managers across four trees is how
 a cold clone acquires three ways to fail, and `--frozen-lockfile` turns any drift into a red build
 rather than a silent one — which is the point. The pin is a floor for reproducibility, not a
-statement that newer is unusable; move it deliberately, in one sweep, not per repo.
+statement that newer is unusable; move it deliberately, in one sweep.
 
 **On server state.** The platform deliberately ships **no** data-fetching or client-cache library.
 Every front end already uses bare `fetch`, and the loading / error / empty discipline lives in a
@@ -90,7 +107,8 @@ shared `AsyncState` component instead — which is where it belongs, because the
 what the user is shown when a request is in flight or has failed, not about how the request was
 made. Adding a cache layer is a real dependency in every surface and buys little for screens that
 are read-mostly and human-paced. Revisit it when a surface has a concrete need (optimistic writes,
-polling, cross-surface cache invalidation) — as an RFC, not as an import.
+polling, cross-surface cache invalidation) — as a deliberate, documented change to this baseline,
+not as an import in one surface.
 
 **On charts.** `visx` composes D3 primitives as React components, so the chart discipline is
 enforced by the API rather than by care: `@astro-mine/ui` owns the chart layer, a second y-axis is
@@ -110,27 +128,36 @@ provide and is hand-built.
 | **Geometry / visual assets referenced by SADF** | **USD** (preferred) and **glTF**; meshes via standard formats | Aligns with Isaac/Omniverse; USD is the graphics-interchange standard | — |
 | **Config & scenario specs** | **JSON Schema** + **Pydantic v2** (Python) | One schema validates files and generates typed models | — |
 | **RL environment view** | **Gymnasium** (single-agent) / **PettingZoo** (multi-agent) APIs | Community standard; instant familiarity | — |
-| **External / web-facing APIs** | **REST + OpenAPI 3.1** via **FastAPI** | Browser- and tool-friendly, self-documenting | GraphQL only where a UI's query shape demands it (View/Studio) |
-| **Internal service-to-service** | **gRPC** over HTTP/2 | Streaming, typed, efficient | — |
+| **External / web-facing APIs** | **REST + OpenAPI 3.1** via **FastAPI**, in the API distribution (§7) | Browser- and tool-friendly, self-documenting | GraphQL only where a UI's query shape demands it |
+| **Internal service-to-service** | **gRPC** over HTTP/2, shipped with the component that serves it | Streaming, typed, efficient | — |
 
 **Schema evolution:** Protobuf fields are append-only; never renumber or repurpose tags.
 Breaking a Core contract requires a new major interface version and a deprecation window. All
-schemas are versioned with the package that owns them and published as generated client
+schemas are versioned with the component that owns them and published as generated client
 libraries.
 
-### 3.1 Referencing a Core schema from another package ([RFC-0009](../rfc/0009-cross-package-schema-resolution.md))
+**Where the REST layer lives (normative).** A component MUST NOT ship its own FastAPI application.
+Every REST surface is a route module in the API distribution, built over the owning component's
+public library API — so the component stays importable without a web framework, one set of REST
+conventions applies platform-wide, and the routes cannot become the only place a behaviour exists
+(§2, §7). gRPC services are different and stay with their component: they serve the component's own
+contract at high rate, are not a web edge, and have no cross-component conventions to unify.
 
-Core owns schemas that other packages `$ref` across files — above all the shared units vocabulary
-([RFC-0007](../rfc/0007-units-frames-wire-schema.md)). Until RFC-0009 this document said nothing
-about **how**, so six packages invented five different techniques to name one schema — path
-arithmetic reconstructing Core's directory layout, `$id` squatting inside Core's namespace, a
-hardcoded copy of a private URI, runtime derivation, and a vendored byte-copy. Only one was
-correct. These rules are what was missing.
+### 3.1 Referencing a Core schema from another component
+
+Core owns schemas that other components `$ref` across files — above all the shared units vocabulary
+(§5). Left unstated, this went wrong in a specific and instructive way: six components once invented
+five different techniques to name one schema — path arithmetic reconstructing Core's directory
+layout, `$id` squatting inside Core's namespace, a hardcoded copy of a private URI, runtime
+derivation, and a vendored byte-copy. Only one was correct. These rules are what was missing, and
+they hold whether or not the referencing code ships in the same distribution.
 
 **One name.**
 
-- A Core schema is referenced by its absolute **`$id`**. A package's schema **MUST** `$ref` it that
-  way — never by a relative path, never by a URI derived from Core's directory layout.
+- A Core schema is referenced by its absolute **`$id`**. A schema **MUST** `$ref` it that
+  way — never by a relative path, never by a URI derived from Core's directory layout. A path that
+  happens to resolve inside one repository is not a name; it is a coincidence that breaks the first
+  time the layout moves.
 
   ```json
   { "$ref": "https://schemas.astro-mine.org/core/units/v0.1/units.schema.json#/$defs/ReferenceFrame" }
@@ -142,9 +169,9 @@ correct. These rules are what was missing.
 
 **`$id` namespaces are owned.**
 
-- A package **MUST** declare `$id`s only under its own namespace
-  (`https://schemas.astro-mine.org/<package>/…`). It **MUST NOT** publish an `$id` under another
-  package's namespace, and two packages **MUST NOT** publish the same `$id`. A colliding or
+- A component **MUST** declare `$id`s only under its own namespace
+  (`https://schemas.astro-mine.org/<component>/…`). It **MUST NOT** publish an `$id` under another
+  component's namespace, and two components **MUST NOT** publish the same `$id`. A colliding or
   squatted `$id` is a silent wrong-schema resolution.
 
 **One mechanism.**
@@ -158,23 +185,28 @@ correct. These rules are what was missing.
   Draft202012Validator(my_schema, registry=schema_registry(my_schema))
   ```
 
-- A package **MUST NOT** import Core modules that are underscore-private or absent from a package's
+- A component **MUST NOT** import Core modules that are underscore-private or absent from Core's
   `__all__`. Correspondingly, **Core MUST provide a public, documented equivalent** for any
   capability a consumer legitimately needs — the absence of one is what produced all five
   workarounds, and a private API with five importers is a Core defect, not a consumer defect.
+  Consolidation makes this rule *more* load-bearing, not less: reaching into Core's internals is now
+  a plain import with nothing to declare and nothing to notice.
 
 **Cross-language and vendored consumers.**
 
-- A package that cannot import Core (a non-Python binding) **MUST** resolve Core schemas from the
+- A consumer that cannot import Core (a non-Python binding) **MUST** resolve Core schemas from the
   **published bundle**, using its `schema_index` (`$id` → path).
-- A package that nonetheless **vendors** a copy of a Core schema **MUST** guard it against drift by
+- A consumer that nonetheless **vendors** a copy of a Core schema **MUST** guard it against drift by
   pinning `astro_mine.core.SCHEMA_DIGEST` (or the bundle's `schema_digest`) and **failing** CI when
   the copy no longer matches. A hand-resynced copy guarded by a comment is drift with extra steps.
 
-**Compatibility is verified, not assumed.** Core CI **MUST** run the schema tests of its consumers
-against Core@HEAD (the *downstream canary*), so breaking a consumer fails the Core PR that breaks
-it. A green Core board that says nothing about downstream compatibility is worse than no check: the
-job this replaced resolved Core from a two-tags-old release and could not fail for any change.
+**Compatibility is verified, not assumed.** Within the platform distribution, a change to Core runs
+every component's schema tests in the same CI job, so breaking a consumer fails the pull request
+that breaks it — the property that used to require a cross-repo canary, now structural. Across
+distributions it still requires a check: the CLI, API, and front-end builds **MUST** run against the
+platform at `HEAD`, not against a released pin. A downstream job that resolves its dependency from
+an old release cannot fail for any change, which makes a green board actively misleading rather than
+merely uninformative.
 
 ---
 
@@ -183,7 +215,7 @@ job this replaced resolved Core from a two-tags-old release and could not fail f
 Three planes, chosen per latency/criticality:
 
 - **Control plane (sync):** **gRPC** for request/response and server-streaming between
-  services; **REST/OpenAPI** at the edge for browsers and third-party tools.
+  services; **REST/OpenAPI** at the edge for browsers and third-party tools (§3, §7).
 - **Eventing / orchestration (async, cloud):** **NATS + JetStream** as the default
   lightweight pub/sub and work queue (sim job lifecycle, hub events, bench result ingestion).
   **Apache Kafka** is the recommended alternative *only* where a durable, high-throughput,
@@ -216,18 +248,26 @@ assumptions. Frames and time are SPICE-backed (TDB/ET, body-fixed and inertial f
 [Core](core.md) defines the frame/time **types** (`Epoch`, `ReferenceFrame`, `PlanetaryCRS`,
 `EpochWindow`) as a canonical interface — a JSON Schema authority layer, the Pydantic models it
 pins, and a Protobuf / Cap'n Proto wire form — so the vocabulary and its guards are enforceable in
-every language binding, not Python alone ([RFC-0007](../rfc/0007-units-frames-wire-schema.md)). Core
-defines the `require_frame`/`require_crs` fail-loud guards but defers SPICE **resolution** — kernels,
-`spkpos`, `pxform`, topocentric geometry — to **[`astro-mine-spice`](../architecture/spice.md)**
-(`astro_mine.spice`, [RFC-0002](../rfc/0002-shared-spice-foundation.md)), the single shared resolver
-every SPICE consumer (Worlds, Link, Sim, Transit) depends on. Core cannot host that resolution itself
+every language binding, not Python alone. Core defines the `require_frame`/`require_crs` fail-loud
+guards but defers SPICE **resolution** — kernels, `spkpos`, `pxform`, topocentric geometry — to
+**[Spice](spice.md)** (`astro_mine.spice`), the single shared resolver every SPICE consumer
+(Worlds, Link, Sim, Transit) depends on. Core cannot host that resolution itself
 (`spiceypy`/`numpy` are heavy deps the narrow waist excludes — core.md §2 principle 3); centralizing
-it in one package keeps frame/aberration conventions singular platform-wide.
+it in one component keeps frame/aberration conventions singular platform-wide. That every component
+now installs `spiceypy` regardless does not weaken the rule: the point was never that a user could
+avoid the dependency, it is that exactly one code path resolves a frame.
+
+**Units on the wire (normative).** A physical quantity crossing an interface MUST carry its unit,
+and the unit MUST come from Core's shared units vocabulary, referenced by `$id` (§3.1) rather than
+restated. Field names MUST carry the unit as a suffix where the schema does not
+(`reference_radius_m`, `mass_kg`, `duration_s`); a bare numeric field whose unit lives only in a
+docstring is how two correct components disagree. Unit conversion at a boundary is the sender's
+responsibility, never inferred by the receiver.
 
 **Frame/CRS/time guard rules (normative).** `require_frame`/`require_crs` and the epoch guards
 enforce the following as **MUST** requirements on **any** Core binding — Python is the reference
 implementation (core.md §8), and the rules are conformance-tested by a shared vector file Core
-ships ([RFC-0007](../rfc/0007-units-frames-wire-schema.md) Design §3):
+ships:
 
 1. A reference frame MUST be present, and its `name` (and `center`, when given) MUST be non-empty,
    whitespace-free tokens.
@@ -267,28 +307,64 @@ code version, the environment lockfile, and the random seed. Datasets and polici
 
 ## 7. Compute, packaging & deployment
 
+### 7.1 The four distributions
+
+The component catalog is a map of design boundaries; it is **not** a map of published artifacts.
+Astro-Mine publishes four things, and a component belongs to exactly one of them:
+
+| Distribution | Kind | Contents | Depends on |
+|---|---|---|---|
+| **`astro-mine-platform`** | Python wheel (maturin; bundles Guard's Rust core) | every component as `astro_mine.<name>` — a **library**, no console scripts | — |
+| **`astro-mine-cli`** | Python wheel | the one `astro-mine` executable and every command | the platform |
+| **`astro-mine-api`** | Python wheel / OCI image | every REST surface as FastAPI route modules | the platform |
+| **`astro-mine-ui`** | npm packages under `@astro-mine` | the console shell, its surface contract, the design system, the visualization library, and the per-component surfaces | the API at runtime |
+
+> **Where this stands.** The platform and CLI distributions ship. `astro-mine-api` and
+> `astro-mine-ui` are **not yet stood up**: the REST route modules and the `@astro-mine/*` packages
+> exist and run, but still sit in the repositories they were written in. The rules below are
+> normative for both today — a new REST surface is written as a route module, not woven into a
+> component — and the move is tracked in the [roadmap](../roadmap/README.md).
+
+Normative consequences:
+
+- **One version, no matrix.** A user installs `astro-mine-cli` and holds the whole platform at one
+  self-consistent version. Components MUST NOT declare version constraints on each other — there is
+  nothing to constrain — and MUST NOT be released independently.
+- **One base dependency set.** The platform's `[project.dependencies]` is the union of what its
+  components require. Heavy *optional* stacks MUST stay behind extras, and an extra is named
+  **`<component>-<extra>`** (`learn-rllib`, `sim-mujoco`, `mind-onnx`) because bare extra names
+  collide across components.
+- **The local tier still has to work** without any of those extras, without a service, and without
+  an account (§7.2 tier 1). That is the property the consolidation had to preserve, and the one to
+  check first when adding a base dependency.
+- **A new component is a new subpackage**, not a new repository. Adding one is a directory under
+  `src/astro_mine/`, a test directory, and an entry in the test runner — never a release process.
+
+### 7.2 Deployment
+
 - **Containers:** OCI images for every deployable; multi-arch where relevant. Reproducible
   builds; pinned base images.
 - **Orchestration:** **Kubernetes** is the substrate (charter). **Ray** for distributed sim
   and training; **Argo Workflows** for DAG-style batch sweeps; **KubeRay** + **NVIDIA GPU
   Operator** for GPU scheduling (MIG for sharing).
 - **Deployment tiers:**
-  1. **Local/dev** — a workstation; `docker compose` or a single Python env. A researcher can
-     clone, run a scenario, and score a baseline in an afternoon. *This tier MUST always work.*
+  1. **Local/dev** — a workstation; one Python environment, or `docker compose` where a tier-2
+     service is genuinely wanted. A researcher can install, run a scenario, and score a baseline in
+     an afternoon. *This tier MUST always work.*
   2. **Cloud** — K8s + Ray for scale-out (`Cloud`, large `Sim` sweeps, `Learn` training,
-     `Bench` leaderboard eval).
+     `Bench` leaderboard eval), with `astro-mine-api` serving the hosted surfaces.
   3. **Operations / ground** — `Ops` + `Bridge` + `View` near operators; ROS 2/DDS data plane.
   4. **Flight-adjacent** (Phase 3, mostly out of open scope) — `Bridge` adapters to cFS/F´.
-- **Packaging & releases:** Python wheels on an index; **npm packages under the `@astro-mine`
-  scope** for front-end libraries (§2.1, §13); OCI artifacts for content; **SemVer** for all
-  packages. Multi-repo (one repo per package per charter) with `Core` published as a
-  versioned dependency. *(This is the public end-state; during private incubation it is deferred —
-  see [VERSIONING.md](../VERSIONING.md) §5–7: a source-pinned `uv` Git dependency + PAT, no public
-  index yet.)*
+- **Releases:** **SemVer** for every distribution; Python wheels on an index and npm packages under
+  the `@astro-mine` scope; OCI artifacts for content. The full policy — what versions mean, how the
+  four distributions move relative to one another, and the held Core interface version — is
+  [VERSIONING.md](../VERSIONING.md).
 - **Plugin distribution:** plugins are **OCI artifacts** in a registry (Harbor/ghcr),
   described by a Core plugin manifest and discovered via `Hub`. In-process plugins use Python
   entry points; untrusted or non-Python plugins run **out-of-process** (gRPC + sandboxed
-  container).
+  container). A third-party plugin is its own distribution and always was — that path is
+  unchanged by consolidation, and is the one extension mechanism that MUST NOT require a change to
+  any Astro-Mine distribution (§1 tenet 3, §13).
 
 ---
 
@@ -303,6 +379,10 @@ code version, the environment lockfile, and the random seed. Datasets and polici
   workers stream only the slices they need from object storage.
 - **Back-pressure & graceful degradation.** Streaming paths are bounded and shed load; swarm
   coordination must degrade, not collapse, when comms drop.
+- **Import cost is a performance budget.** One wheel carrying every component makes eager
+  top-level imports everyone's problem: a component MUST NOT import a heavy optional dependency at
+  module scope, and the CLI MUST NOT import a component to render help. You pay for the code path
+  you ran.
 - **Measure before optimizing.** Every component ships representative benchmarks; performance
   claims are reproducible.
 
@@ -317,8 +397,11 @@ code version, the environment lockfile, and the random seed. Datasets and polici
 - **Plugin isolation:** untrusted plugins run in containers with **seccomp/gVisor**; **WASM
   (wasmtime)** is the forward-looking sandbox for safe untrusted compute.
 - **Supply chain:** signed artifacts (**Sigstore/cosign**), **SLSA** provenance, **SBOM**
-  (Syft/CycloneDX). Org defaults already on: Dependabot, secret scanning, push protection,
-  read-only default Actions permissions.
+  (Syft/CycloneDX). One implementation of all of it — [Seal](seal.md) — because two signers that
+  disagree fail silently. Org defaults on: Dependabot alerts and automated security fixes,
+  read-only default Actions permissions. Secret scanning, push protection and branch rulesets are
+  **not** available for private repositories on the current plan and are due at the public flip;
+  treating them as already on is how a gap gets inherited.
 - **Safety-critical paths** (`Guard`, `Ops`, `Bridge`) follow the assurance conventions in
   their own docs: hard constraints enforced independently of learned components.
 
@@ -339,20 +422,30 @@ code version, the environment lockfile, and the random seed. Datasets and polici
 
 - **Unit/integration:** `pytest`; property-based testing with **Hypothesis** for schema and
   numerical invariants; `gtest` for C++.
+- **One suite, per-component selections.** Tests live under `tests/<component>/`, and each
+  component keeps its own default selection and marker set — a single `addopts` cannot express
+  seventeen different ones. The platform's test runner re-applies each component's selection, and
+  CI names the marker expression per component. Opt-in lanes that need a service, a cluster, or
+  hardware MUST be marker-gated and MUST self-skip rather than fail when absent.
 - **Physics validation:** regression against external oracles (**STK/GMAT/Basilisk** for
   orbits; analytic cases and lab data for terramechanics) with explicit error budgets.
 - **Golden tests & determinism gates:** seeded runs compared to stored references; CI fails on
   non-reproducibility.
+- **Layering tests (normative).** Because components no longer sit behind package boundaries, the
+  rules of §1 and §3.1 MUST be asserted by test: no component imports another's private modules, no
+  component imports the CLI or API distribution, Core imports nothing heavier than its declared
+  floor, and the front end's surface packages do not import each other. A layering rule that is only
+  written down is a layering rule that has already been broken somewhere.
 - **CI/CD:** GitHub Actions (read-only default workflow permissions, per org policy); artifacts
   signed on release.
-- **Contract tests:** every component proves it honors the Core interface versions it claims
-  (consumer-driven contract tests against `Core`).
+- **Contract tests:** every component proves it honors the Core interface versions it claims, and
+  the CLI, API, and front-end distributions build and test against the platform at `HEAD` (§3.1).
 - **Front-end lanes** (§2.1): **Vitest + Testing Library** (`jsdom`) for logic and components;
   **Playwright** against the **built** artifact, so the test exercises what actually ships; and an
   **automated accessibility lane** that fails the build. The two lanes stay separate — WebGL has no
   `jsdom` context, so anything touching a canvas belongs in Playwright, not Vitest.
-- **Design-system gates.** Where a repo ships design tokens, the properties asserted about them are
-  **checked, not claimed**: colour-contrast conformance across every theme and mode, colour-vision
+- **Design-system gates.** Where a package ships design tokens, the properties asserted about them
+  are **checked, not claimed**: colour-contrast conformance across every theme and mode, colour-vision
   separation for chart palettes, and generated artifacts matching their source. An accessibility
   claim nobody runs is an accessibility claim that quietly stops being true.
 
@@ -362,40 +455,64 @@ code version, the environment lockfile, and the random seed. Datasets and polici
 
 - Default-open for the **science, simulation, and coordination** commons.
 - **Partition** genuinely sensitive operational capability (e.g., certification-grade flight
-  targeting — explicitly out of scope per charter) into separate, access-controlled repos.
+  targeting — explicitly out of scope per charter) behind capability tags and, where the code would
+  otherwise ship in the open library, into a separate access-controlled distribution.
 - Follow `astro-mine/.github` **EXPORT_CONTROL.md**; document a clear EAR/ITAR posture per
   component where relevant (notably `Bridge`, `Ops`, parts of `Mind`/`Allocate`).
 - "Open does not mean naive": capability gating is a first-class design concern, not a bolt-on.
-- **Trajectory & mission design are design-time only** ([RFC-0001](../rfc/0001-multi-regime-missions.md)):
-  reference trajectories and Δv budgets are *descriptive* artifacts for trade studies; operational
-  maneuver targeting and guided atmospheric entry are partitioned out and gated by an
-  `operational_targeting` capability tag at the registry/`Bridge` boundary. Mission economics
-  (`Ledger`) ships as an open framework with proprietary cost data kept in the commercial layer.
+- **Capability tags are checked at a boundary, not honoured by convention.** The gate is enforced at
+  the registry (`Hub` admission) and at the operations edge (`Bridge` dispatch) — the two places
+  where a capability leaves the commons. A tag consulted only by the component that declares it
+  gates nothing.
+- **Trajectory & mission design are design-time only:** reference trajectories and Δv budgets are
+  *descriptive* artifacts for trade studies; operational maneuver targeting and guided atmospheric
+  entry are partitioned out and gated by an `operational_targeting` capability tag. Predicting a
+  **live mission's** communications windows is gated the same way, because the geometry that
+  schedules a simulated relay pass schedules a real one. Mission economics (`Ledger`) ships as an
+  open framework with proprietary cost data kept in the commercial layer.
 
 ---
 
 ## 13. Naming, versioning & docs conventions
 
-- Packages: `Astro-Mine-<Name>` (PyPI/dist name lowercase `astro-mine-<name>`; import
-  `astro_mine.<name>`).
-- **CLI naming (normative — [RFC-0011](../rfc/0011-umbrella-cli.md)).** A component's **direct
-  console script is `astro-mine-<package>`** — the prefix is uniform (it removes the `PATH`
-  land-grab of generic bare names like `fleet`/`link`/`prospect`) and names the command after its
-  package. The **discoverable umbrella surface is `astro-mine <verb>`** (verb-first — the user
-  guesses the *action*); component-scoped actions read as `astro-mine <component> <verb>` (e.g.
-  `astro-mine studio serve`). The umbrella (`astro-mine-cli`, import `astro_mine.cli`) **discovers**
-  subcommands from the **`astro_mine.cli`** entry-point group, so a component contributes a verb by
-  declaring an entry point — **never by a PR to the umbrella** — and it must **degrade honestly**
-  when a component is absent (name the `pip install`, never traceback). A missing first-party verb
-  names its fix; existing component CLIs keep working directly (the umbrella is additive). Any bare
-  or mis-nouned legacy name (`fleet`/`worlds`/`link`/`prospect`; `astro-mine-train`) is kept as an
-  **alias for one deprecation cycle**, removed at the public-flip gate. New CLIs are born under the
-  prefixed rule — the alias surface only shrinks.
+- **Components** are named `Astro-Mine-<Name>` in prose and imported as `astro_mine.<name>`. The
+  name is **not** a distribution name: `astro_mine.sim` ships in `astro-mine-platform`, and
+  `pip install astro-mine-sim` installs nothing, because no such distribution exists. The four
+  distribution names are in §7.1.
+- **CLI naming (normative).** The platform installs **exactly one** executable, `astro-mine`, from
+  `astro-mine-cli`, under **one** grammar:
+
+  ```
+  astro-mine <component> <verb> [options]
+  ```
+
+  Rules that follow from it:
+  - The platform distribution declares **no** console scripts. A component MUST NOT introduce one.
+    (A small number of `python -m` entry points remain for machine-facing plumbing — a container
+    entrypoint, an in-pod harness — because each is invoked by other code rather than typed.)
+  - **Component-first, then verb.** The user names the thing that owns the action, then the action.
+    Top-level verbs are reserved for the three *routers* that answer a question no single component
+    can — "who owns this?": `validate` (routed by the document's schema `$id`), `new` (scaffold an
+    authored document), and `plugin new` (scaffold a plugin package).
+  - **The CLI is lazy.** `astro-mine --help` MUST NOT import a component; dispatch imports exactly
+    the one module the user named (§8). The cost of that choice is that top-level help lists
+    components, not their verbs, and `astro-mine <component> --help` is where a component's real help
+    lives.
+  - **Third parties extend by entry point, never by a pull request.** The `astro_mine.cli`,
+    `astro_mine.cli.validators`, `astro_mine.cli.scaffolds`, and `astro_mine.cli.plugin_scaffolds`
+    groups stay live for outside packages, and a discovered command is presented
+    indistinguishably from a first-party one. First-party commands are dispatched statically,
+    because federating them through entry points hid which function ran and bought nothing once
+    every component was always present.
+  - **No prefixed per-component binaries, and no aliases.** The earlier scheme gave each component
+    its own `astro-mine-<component>` script, with bare legacy names (`fleet`, `worlds`, `link`,
+    `prospect`) and one mis-nouned prefixed name kept as deprecated aliases. All of them are gone.
+    Any such name in a document, a docstring, or a blog post is historical.
 - **Front-end packages** (§2.1) are npm packages under the **`@astro-mine`** scope:
   `@astro-mine/<name>`, lowercase and hyphenated. A per-component *surface* is named for its
   component with a `-ui` suffix — `@astro-mine/bench-ui`, `@astro-mine/studio-ui`,
   `@astro-mine/hub-ui` — which is also what the console's layering check keys on to tell a surface
-  from a library. A repo's workspace root is private and unpublished; only the packages it ships
+  from a library. The workspace root is private and unpublished; only the packages it ships
   carry the scope.
 - **Artifact names (normative).** A published artifact's registry name is **bare kebab-case** —
   `^[a-z][a-z0-9]*(-[a-z0-9]+)*$`, lowercase ASCII, hyphen-separated, starting with a letter. No
@@ -424,19 +541,18 @@ code version, the environment lockfile, and the random seed. Datasets and polici
   names only.
 - **Shipped examples (normative).** A component that defines an authored format MUST ship at least
   one working example of it, and the example MUST be reachable **two ways**, because the two
-  audiences are different: **package data** under `src/astro_mine/<comp>/reference/` for a reader
-  who has installed a wheel and calls `importlib.resources.files(...)`, and a path under the repo's
-  **`examples/`** for a reader browsing on GitHub. Where both exist, one is the file and the other
-  points at it — never two copies that can drift. An example MUST validate under its owner's
-  validator (`astro-mine-core validate`, or the component's own) at merge time, and the component's
-  README MUST name it by path and show the call that loads it. A format whose only example is
-  authored inside a build script does not satisfy this: content that ships but cannot be found is
-  content that does not exist.
-- Every component repo carries an `ARCHITECTURE.md` that links back to this directory.
+  audiences are different: **package data** under `src/astro_mine/<component>/reference/` for a
+  reader who has installed the wheel and calls `importlib.resources.files(...)`, and a path under
+  the platform's **`examples/<component>/`** for a reader browsing on GitHub. Where both exist, one
+  is the file and the other points at it — never two copies that can drift. An example MUST validate
+  under its owner's validator (`astro-mine validate`, or the owning component's own verb) at merge
+  time, and the component's documentation MUST name it by path and show the call that loads it. A
+  format whose only example is authored inside a build script does not satisfy this: content that
+  ships but cannot be found is content that does not exist.
+- **Documentation.** Each of the four repositories carries an `ARCHITECTURE.md` that links back to
+  this directory; a component's design lives in `architecture/<component>.md` here, not in the
+  source tree.
 - Interface versions are independent of implementation versions; a component declares the Core
   interface major versions it supports.
-- The full **release & version policy** — per-package SemVer, the Git tag as the version source
-  of truth, the private-incubation distribution stance, and the held Core interface version — is
-  specified in [VERSIONING.md](../VERSIONING.md).
 - This directory is the **source of truth** for cross-cutting decisions; component docs cite it
   with relative links (e.g., `see conventions.md §4`).
