@@ -47,7 +47,7 @@ controller — it owns none of those, it *calls* them. It does not author campai
 [Studio](studio.md)); it does not implement the hardware/flight-software adapters (that is
 [Bridge](bridge.md)); it does not implement safety shields (it *invokes* [Guard](guard.md));
 it does not run flight-certified targeting — certification-grade flight code generation is
-**explicitly excluded from the open core** (charter §2.3, §10.5, conventions.md §12). On-board
+**explicitly excluded from the open core** (charter §2, §9.5, conventions.md §12). On-board
 flight autonomy in Phase 3 is a [Bridge](bridge.md)/`Guard` concern, not an Ops feature.
 
 **Primary users:** operators and mission-ops teams. Secondarily, integrators validating the
@@ -70,9 +70,9 @@ threshold on Earth analogs").
 2. **Approve intent, not keystrokes.** Across minutes of latency, direct teleoperation is
    impossible for most tasks. Operators approve *bounded intent* (goals + envelopes); the edge
    executes autonomously within that envelope. The default interaction model is **supervised /
-   adjustable autonomy**, not teleoperation (charter §8).
+   adjustable autonomy**, not teleoperation (charter §7).
 3. **Reuse the design loop verbatim.** Replanning calls the identical [Mind](mind.md),
-   [Allocate](allocate.md), and [Guard](guard.md) components used during design (charter §6,
+   [Allocate](allocate.md), and [Guard](guard.md) components used during design (charter §5,
    conventions.md §1.2 "contribute once, use everywhere"). Operations is the design loop closed
    in real time — not a parallel reimplementation.
 4. **Event-sourced truth.** Fleet state is a fold over an append-only, replayable command-and-
@@ -80,7 +80,7 @@ threshold on Earth analogs").
    command and its provenance are auditable. This is non-negotiable for an operations system.
 5. **Degrade, don't collapse.** When comms drop or an asset goes dark, Ops sheds load, falls
    back to last-approved intent and `Guard`'s safe behaviors, and reconciles on reconnect —
-   the swarm must survive partition (charter §9, conventions.md §8).
+   the swarm must survive partition (charter §8, conventions.md §8).
 6. **Hard constraints are independent of learned components.** Safety floors (collision,
    power, keep-out) are enforced by [Guard](guard.md) on a path that does not trust any learned
    planner output. Assurance is structurally separate from optimization (conventions.md §9).
@@ -232,7 +232,7 @@ makes an operations decision auditable and a mission reproducible.
 
 ## 6. Integration architecture
 
-Ops is the hub of the **operations loop** (charter §6) and integrates almost the entire stack
+Ops is the hub of the **operations loop** (charter §5) and integrates almost the entire stack
 through Core contracts — never private side-channels (conventions.md §1.1):
 
 - **Consumes** a validated campaign + fleet roster (SADF) + bound world from
@@ -241,7 +241,7 @@ through Core contracts — never private side-channels (conventions.md §1.1):
   identical to design-time sim, just driven from the live belief and run ahead of reality.
 - **Calls** [Mind](mind.md) (mission/task-and-motion planning) and [Allocate](allocate.md)
   (assignment/scheduling) through the Core Policy/Planner API to replan — the same components,
-  same versions, as design (charter §6).
+  same versions, as design (charter §5).
 - **Gates** every candidate through [Guard](guard.md): no plan is dispatched without a `Guard`
   clearance, enforced independently of the planners (conventions.md §9).
 - **Drives** real hardware or the simulator through [Bridge](bridge.md) over the **ROS 2/DDS**
@@ -305,7 +305,7 @@ deployment tier 3): `Ops` + [Bridge](bridge.md) + [View](view.md) near operators
 
 **Targets (Phase-2 analog scale).**
 
-- Supervise **tens to ~hundreds** of heterogeneous assets (charter §5.4) from one console.
+- Supervise **tens to ~hundreds** of heterogeneous assets (charter §4.4) from one console.
 - **Belief update:** sub-second fused-state update per asset at telemetry cadence; collaborative
   graph optimization incremental and bounded (iSAM2), not full re-batch.
 - **Command-path latency (ground compute):** propose → vet → assure under a few seconds for
@@ -364,7 +364,7 @@ alongside [Guard](guard.md) and [Bridge](bridge.md).
   software is general supervisory orchestration, not flight-certified or weaponizable targeting.
   Adapters to specific real flight assets and any genuinely sensitive operational capability are
   **partitioned** into separate, access-controlled repos with a documented EAR/ITAR posture
-  (charter §10.5, conventions.md §12). Capability gating (Core capability tags + OPA) is
+  (charter §9.5, conventions.md §12). Capability gating (Core capability tags + OPA) is
   first-class, not a bolt-on.
 
 ---
@@ -403,37 +403,37 @@ alongside [Guard](guard.md) and [Bridge](bridge.md).
 | Decision | Options | Recommendation |
 |---|---|---|
 | **Orchestration runtime architecture** | Event-sourced/CQRS; actor model (Ray actors / Akka-style); workflow engine (Temporal, Argo) | **Event-sourced/CQRS core + Temporal durable-execution backbone** — event sourcing gives the audit/replay/reconstruct property operations demands; Temporal gives resumable long-horizon workflows. Actors used *within* services where they fit, not as the system spine. |
-| **State-estimation backend** | Factor graphs (GTSAM/iSAM2); filtering (EKF/UKF); learned estimator | **Factor-graph collaborative SLAM (GTSAM/iSAM2) for the fleet-level map + EKF/UKF for per-asset fusion**; a learned front-end (place recognition/odometry) is pluggable. Factor graphs handle multi-robot relative constraints and loop closure in feature-poor terrain natively (charter §8). |
+| **State-estimation backend** | Factor graphs (GTSAM/iSAM2); filtering (EKF/UKF); learned estimator | **Factor-graph collaborative SLAM (GTSAM/iSAM2) for the fleet-level map + EKF/UKF for per-asset fusion**; a learned front-end (place recognition/odometry) is pluggable. Factor graphs handle multi-robot relative constraints and loop closure in feature-poor terrain natively (charter §7). |
 | **Shadow-twin sync & vetting gate** | Continuous lock-step twin; on-demand vet per replan; ahead-of-time predictive twin | **Predictive twin run ahead of real time + a mandatory on-demand vet at each commit.** Continuous lock-step is too costly at fidelity; the twin predicts forward from the live belief and every replan must clear a fresh vet before dispatch. |
 | **Shadow-twin fidelity** | Always high-fidelity; always surrogate; adaptive | **Adaptive multi-fidelity** (conventions.md §8): [Surrogate](surrogate.md) for routine vetting to stay ahead of real time; escalate to high-fidelity [Sim](sim.md) for high-risk/low-margin plans. |
-| **HITL supervisory model** | Direct teleoperation; supervised autonomy; adjustable/sliding autonomy | **Adjustable autonomy with intent-envelope approval** as default; teleoperation only for short-latency analog/contingency cases. Operator approves bounded intent; edge executes within it (charter §8). |
+| **HITL supervisory model** | Direct teleoperation; supervised autonomy; adjustable/sliding autonomy | **Adjustable autonomy with intent-envelope approval** as default; teleoperation only for short-latency analog/contingency cases. Operator approves bounded intent; edge executes within it (charter §7). |
 | **Phase-gated autonomy posture (RFC-0001)** | Fixed posture all mission; per-phase manual; **regime-gated automatic ratchet** | **Regime-gated ratchet:** the autonomy level steps up automatically for high-latency deep-space phases (`interplanetary_transit`/`proximity_orbit`) — the operator approves an intent envelope over tens-of-minutes light-time and the onboard-analog/edge executes it; it steps back down for low-latency surface/analog phases. Posture is bound to the phase's regime and re-evaluated at each `PhaseTransition`. |
 | **Deployment locus** | Pure ground-station; pure edge/onboard; ground+edge split | **Ground+edge split:** heavy estimation/shadow/replanning on the ground; a thin `Guard`-wrapped intent executor at the edge for delay tolerance (conventions.md §7 tier 3). |
 | **Live-state store** | Redis; in-memory only; Postgres only | **Redis** for hot live state, rebuildable from the MCAP event log (conventions.md §5). |
 | **Ground eventing** | NATS/JetStream; Kafka; ROS 2 topics for everything | **NATS/JetStream** in the ground segment (conventions.md §4); **ROS 2/DDS only on the robot data plane** via [Bridge](bridge.md). Kafka only if a durable high-throughput replay log at scale is later required. |
 
-**Open questions / research dependencies (charter §8, §9).**
+**Open questions / research dependencies (charter §7, §8).**
 
 - **Delay-tolerant supervisory autonomy** — the interaction/trust model for one operator over
   many robots across minutes of latency is an open research problem; the intent-envelope model
-  is a starting hypothesis to validate on analogs (charter §8).
+  is a starting hypothesis to validate on analogs (charter §7).
 - **Swarm state estimation in GNSS-denied, feature-poor terrain** — collaborative localization
-  where landmarks are scarce and absolute positioning is unavailable (charter §8); co-designed
+  where landmarks are scarce and absolute positioning is unavailable (charter §7); co-designed
   with [Sim](sim.md)'s sensor models and [Worlds](worlds.md).
 - **Verifiable assurance under latency** — how strong a guarantee the shadow+`Guard` gate can
-  give for learned plans with no recovery and minutes of delay (charter §9); co-designed with
+  give for learned plans with no recovery and minutes of delay (charter §8); co-designed with
   [Guard](guard.md).
 - **Sim-faithful shadow** — quantifying the sim-to-real gap of the shadow twin so a vet verdict
-  is trustworthy; the sim-to-real credibility problem (charter §9, conventions.md §1.6),
+  is trustworthy; the sim-to-real credibility problem (charter §8, conventions.md §1.6),
   bounded with [Surrogate](surrogate.md) error tracking.
 - **Operational evaluation science** — what "good" means for a live multi-week campaign;
-  co-designed with [Bench](bench.md) (charter §8).
+  co-designed with [Bench](bench.md) (charter §7).
 
 ---
 
 ## 12. Roadmap alignment
 
-- **Phase 2 (~30–54 mo) — Operations bridge (charter §11).** Ops ships with [Bridge](bridge.md)
+- **Phase 2 (~30–54 mo) — Operations bridge (charter §10).** Ops ships with [Bridge](bridge.md)
   and [View](view.md) to **cross the simulation-to-operations threshold on Earth analogs**.
   - **MVP:** the orchestration runtime in **digital-twin shadow mode** — execute a
     [Studio](studio.md)-authored campaign against a [Sim](sim.md) backend through
@@ -441,18 +441,18 @@ alongside [Guard](guard.md) and [Bridge](bridge.md).
     assure → approve → dispatch), the supervisory console + [View](view.md), and the event-
     sourced MCAP log. The full loop runs with *no real hardware* — sim is the world.
   - **Then:** drive **terrestrial analog rover-swarm field tests** through [Bridge](bridge.md)'s
-    ROS 2 backend (charter §11 Phase 2 goal); harden delay-tolerant fallback, the edge executor,
+    ROS 2 backend (charter §10 Phase 2 goal); harden delay-tolerant fallback, the edge executor,
     and reconnect reconciliation against real comms dropout; mature adjustable-autonomy and
     explanation in the console.
 - **Phase 3 (54 mo+) — Flight & ecosystem.** Real flight-asset operation via [Bridge](bridge.md)
   adapters (cFS/F´/CCSDS), with the genuinely sensitive/flight-specific capability **partitioned
-  out of the open core** per the dual-use posture (charter §10.5, conventions.md §12). The open
+  out of the open core** per the dual-use posture (charter §9.5, conventions.md §12). The open
   Ops runtime remains the general, sim-and-analog-grade supervisory orchestrator.
   - **Multi-regime mission operations (RFC-0001, Phase 3).** The phase executor, multi-regime
     shadow twin, and phase-gated adjustable autonomy land here; Ops's only Phase-1 obligation is
     that Core reserves the `MissionSpec`/`PhaseTransition` schema hooks the executor consumes
     (RFC-0001 R5). The track is opt-in and must not gate the Phase-2 lunar/analog MVP.
 
-The discipline (charter §12 "scope explosion"): Ops must resist re-implementing planning,
+The discipline (charter §11 "scope explosion"): Ops must resist re-implementing planning,
 physics, or safety. Its job is to *orchestrate* the components that already exist — that
 restraint is what keeps the operations runtime thin and the platform an ecosystem.

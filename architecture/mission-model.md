@@ -61,7 +61,8 @@ A **small, closed, RFC-governed enum** — deliberately not an open type, to pro
 | `ascent_return` | body → transit (boundary) | departure with mined mass |
 | `earth_interface` | boundary event | delivery/recovery (modeled as an event, **not** a guided-EDL simulator — see §4) |
 
-Adding a regime is an RFC. The expectation is that this list is near-complete for cislunar and
+Adding a regime is a deliberate Core change, argued from a mission that needs it. The expectation is
+that this list is near-complete for cislunar and
 small-body missions; growth should be rare.
 
 ---
@@ -154,7 +155,7 @@ itself:
 - **Out / partitioned:** turning a reference trajectory into **executable maneuver guidance for
   real flight hardware** (operational targeting) and **guided atmospheric EDL** remain excluded,
   per [EXPORT_CONTROL.md](https://github.com/astro-mine/.github/blob/main/EXPORT_CONTROL.md) and
-  charter §10.5. `earth_interface` is modeled as a **delivery/recovery event with a mass/▵v
+  charter §9.5. `earth_interface` is modeled as a **delivery/recovery event with a mass/▵v
   accounting**, not a guided re-entry simulator. The `operational_targeting` capability tag gates
   anything that crosses this line at the registry/Bridge boundary.
 

@@ -13,7 +13,7 @@
 streams and artifacts produced everywhere else in the platform into something a human can watch,
 inspect, and trust: a 3D geospatial picture of the swarm on the body, time-aligned dashboards of
 fleet state, and — as a first-class feature, not a tooltip — **plan explanations** that answer
-"why is the swarm doing this?" (charter §5.6, §8 "delay-tolerant supervisory autonomy").
+"why is the swarm doing this?" (charter §4.6, §7 "delay-tolerant supervisory autonomy").
 
 It does, and only does:
 
@@ -193,10 +193,10 @@ shape genuinely demands it (conventions.md §3).
   **Deviation: no Storybook.** Storybook caps at Vite <= 6 and Vite-version parity across the
   front ends was prioritized, so component docs and visual checks are served by the Playwright lane
   over the `lib/` demo harness until Storybook supports Vite 8.
-- **3D geospatial:** **CesiumJS** + **3D Tiles** (charter §7) for planetary terrain and entities.
+- **3D geospatial:** **CesiumJS** + **3D Tiles** (charter §6) for planetary terrain and entities.
   **three.js / raw WebGL/WebGPU** is used *inside* Cesium (custom primitives / instanced draw) only
   where Cesium's entity API is too slow for very large swarms — not as a parallel renderer.
-- **Mission control:** **OpenMCT** (charter §7) embedded as the dashboards/telemetry surface, wired
+- **Mission control:** **OpenMCT** (charter §6) embedded as the dashboards/telemetry surface, wired
   to platform data through custom OpenMCT telemetry/time plugins.
 - **Replay:** the **MCAP** TypeScript/wasm reader; **Foxglove**-compatible message schemas and
   panels reused where it saves work (conventions.md §4).
@@ -399,19 +399,19 @@ option for cinematic demos — explicitly not the default (see §11). Measure be
 
 | Decision | Options | Recommendation |
 |---|---|---|
-| **Geospatial render engine** | **CesiumJS + 3D Tiles**; custom **three.js/WebGL(GPU)**; **Unreal/Omniverse pixel-streaming** | **CesiumJS + 3D Tiles** (charter §7; native planetary CRS, LOD terrain, aligns with [Worlds](worlds.md)). three.js/WebGPU only as in-Cesium primitives for very large swarms; Omniverse/Unreal streaming reserved for Phase-3 cinematic demos. |
-| **Mission-control layer** | **OpenMCT embed**; fully custom React dashboards; **both** | **OpenMCT embed for telemetry dashboards** (charter §7, mature, plugin model) **+ custom React for globe, timeline, and explanation** views OpenMCT doesn't cover. |
+| **Geospatial render engine** | **CesiumJS + 3D Tiles**; custom **three.js/WebGL(GPU)**; **Unreal/Omniverse pixel-streaming** | **CesiumJS + 3D Tiles** (charter §6; native planetary CRS, LOD terrain, aligns with [Worlds](worlds.md)). three.js/WebGPU only as in-Cesium primitives for very large swarms; Omniverse/Unreal streaming reserved for Phase-3 cinematic demos. |
+| **Mission-control layer** | **OpenMCT embed**; fully custom React dashboards; **both** | **OpenMCT embed for telemetry dashboards** (charter §6, mature, plugin model) **+ custom React for globe, timeline, and explanation** views OpenMCT doesn't cover. |
 | **Browser transport (high-rate)** | **WebSocket**; **SSE**; **WebRTC**; **Foxglove WS / rosbridge** | **WebSocket (+ Foxglove schemas)** for high-rate, **SSE** for low-rate/one-way updates; **rosbridge/Foxglove** when telemetry is on ROS 2/DDS; **WebRTC** only for server-side pixel streaming. |
 | **Replay** | Custom log reader; **MCAP**; Foxglove Studio embed | **MCAP** (platform standard, conventions.md §4) via its TS/wasm reader, with Foxglove-compatible schemas/panels reused; not a separate format. |
 | **Rendering site for huge swarms** | All client-side; **server-side aggregation**; server pixel-streaming | **Client-side by default**; **server-side entity aggregation** at the gateway above a swarm-size threshold; pixel-streaming only for thin clients / cinematic demos (Phase 3). |
-| **Explanation representation** | Free-text from an LLM; **structured decision-trace rendering**; hybrid | **Render structured upstream decision traces** (MCAP from [Mind](mind.md)/[Allocate](allocate.md)/[Guard](guard.md)) as a timeline + "why this, not that" panel. **Optional LLM layer only to *narrate* the structured trace** ([Studio](studio.md)'s intent-LLM, charter §5.5) — never to invent rationale (principle §3). |
+| **Explanation representation** | Free-text from an LLM; **structured decision-trace rendering**; hybrid | **Render structured upstream decision traces** (MCAP from [Mind](mind.md)/[Allocate](allocate.md)/[Guard](guard.md)) as a timeline + "why this, not that" panel. **Optional LLM layer only to *narrate* the structured trace** ([Studio](studio.md)'s intent-LLM, charter §4.5) — never to invent rationale (principle §3). |
 | **State transport: tiles** | Direct from [Worlds](worlds.md); gateway proxy/cache | **Gateway caching proxy** (CDN-backed) so the browser hits one origin and caches are shared. |
 | **Front-end framework** | React + TS; Vue; Svelte | **React + TypeScript** (conventions.md §2 — non-negotiable platform standard). |
 | **Multi-body / heliocentric view (RFC-0001)** | Extend the Cesium scene with a heliocentric mode; a separate astrodynamics plot widget; both | **Cesium for body-proximity / surface + a complementary heliocentric / multi-body mode** for transit and rendezvous, with a 2D **porkchop / launch-window** plot widget alongside; render [Trajectory](trajectory.md) `TrajectoryRef` arcs and [Transit](transit.md) geometry only — no guidance synthesis (dual-use boundary, RFC-0001 §6). |
 
 **Open questions / research dependencies:**
 
-- **Explanation UX for delay-tolerant supervision (charter §8).** What representation actually lets
+- **Explanation UX for delay-tolerant supervision (charter §7).** What representation actually lets
   one operator trust and supervise hundreds of robots across minutes of latency? A View + human-
   factors research question, co-designed with [Ops](ops.md)/[Mind](mind.md) and validated in the
   Phase-2 terrestrial-analog field tests.
@@ -435,7 +435,7 @@ option for cinematic demos — explicitly not the default (see §11). Measure be
   fleet telemetry from [Ops](ops.md), OpenMCT dashboards, the 3D geospatial scene with
   [Prospect](prospect.md) overlays, the shared live/replay timeline, and the **plan-explanation**
   views rendering [Mind](mind.md)/[Allocate](allocate.md)/[Guard](guard.md) traces — validated
-  against the terrestrial-analog rover-swarm field tests (charter §11). The embeddable library is
+  against the terrestrial-analog rover-swarm field tests (charter §10). The embeddable library is
   consumed by [Studio](studio.md).
 - **Phase 3+ (later).** Cinematic server-side pixel-streaming (Omniverse/Unreal) for stakeholder
   demos; richer LLM-narrated explanations; thin/mobile and AR/VR clients; flight-adjacent operations

@@ -39,7 +39,7 @@ one-phase case of the same model.
 - **Proves the whole platform thesis at once.** A mission that survives launch, months of cruise,
   proximity operations around an uncharacterized irregular body, surface contact in microgravity,
   ascent, and Earth return is the strongest possible evidence that "thin core, thick swappable
-  edges" scales from one world to a full interplanetary campaign (charter §3, §10).
+  edges" scales from one world to a full interplanetary campaign (charter §3, §9).
 - **Activates a new audience without disrupting the old.** Mission & systems engineers,
   astrodynamicists, and resource economists join the robotics/RL/planetary-science base via the
   [Mission Architect](../architecture/studio.md) surface (charter §2; RFC-0001 motivation), while
@@ -54,7 +54,7 @@ one-phase case of the same model.
   asteroid-mining capstone).
 - **High novelty, hard science.** Microgravity contact/anchoring, relative navigation around an
   uncharacterized body, window-gated no-recovery decisions under light-time, and
-  trajectory⇄fleet⇄swarm⇄economics co-optimization are open research problems (charter §7),
+  trajectory⇄fleet⇄swarm⇄economics co-optimization are open research problems (charter §6),
   framed here as a single benchmark.
 
 ## 3. Mission objective & success criteria
@@ -295,7 +295,7 @@ scores and operational readings comparable (the reuse property, system.md §6).
 
 ## 9. Hard problems exercised
 
-| Problem (charter §7 research / §8 engineering) | How this scenario stresses it |
+| Problem (charter §6 research / §8 engineering) | How this scenario stresses it |
 |---|---|
 | Microgravity proximity ops & anchoring (§7) | anchored contact/sampling on a cohesion-dominated rubble pile under ~10⁻⁴ g |
 | Cooperative multi-agent coordination under intermittent comms (§7) | a **sampler swarm** coordinating site coverage and contact under relay-gated comms and light-time |

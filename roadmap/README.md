@@ -1,7 +1,7 @@
 # Astro-Mine — Detailed Roadmap
 
 > **Status:** Phase-0 incubation — nothing is built yet. This is a *planning* document: it
-> elaborates the high-level [charter §10 phased roadmap](../charter/Swarm_Exploration_ISRU_Orchestrator_OSS_Project.md)
+> elaborates the high-level [charter §9 phased roadmap](../charter/Swarm_Exploration_ISRU_Orchestrator_OSS_Project.md)
 > and [system.md §11](../architecture/system.md) into per-phase, per-component **scope and
 > requirements** at a fidelity an implementation-planning session can turn into GitHub issues —
 > **without** prescribing implementation steps.
@@ -57,7 +57,7 @@ renumber**, so issues, dependencies, and later phases can cite them. An item is 
 This roadmap scopes the **recommended option as the baseline**; alternatives are out of scope for
 an item unless the item says otherwise. Genuine in-phase forks are called out where they remain open.
 
-**Honesty discipline.** Timeframes (`~0–12 mo`, etc.) are **illustrative** (charter §10), not
+**Honesty discipline.** Timeframes (`~0–12 mo`, etc.) are **illustrative** (charter §9), not
 commitments. Every "MUST validate / reproduce / score" requirement assumes the platform's
 determinism-and-provenance discipline (conventions.md §5, §11).
 
@@ -74,7 +74,7 @@ determinism-and-provenance discipline (conventions.md §5, §11).
 
 **The governing principle:** the narrow waist barely changes — later phases add edges, not core
 rewrites. Success is measured by how *little* [Core](../architecture/core.md) changes as the
-platform grows (system.md §11; charter §9).
+platform grows (system.md §11; charter §8).
 
 ---
 
@@ -136,7 +136,7 @@ not owned by one component, but they gate the phase exit.
   Phase 1) — one shared companion, the single home for `cryptography`, rather than a signer copied per
   producer.
 - **CX-GOV — Governance, license, export-control posture** established **up front**, before the
-  community forms (charter §12): Apache-2.0, the RFC process in `astro-mine/.github`, and a
+  community forms (charter §11): Apache-2.0, the RFC process in `astro-mine/.github`, and a
   documented EAR/ITAR posture and capability-tag taxonomy.
 - **CX-RFC0001 — Multi-regime schema hooks.** The *only* early obligation of the opt-in
   mission-architecture track is **reserving the additive Core schema hooks in Phase 1**
@@ -144,7 +144,7 @@ not owned by one component, but they gate the phase exit.
   `operational_targeting` tag). Implementations land in Phase 3 and **must not gate the lunar MVP**
   (RFC-0001 R5; mission-model §3).
 - **CX-S2R — Sim-to-real credibility.** Uncertainty-honest claims from P0; physics validation against
-  external oracles with explicit error budgets; terrestrial-analog validation in P2 (charter §9).
+  external oracles with explicit error budgets; terrestrial-analog validation in P2 (charter §8).
 - **CX-OBS — Observability.** OpenTelemetry traces/metrics/logs, Prometheus/Grafana/Loki, in every
   service as it ships (conventions.md §10).
 
@@ -161,7 +161,7 @@ ambiguity and are pinned here. Each phase file follows these.
 2. **Cloud's container-first principle is Phase 0; the hosted scale-out platform is Phase 1.** Every
    P0 workload is built container-first and cluster-ready, but the dependency-free local tier is all
    P0 actually requires (cloud.md §12).
-3. **Prospect is Phase 0.** Though absent from the charter §10 "ships" prose, the anchor scenario's
+3. **Prospect is Phase 0.** Though absent from the charter §9 "ships" prose, the anchor scenario's
    belief field + ground-truth isolation are P0 deliverables (system.md §11; scenario §15).
 4. **Surrogate is early-Phase-1, ordered after the minimum runnable loop** — it consumes Phase-0 Sim
    (surrogate.md §12). **View** has a sanctioned **thin-slice reuse from P0/1** (globe + MCAP replay

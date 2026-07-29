@@ -1,6 +1,6 @@
 # Astro-Mine-Allocate — Technology Architecture
 
-> Layer: **Autonomy & coordination** · Phase: **1** · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
+> Layer: **Autonomy & coordination** · Phase: **1** · Ships in: [`astro-mine-platform`](platform.md) · Extended for multi-regime missions (Phase 3)
 > The combinatorial core of swarm coordination — who does what, when, and where.
 > Cross-cutting standards: see [conventions.md](conventions.md).
 
@@ -27,11 +27,11 @@ It owns and only owns:
   behind one strategy interface;
 - **anytime / online re-solving** machinery for replanning under change.
 
-**Mission-level joint assignment (RFC-0001).** With the multi-regime extension, the same engine
+**Mission-level joint assignment.** With the multi-regime extension, the same engine
 also decides the discrete backbone of an interplanetary resource mission: **which asset → which
 target** (e.g. which asteroid) **→ which launch/transfer window → which trajectory**. This is the
 discrete/continuous joint problem the RFC identified as having no owner — it sits between Allocate
-and [Sim](sim.md) (RFC-0001 §4, motivation item 1) and is **assigned to Allocate** for the
+and [Sim](sim.md) ([mission-model.md](mission-model.md)) and is **assigned to Allocate** for the
 discrete-assignment half, mixing combinatorial choice with continuous orbital-mechanics
 feasibility. Allocate still owns only the *assignment*; trajectory *optimization* is
 [Trajectory](trajectory.md)'s, and the trade-study loop that couples them is
@@ -75,7 +75,7 @@ continuous motion and hard physical constraints**.
 4. **Exact and learned compose, neither rules.** Learning *guides* exact search (warm starts,
    branching/variable-ordering hints, subproblem selection); the exact layer *guarantees*
    feasibility and bounds. We never trust a neural assignment without a feasibility check, and we
-   never throw away a learned warm start that the solver can verify (charter §8).
+   never throw away a learned warm start that the solver can verify (charter §7).
 5. **Decompose to scale.** Hundreds of robots over multi-week horizons do not fit one monolithic
    solve. Spatial/temporal partitioning and rolling-horizon decomposition are first-class, not
    afterthoughts; the architecture assumes the full problem is *never* solved at once at scale.
@@ -144,7 +144,7 @@ and indexed by [Hub](hub.md). A research lab ships "learning-to-branch for excav
 a guidance plugin without touching Allocate's core. Reference solvers ship as *replaceable
 examples*.
 
-**Mission-level joint assignment (RFC-0001).** Multi-regime missions add new *constraint
+**Mission-level joint assignment.** Multi-regime missions add new *constraint
 families* and *edge weights* to this same machinery — no new solver paradigm. Window-feasibility,
 Δv, and time-of-flight from [Trajectory](trajectory.md)'s `TrajectoryRef`/`ManeuverBudget`
 artifacts enter as a constraint builder (launch/transfer windows as time-windowed availability,
@@ -171,7 +171,7 @@ share one library (conventions.md §1.4).
   metaheuristics or custom propagators drop to **C++20** via pybind11 where profiling justifies
   it; OR-Tools' CP-SAT is itself a C++ engine driven from Python.
 - **Solver libraries:**
-  - **Google OR-Tools / CP-SAT** — the primary engine (charter §7): a lazy-clause-generation
+  - **Google OR-Tools / CP-SAT** — the primary engine (charter §6): a lazy-clause-generation
     CP-SAT solver that excels at the discrete scheduling + assignment + interval-reasoning shape
     Allocate has, with native cumulative/no-overlap/interval constraints, integrated objectives,
     and solver hints (warm starts) — the natural seam for learned guidance.
@@ -194,9 +194,10 @@ share one library (conventions.md §1.4).
 - **Runtime model:** synchronous library call for small solves; an async, streaming gRPC worker
   for large ones. Solves are CPU-bound, multi-threaded within a backend, and embarrassingly
   parallel across scenarios/partitions.
-- **Build/packaging:** Python wheel `astro-mine-allocate`; OCI image bundling pinned solver
-  binaries (CP-SAT, HiGHS, SCIP) for reproducibility; **SemVer**; Gurobi shipped as an optional
-  extra, never a default dependency, to keep the stack fully open (conventions.md §7).
+- **Build/packaging:** ships in the [`astro-mine-platform`](platform.md) wheel, with CP-SAT as a
+  base dependency at a deliberately tight pin; OCI image bundling the other solver binaries (HiGHS,
+  SCIP) for reproducibility. Gurobi stays an optional extra, never a default dependency, to keep the
+  stack fully open (conventions.md §7.1).
 
 ---
 
@@ -253,7 +254,7 @@ Allocate sits inside the autonomy layer and integrates entirely through Core con
   uncertainty), [Fleet](fleet.md) (asset capabilities & budgets). Where durations/costs come from
   physics, they are sourced via [Sim](sim.md)/[Surrogate](surrogate.md) rollouts or cached
   cost tables, not re-derived.
-- **Mission-level constraints from [Trajectory](trajectory.md)/[Sizing](sizing.md) (RFC-0001):**
+- **Mission-level constraints from [Trajectory](trajectory.md)/[Sizing](sizing.md):**
   for multi-regime missions Allocate additionally consumes `TrajectoryRef`/`ManeuverBudget`
   feasibility plus Δv/time-of-flight from [Trajectory](trajectory.md) as window-gated constraints
   and edge weights, and Δv→propellant feasibility from [Sizing](sizing.md) — alongside the
@@ -281,7 +282,7 @@ Allocate sits inside the autonomy layer and integrates entirely through Core con
 ## 7. Infrastructure & deployment
 
 - **Deployment tiers (conventions.md §7):**
-  1. **Local/dev** — `pip install astro-mine-allocate`; small-to-medium instances solve on a
+  1. **Local/dev** — `pip install astro-mine-cli`; small-to-medium instances solve on a
      workstation in-process. This tier MUST always work — a researcher solves a reference
      scenario in an afternoon.
   2. **Cloud** — a gRPC solver service plus **Ray** for parallel/decomposed solves and sweeps,
@@ -320,7 +321,7 @@ Allocate sits inside the autonomy layer and integrates entirely through Core con
     is never solved at once at scale (principle 5).
   - **Learned warm starts & guidance (`guidance`):** GNN-predicted assignments warm-start CP-SAT;
     learning-to-branch and subproblem-selection models cut search; all verified by the exact
-    layer (charter §8). Warm starts from the *previous* plan dominate during online replanning.
+    layer (charter §7). Warm starts from the *previous* plan dominate during online replanning.
   - **Incrementality:** keep the IR and incumbent warm in Redis; apply deltas on re-solve rather
     than rebuilding (the online path).
   - **Anytime contract (`anytime`):** stream incumbents with bounds so a caller always has a
@@ -373,7 +374,7 @@ Allocate sits inside the autonomy layer and integrates entirely through Core con
   constraints, the optimality gap, and — on infeasibility — an **irreducible infeasible set
   (IIS)** so an operator or mission designer learns *why* no plan exists (e.g., "no contact
   window long enough to relay the haul before the power floor"). This is an operability feature,
-  not a nicety, for delay-tolerant supervisory autonomy (charter §8).
+  not a nicety, for delay-tolerant supervisory autonomy (charter §7).
 - **Testing & validation (conventions.md §11):**
   - **Unit/integration:** `pytest`; **Hypothesis** property tests asserting solver invariants
     (returned plans are always feasible against the model; objective is correctly computed;
@@ -394,11 +395,11 @@ Allocate sits inside the autonomy layer and integrates entirely through Core con
 
 | Decision | Options | Recommendation |
 |---|---|---|
-| Primary discrete solver | OR-Tools **CP-SAT**; MILP (HiGHS/SCIP/Gurobi); custom CP | **CP-SAT** — native interval/cumulative/no-overlap scheduling, integrated objectives, solver hints for warm starts; the natural fit for assignment+scheduling (charter §7) |
+| Primary discrete solver | OR-Tools **CP-SAT**; MILP (HiGHS/SCIP/Gurobi); custom CP | **CP-SAT** — native interval/cumulative/no-overlap scheduling, integrated objectives, solver hints for warm starts; the natural fit for assignment+scheduling (charter §6) |
 | MILP backend (modeling track) | HiGHS; SCIP; **Gurobi (commercial)**; CBC | **HiGHS default** (open, fast LP/MILP); **SCIP** for hard MILP / branch-and-price; **Gurobi as optional licensed extra**, never a default dependency (keep stack open) |
 | Modeling layer | **Pyomo**; OR-Tools MathOpt; `python-mip`; raw solver APIs | **Pyomo** for the solver-agnostic MILP track; **native CP-SAT API** for the CP track — compiled from one Allocation IR |
 | Coordination architecture | **Centralized** optimization; **decentralized/auction** (CBBA); **hybrid** | **Hybrid** — centralized exact/decomposed solve as the default; auction backend as the comms-degraded fallback so coordination degrades, not collapses |
-| Exact vs learned vs hybrid | Pure exact; pure learned (neural combinatorial opt); **hybrid (neural-guided)** | **Hybrid** — learning *warm-starts and guides* (learning-to-branch, subproblem selection) exact search that *guarantees* feasibility/bounds (charter §8); never trust unverified learned assignments |
+| Exact vs learned vs hybrid | Pure exact; pure learned (neural combinatorial opt); **hybrid (neural-guided)** | **Hybrid** — learning *warm-starts and guides* (learning-to-branch, subproblem selection) exact search that *guarantees* feasibility/bounds (charter §7); never trust unverified learned assignments |
 | Guidance model class & artifact | MLP; **GNN over task/asset/contact graph**; transformer; pointer net | **GNN encoder** (the problem is a graph) exported to **ONNX** (conventions.md §6) for portable, optional inference |
 | Decomposition for scale | Monolithic; spatial partition; **rolling-horizon (temporal)**; column generation / branch-and-price | **Rolling-horizon + spatial partitioning** as the workhorse; **column generation** for routing-heavy hauling subproblems |
 | Uncertainty handling | Deterministic re-solve; **stochastic (scenario/SAA)**; robust/chance-constrained | **Stochastic scenario-based** for design when distributions matter; **fast deterministic re-solve** (with warm start) as the online default; robust formulation as an opt-in mode |
@@ -422,7 +423,7 @@ Allocate sits inside the autonomy layer and integrates entirely through Core con
 - **Granularity of the contact-graph and traversal-cost interface** with [Link](link.md) and
   [Worlds](worlds.md) so the IR stays solver-neutral without leaking physics.
 
-**Mission-level joint assignment (RFC-0001).** The asset↔target↔window↔trajectory problem reuses
+**Mission-level joint assignment.** The asset↔target↔window↔trajectory problem reuses
 every recommendation above: **CP-SAT / MILP** as the combinatorial backbone, **learned
 warm-starts** for the larger search, and the **GNN-over-graph** encoder extended to the
 asset-target-window graph. It is **window-gated with hard orbital deadlines** (a missed launch
@@ -436,7 +437,7 @@ into the solver-neutral model — the mission-scale analogue of the contact-grap
 ## 12. Roadmap alignment
 
 - **Phase 1 (this package's debut).** Allocate ships with [Mind](mind.md), [Learn](learn.md),
-  [Guard](guard.md), [Studio](studio.md), and [Hub](hub.md) (charter §11) to make Astro-Mine "the
+  [Guard](guard.md), [Studio](studio.md), and [Hub](hub.md) (charter §10) to make Astro-Mine "the
   MARL and planning commons for planetary swarms."
 - **Phase-1 MVP:** the **CP-SAT** backend behind the [Core](core.md) allocation sub-interface;
   the canonical Allocation IR; constraint builders for **power, comms-window, and terrain
@@ -449,12 +450,12 @@ into the solver-neutral model — the mission-scale analogue of the contact-grap
   [Learn](learn.md) traces; **decomposition** (rolling-horizon, spatial partition) for scale on
   [Cloud](cloud.md); the **decentralized auction** fallback; **stochastic/robust** formulations
   over [Prospect](prospect.md) uncertainty. Online replanning hardens for [Ops](ops.md) at the
-  Phase-2 operations threshold (charter §11).
+  Phase-2 operations threshold (charter §10).
 - **Phase 3:** flight-adjacent replanning latency/assurance work alongside [Bridge](bridge.md);
   new task/asset regimes (asteroids, icy moons) arrive purely as constraint/solver plugins, never
   as core changes — the measure of success being how little Allocate's IR has to change as the
   edges grow.
-- **Phase 3 (RFC-0001):** mission-level joint asset↔target↔window↔trajectory assignment lands as
+- **Phase 3:** mission-level joint asset↔target↔window↔trajectory assignment lands as
   added constraint families/edge weights consuming [Trajectory](trajectory.md)/[Sizing](sizing.md)
   feasibility over the Mission/Phase/Regime contract ([mission-model](mission-model.md)) — Core
   schema hooks reserved in **Phase 1**, implementation in **Phase 3**; the IR and CP-SAT/MILP

@@ -2,7 +2,7 @@
 
 > **Window:** 54 mo + · **Theme:** Flight, mission architecture & ecosystem · **Roadmap home:** [README](README.md)
 > **Goal:** become the **default stack** — for surface ISRU *and* full interplanetary resource
-> missions — as the cislunar economy matures (charter §10; system.md §11).
+> missions — as the cislunar economy matures (charter §9; system.md §11).
 
 **Entry dependencies:** Phase 2 complete (sim→ops threshold crossed on analogs); the **RFC-0001 Core
 schema hooks reserved in Phase 1** (`RM-P1-CORE-04`) — without them this phase would require

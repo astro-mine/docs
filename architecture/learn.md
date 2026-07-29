@@ -1,6 +1,6 @@
 # Astro-Mine-Learn — Technology Architecture
 
-> Layer: **Autonomy & coordination** · Phase: **1**
+> Layer: **Autonomy & coordination** · Phase: **1** · Ships in: [`astro-mine-platform`](platform.md)
 > The multi-agent RL engine: PettingZoo-style envs, baselines, curricula, and scale-out
 > training for cooperation under partial observability and comms-limited links.
 > Cross-cutting standards: see [conventions.md](conventions.md).
@@ -37,7 +37,7 @@ is a *consumer* of Core contracts, never an extender of the waist. It also does 
 leaderboard; it *produces* artifacts that [Bench](bench.md) scores and [Hub](hub.md) distributes.
 
 **Primary users:** ML and RL researchers — the earliest and largest contributor base
-(charter §3, §5.4). Secondarily, autonomy researchers and mission designers who consume trained
+(charter §3, §4.4). Secondarily, autonomy researchers and mission designers who consume trained
 policies via [Mind](mind.md).
 
 **Charter alignment:** §5.4 (the Learn package); §7 ("PyTorch and JAX; multi-agent RL via
@@ -50,7 +50,7 @@ Learn is the engine behind).
 
 ## 2. Architecture principles
 
-1. **Library first, cluster second.** A researcher MUST be able to `pip install astro-mine-learn`,
+1. **Library first, cluster second.** A researcher MUST be able to `pip install astro-mine-cli`,
    wrap a scenario, and train a baseline on a single GPU workstation before any cluster is
    involved (conventions.md §7, tier 1). The distributed path is the *same* code with a different
    executor, never a fork.
@@ -70,17 +70,17 @@ Learn is the engine behind).
    pytrees) stay internal to Learn (conventions.md §6).
 6. **Algorithms are plugins.** A new MARL algorithm, a new curriculum, or a new scenario generator
    is contributed as a registered plugin against Learn's trainer/curriculum interfaces — not a
-   patch to the core toolkit (conventions.md §1, charter §10.2).
+   patch to the core toolkit (conventions.md §1, charter §9.2).
 7. **Throughput is multi-fidelity.** Training rollouts pick a fidelity tier per phase: cheap
    surrogate-accelerated or GPU-vectorized rollouts early, high-fidelity [Sim](sim.md) for
    final-policy validation. The fidelity dial is a curriculum axis, not an afterthought
-   (conventions.md §8, charter §9).
+   (conventions.md §8, charter §8).
 8. **Honest evaluation.** Reported scores separate *training* envs from *held-out evaluation*
    envs; sample-efficiency, wall-clock, and seed-variance are all reported. A single lucky seed
-   is an anti-pattern (charter §8 "evaluation science for swarm campaigns").
+   is an anti-pattern (charter §7 "evaluation science for swarm campaigns").
 9. **Degrade, don't collapse.** Policies are trained and stressed against comms dropout so the
    learned behavior degrades gracefully — the property [Guard](guard.md) later enforces as a hard
-   floor (conventions.md §8, charter §9).
+   floor (conventions.md §8, charter §8).
 
 ---
 
@@ -116,7 +116,7 @@ astro_mine.learn
 - **`CommsModel`** — a declarative, composable wrapper describing the comms regime:
   line-of-sight/range gating (driven by [Link](link.md) when present), message bandwidth budget,
   stochastic **drop** probability, and fixed/sampled **delay** distributions. This is *the*
-  knob that makes the charter §8 problem concrete and benchmark-comparable.
+  knob that makes the charter §7 problem concrete and benchmark-comparable.
 - **`Algorithm` / `Trainer`** — the plugin contract for a learning method: `act(obs)`,
   `learn(batch)`, checkpoint/restore, and an `export()` hook. CTDE algorithms additionally declare
   a centralized-critic input spec.
@@ -131,7 +131,7 @@ astro_mine.learn
 New **algorithms**, **curricula**, **scenario generators**, and **model architectures** register
 through the Core plugin registry (conventions.md §1, §7). In-process plugins use Python entry
 points; the trainer discovers them by capability tag. Reference baselines ship as *replaceable
-examples*, not privileged internals (charter §10.2).
+examples*, not privileged internals (charter §9.2).
 
 ### Interaction patterns
 
@@ -156,10 +156,10 @@ examples*, not privileged internals (charter §10.2).
 - **ML frameworks:** **PyTorch** is the primary, default training framework (broadest community
   familiarity, the RLlib path). **JAX** (with **Brax**-style vectorized envs and `flax`/`optax`)
   is the recommended path for massively parallel, GPU-resident rollouts and differentiable
-  pipelines (conventions.md §6, charter §7). Learn supports both; an algorithm declares which
+  pipelines (conventions.md §6, charter §6). Learn supports both; an algorithm declares which
   backend it uses.
 - **RL framework:** **Ray RLlib** is the default multi-agent training framework and distributed
-  executor (conventions.md §6, charter §7) — it gives multi-agent APIs, batteries-included
+  executor (conventions.md §6, charter §6) — it gives multi-agent APIs, batteries-included
   baselines, and KubeRay scale-out for free. A **JAX-native** stack (PureJaxRL-style end-to-end
   GPU training) is offered as an alternative for throughput-bound research (see §11).
 - **Env APIs:** **Gymnasium** + **PettingZoo** (`ParallelEnv`) (conventions.md §3). Vectorized
@@ -172,9 +172,11 @@ examples*, not privileged internals (charter §10.2).
 - **Experiment tracking:** **MLflow** (open-source default); **Weights & Biases** as a hosted
   option (conventions.md §6). Runs link to [Bench](bench.md) results and [Hub](hub.md) artifacts
   by content hash.
-- **Build/packaging:** Python wheel `astro-mine-learn`; OCI images for the rollout-worker and
-  learner roles (pinned base images, multi-arch where relevant) per conventions.md §7. SemVer;
-  declares the Core interface major versions it supports (conventions.md §13).
+- **Build/packaging:** ships in the [`astro-mine-platform`](platform.md) wheel, with Ray/RLlib and
+  the export and tracking stacks behind `learn-*` extras — training is the heaviest optional stack the
+  platform has, and the local tier must install without it (conventions.md §7.1). OCI images for the
+  rollout-worker and learner roles (pinned base images, multi-arch where relevant). Declares the Core
+  interface major versions it supports (conventions.md §13).
 
 ---
 
@@ -208,7 +210,7 @@ only consumes the spaces the env declares.
 
 ## 6. Integration architecture
 
-Learn sits in the design/training loop (charter §6) and connects only through Core contracts:
+Learn sits in the design/training loop (charter §5) and connects only through Core contracts:
 
 - **[Core](core.md) — Environment API & Policy API (consumes).** Learn's `envs/adapter`
   wraps any Core Environment-API world as Gymnasium/PettingZoo; exported policies implement the
@@ -225,19 +227,19 @@ Learn sits in the design/training loop (charter §6) and connects only through C
   in its metadata so [Bench](bench.md) can require a high-fidelity validation pass.
 - **[Link](link.md) (consumes, optional).** When present, the `CommsModel` is driven by Link's
   line-of-sight/relay/latency/bandwidth model rather than a synthetic stand-in — making the
-  comms-limitation realistic (charter §5.1).
+  comms-limitation realistic (charter §4.1).
 - **[Mind](mind.md) (produces for).** Exported ONNX policies are consumed as controllers and
   pluggable planners inside Mind's hierarchy.
 - **[Guard](guard.md) (produces for).** Learned policies are wrapped by Guard's safety shield;
   Learn surfaces the policy's declared comms/observability assumptions and action bounds in
   metadata so Guard knows what envelope to enforce.
 - **[Allocate](allocate.md) (produces for, optional).** Learn can train learned heuristics that
-  Allocate combines with CP-SAT/OR-Tools exact solvers (charter §5.4).
+  Allocate combines with CP-SAT/OR-Tools exact solvers (charter §4.4).
 - **[Bench](bench.md) (produces for).** `PolicyPackage` artifacts are scored on named scenarios;
   Bench pins the Core interface versions and re-runs with recorded seeds for reproducibility.
 - **[Hub](hub.md) (produces for / discovers from).** Policies (and baselines, curricula) are
   published to and discovered from Hub by content hash — the academic-flywheel network
-  (charter §10.3).
+  (charter §9.3).
 - **[Cloud](cloud.md) (deploys on).** Distributed training runs as Ray jobs on KubeRay; large
   sweeps as Argo Workflows (conventions.md §7).
 
@@ -296,7 +298,7 @@ Learn sits in the design/training loop (charter §6) and connects only through C
   on object storage; range-read only the slices a learner needs (conventions.md §8).
 - **Back-pressure.** Rollout→learner queues are bounded; under load the system sheds rollouts
   rather than OOMing — and, deliberately, training under simulated comms dropout exercises the
-  *graceful-degradation* property the policies themselves must have (conventions.md §8, charter §9).
+  *graceful-degradation* property the policies themselves must have (conventions.md §8, charter §8).
 
 **Scaling strategy:** horizontal rollout fan-out on Ray/K8s; data-parallel learner; multi-fidelity
 dial as the primary cost lever; spot/preemptible workers for sweeps. Every baseline ships a
@@ -318,12 +320,12 @@ reproducible throughput benchmark (conventions.md §8 "measure before optimizing
   signed metadata so a Hub consumer can verify what a policy was trained on.
 - **Safety boundary — explicit.** Learn produces policies; it provides **no runtime safety
   guarantee**. Hard constraints (collision, power floors, keep-out) are enforced independently by
-  [Guard](guard.md) (conventions.md §9, charter §5.4). Learn's contribution to safety is *honest
+  [Guard](guard.md) (conventions.md §9, charter §4.4). Learn's contribution to safety is *honest
   metadata* (declared comms/observability assumptions, action bounds, surrogate-fidelity caveats)
   so Guard and operators know the envelope. A learned policy is never trusted as the last line of
   defense.
 - **Export control / dual use.** Learn trains *cooperative coordination under comms constraints*
-  on *open scientific scenarios* — squarely inside the open commons (charter §2, §10.5,
+  on *open scientific scenarios* — squarely inside the open commons (charter §2, §9.5,
   conventions.md §12). It generates no certification-grade flight targeting. Where a policy is
   trained against a capability-tagged sensitive scenario, that tag (from the Core manifest)
   propagates into the policy metadata and gates publication via OPA (conventions.md §12,
@@ -338,7 +340,7 @@ reproducible throughput benchmark (conventions.md §8 "measure before optimizing
   (conventions.md §10). A distributed training run is traceable across learner and rollout workers.
 - **Training metrics:** reward curves, KL/entropy/value-loss, env-steps/sec, sample-efficiency,
   per-agent contribution, and **comms-stress curves** (performance vs. drop/delay) — the headline
-  diagnostic for the charter §8 problem.
+  diagnostic for the charter §7 problem.
 - **Testing & validation strategy:**
   - *Unit/integration:* `pytest`; **Hypothesis** property tests for env-wrapper invariants
     (mask consistency, action-space conformance, comms-budget accounting) (conventions.md §11).
@@ -349,7 +351,7 @@ reproducible throughput benchmark (conventions.md §8 "measure before optimizing
   - *Export equivalence:* every ONNX export is checked under **ONNX Runtime** for numerical
     equivalence to the source policy on a fixed observation batch before publish.
   - *Evaluation harness:* held-out evaluation envs, seed sweeps, and variance reporting baked into
-    `eval/` so leaderboard numbers are statistically honest (charter §8).
+    `eval/` so leaderboard numbers are statistically honest (charter §7).
 
 ---
 
@@ -357,7 +359,7 @@ reproducible throughput benchmark (conventions.md §8 "measure before optimizing
 
 | Decision | Options | Recommendation |
 |---|---|---|
-| **MARL paradigm** | Fully independent learners (IPPO); centralized-training/decentralized-execution (CTDE: MAPPO/QMIX/MADDPG); explicit communication-learning methods | **CTDE (MAPPO + QMIX) as default baselines**, IPPO as the simple control, **comms-learning as a first-class research track** — because comms-limited cooperation *is* the charter §8 problem. Ship all three as plugins. |
+| **MARL paradigm** | Fully independent learners (IPPO); centralized-training/decentralized-execution (CTDE: MAPPO/QMIX/MADDPG); explicit communication-learning methods | **CTDE (MAPPO + QMIX) as default baselines**, IPPO as the simple control, **comms-learning as a first-class research track** — because comms-limited cooperation *is* the charter §7 problem. Ship all three as plugins. |
 | **RL framework / executor** | Ray RLlib; JAX-native (PureJaxRL/Brax-style end-to-end GPU); custom trainer | **Ray RLlib (PyTorch) as the default**, KubeRay for scale-out; **JAX-native offered as a high-throughput alternative** for vectorized-env research. Avoid a custom trainer except for kernels. |
 | **Sim-throughput strategy** | GPU-vectorized envs; distributed CPU rollouts; surrogate-accelerated rollouts | **Surrogate-accelerated as the bulk-training default**, distributed CPU [Sim](sim.md) for fidelity-critical phases, **GPU-vectorized where a JAX/Brax env or surrogate exists** — selectable per curriculum stage. |
 | **Partial-observability & comms modeling** | In-algorithm hacks; centralized super-observation; **declarative env-wrapper `CommsModel`** | **Declarative env-wrapper** (observation masks + drop/delay/budget channel), optionally driven by [Link](link.md) — keeps results comparable across algorithms. |
@@ -368,7 +370,7 @@ reproducible throughput benchmark (conventions.md §8 "measure before optimizing
 
 **Open questions / research dependencies:**
 
-- The headline open problem (charter §8): *scalable cooperative learning under partial
+- The headline open problem (charter §7): *scalable cooperative learning under partial
   observability and intermittent, delayed comms.* The `CommsModel` makes it measurable; which
   algorithm family wins is unresolved and is a [Bench](bench.md) leaderboard, not a fixed choice.
 - Exact boundary of the Core Environment API for **variable-fidelity** and **comms-masked**
@@ -377,15 +379,15 @@ reproducible throughput benchmark (conventions.md §8 "measure before optimizing
 - How much training can run on [Surrogate](surrogate.md) fidelity before high-fidelity validation
   is required — depends on Surrogate's tracked error bounds (conventions.md §8).
 - Whether learned **allocation heuristics** belong in Learn or [Allocate](allocate.md), and the
-  hand-off contract between them (charter §5.4).
+  hand-off contract between them (charter §4.4).
 - Sim-to-real / sim-to-sim transfer credibility for learned policies — tied to the platform-wide
-  sim-to-real research thread (charter §8) and validated only on terrestrial analogs in Phase 2.
+  sim-to-real research thread (charter §7) and validated only on terrestrial analogs in Phase 2.
 
 ---
 
 ## 12. Roadmap alignment
 
-- **Phase 1** is Learn's debut (charter §11): "become the MARL and planning commons for planetary
+- **Phase 1** is Learn's debut (charter §10): "become the MARL and planning commons for planetary
   swarms," shipping alongside [Mind](mind.md), [Allocate](allocate.md), [Guard](guard.md),
   [Studio](studio.md), and [Hub](hub.md), with the first public leaderboards.
 - **MVP (Phase 1 entry):** Gymnasium/PettingZoo adapter over the Core Environment API; the
@@ -398,6 +400,6 @@ reproducible throughput benchmark (conventions.md §8 "measure before optimizing
   the comms-stress evaluation suite.
 - **Later (Phase 2+):** automatic-curriculum plugins; learned allocation heuristics for
   [Allocate](allocate.md); transfer-learning and sim-to-real-aware training validated against the
-  terrestrial analog field tests that [Ops](ops.md) introduces (charter §11, Phase 2). The success
+  terrestrial analog field tests that [Ops](ops.md) introduces (charter §10, Phase 2). The success
   measure is the academic flywheel turning: external labs publishing policies to [Hub](hub.md) and
-  beating the [Bench](bench.md) leaderboards (charter §10.3).
+  beating the [Bench](bench.md) leaderboards (charter §9.3).

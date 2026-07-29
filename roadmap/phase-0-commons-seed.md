@@ -2,10 +2,10 @@
 
 > **Window:** ~0–12 mo · **Theme:** Commons seed · **Roadmap home:** [README](README.md)
 > **Goal:** a runnable, reproducible benchmark on the lunar-polar anchor scenario — a researcher can
-> *clone, run, and score a baseline in an afternoon* (charter §10, §13; system.md §11).
+> *clone, run, and score a baseline in an afternoon* (charter §9, §12; system.md §11).
 
 **Entry dependencies:** none (this is the seed). **Governance, license, and export-control posture
-must be stood up alongside the first code, not after** (charter §12 → [CX-GOV](README.md#cross-cutting-workstreams)).
+must be stood up alongside the first code, not after** (charter §11 → [CX-GOV](README.md#cross-cutting-workstreams)).
 
 **Integration milestones (the phase's definition of "done"):**
 
@@ -41,10 +41,10 @@ Breadth (Mars, more engines, autonomy, studio) is deliberately out of scope.
 - **RM-P0-CORE-02** — **Environment API v0.1**: `reset()/step(action) → observation, reward?, info`
   generalized for multi-agent, partial observability, variable timestep, and **explicit
   comms/observation masks**; maps cleanly onto Gymnasium/PettingZoo without being limited to them.
-  *(trace: core.md §3; `LUNAR-TR-003`; charter §8)*
+  *(trace: core.md §3; `LUNAR-TR-003`; charter §7)*
 - **RM-P0-CORE-03** — **Policy/Planner API v0.1**: one uniform "observations + context →
   actions/assignments" contract with composable sub-interfaces (mission planner · TAMP · allocator ·
-  controller). *(trace: core.md §3; charter §5.4)*
+  controller). *(trace: core.md §3; charter §4.4)*
 - **RM-P0-CORE-04** — **Message-schema catalog v0.1**: the typed cross-component vocabulary
   (state, action, sensor, comms-mask, contact-plan, observation), **including the `ObjectiveSpec`
   schema and the objective→metric binding** as a first-class contract. Per-tick hot-path payloads
@@ -164,7 +164,7 @@ illumination surrogate. **Deferred → P3:** small/irregular bodies, microgravit
   unreachable through the agent-facing Environment API; enforced by capability tags + contract tests.
   A leak is a security-class defect. *(trace: prospect.md §9; `LUNAR-FR-002`, `LUNAR-SR-005`, `LUNAR-DR-005`)*
 - **RM-P0-PROSPECT-06** — **Information-gain maps (variance / mutual information)** for active
-  perception. *(trace: prospect.md §3, §12; `LUNAR-FR-002`; charter §8)*
+  perception. *(trace: prospect.md §3, §12; `LUNAR-FR-002`; charter §7)*
 - **RM-P0-PROSPECT-07** — **Calibration gate**: credible-interval coverage checked against held-out
   ground truth; CI fails on miscalibration. *(trace: prospect.md §10, §12; `LUNAR-DR-005`)*
 

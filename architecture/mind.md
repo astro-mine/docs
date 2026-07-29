@@ -1,6 +1,6 @@
 # Astro-Mine-Mind — Technology Architecture
 
-> Layer: **Autonomy & coordination** · Phase: **1** · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
+> Layer: **Autonomy & coordination** · Phase: **1** · Ships in: [`astro-mine-platform`](platform.md) · Extended for multi-regime missions (Phase 3)
 > The hierarchical autonomy framework: mission planner → per-agent task-and-motion
 > planner → local controller, composed from pluggable, swappable layers.
 > Cross-cutting standards: see [conventions.md](conventions.md).
@@ -50,12 +50,12 @@ Astro-Mine-Mind"), §8 (cooperation under partial observability and intermittent
 §9 (robust coordination, "degrade gracefully rather than collapse"; verifiable safety of learned
 policies under latency).
 
-**Multi-regime, window-gated planning (RFC-0001).** Mind extends the same three-tier hierarchy to
+**Multi-regime, window-gated planning.** Mind extends the same three-tier hierarchy to
 compose plans *across* mission **Phases/Regimes** ([mission-model](mission-model.md)) rather than
 within a single surface campaign. Each Phase carries its own dynamics, comms, latency, and autonomy
 posture, so Mind composes a per-phase decision stack and stitches them across `PhaseTransition`
 handoffs. This is additive: a single-`surface`-phase mission is exactly today's campaign, so nothing
-already built changes. Per RFC-0001 Resolution **R2**, cross-phase replanning *policy* (phase
+already built changes. The division of labour is deliberate: cross-phase replanning *policy* (phase
 ordering, contingencies) is set in [Studio](studio.md) (design) and [Ops](ops.md) (operations);
 Mind composes the per-phase stacks and honors the schedule it is given. The deep-space phases
 demand a stronger delay-tolerant posture (tens-of-minutes light-time), reinforcing principle 5.
@@ -70,7 +70,7 @@ demand a stronger delay-tolerant posture (tens-of-minutes light-time), reinforci
 2. **Every layer is a Core plugin.** Mission planners, TAMP backends, and controllers all
    implement the [Core](core.md) Policy/Planner interface and ship with a plugin manifest. "Add a
    new global planner" means writing a package and registering a manifest — never patching Mind
-   (conventions.md §1, §7; charter §10.2).
+   (conventions.md §1, §7; charter §9.2).
 3. **Hierarchy is the contract; the tiers are negotiable.** The mission → TAMP → control
    decomposition is the durable abstraction. Within it, a researcher MAY collapse tiers (a single
    end-to-end learned policy), insert tiers, or replace the representation (BT vs HTN vs FSM) so
@@ -78,7 +78,7 @@ demand a stronger delay-tolerant posture (tens-of-minutes light-time), reinforci
 4. **Degrade, don't collapse.** Every tier has an explicit fallback path that is reachable with
    **stale or no fresh input** from the tier above. Loss of comms must downgrade autonomy
    gracefully — agents fall back to cached roles and conservative local behaviors, never to
-   undefined behavior (charter §8/§9; conventions.md §8).
+   undefined behavior (charter §7/§9; conventions.md §8).
 5. **Delay-tolerant by construction.** Plans carry validity horizons, assumptions, and
    contingency branches so an agent can act correctly on a *minutes-old* plan and reconcile when
    comms return. Decisions are time-stamped and idempotent; no tier assumes synchronous,
@@ -86,13 +86,13 @@ demand a stronger delay-tolerant posture (tens-of-minutes light-time), reinforci
 6. **Uncertainty- and partial-observability-first.** Tiers consume belief states (with explicit
    uncertainty, conventions.md §1.6), not point estimates, and can choose *information-gathering*
    actions (active perception) when belief is poor — directly serving the resource-uncertainty
-   research problem (charter §8).
+   research problem (charter §7).
 7. **Guard-wrapped output is the only output.** Mind never emits an action that has not passed
    through the [Guard](guard.md) shield. The safety boundary is architectural, not a convention a
    plugin author can forget.
 8. **Same framework in design and ops.** The identical Mind stack runs offline against
    [Sim](sim.md) for training/validation and online inside [Ops](ops.md) for replanning. There is
-   no separate "operations planner" to drift out of sync with the validated design (charter §6).
+   no separate "operations planner" to drift out of sync with the validated design (charter §5).
 9. **Determinism on demand.** Given a seed, a pinned plugin set, and fixed inputs, a Mind stack
    produces identical decisions, so a [Bench](bench.md) result or an [Ops](ops.md) replan is
    reproducible and auditable (conventions.md §1.5, §11).
@@ -166,7 +166,7 @@ candidate action passes through `guardrail/` ([Guard](guard.md)) before it is re
 Environment API action. Under comms loss, `coord/` and the BT fallback branches keep agents
 acting on cached plans (principle 4).
 
-**Multi-regime composition (RFC-0001).** Across a multi-phase mission the executive composes one
+**Multi-regime composition.** Across a multi-phase mission the executive composes one
 decision stack *per Phase*, reading the active phase's `regime` from the Environment API and
 selecting the coordination strategy, fallback policy, and validity horizons appropriate to it
 (e.g., a delay-tolerant supervisory stack for `interplanetary_transit`, a reactive surface stack
@@ -188,14 +188,14 @@ and replan triggers: a phase plan is invalid if it would miss its window. The jo
   core where it abuts the [Guard](guard.md) boundary, if profiling justifies it.
 - **Planning frameworks:**
   - *Behavior trees:* a **pure-Python** execution engine for the **Groot v4 XML dialect**
-    (BehaviorTree.CPP's authoring format, charter §7) — parse / validate / round-trip plus a
+    (BehaviorTree.CPP's authoring format, charter §6) — parse / validate / round-trip plus a
     deterministic reactive tick engine. The native **BehaviorTree.CPP**/pybind11 runtime is
     deliberately **not** vendored: no Python binding is distributed, and a CMake+pybind11 build would
     breach the tier-1 local-install rule (conventions.md §7) for no gain over the XML dialect the
     engine already round-trips (astro-mine-mind#17).
   - *Symbolic / temporal planning:* PDDL2.1+ via the **unified-planning** library (a backend-
     agnostic façade over **Fast Downward**, **OPTIC**, **ENHSP**, etc.); HTN via **pyhop/SHOP**-
-    style backends. These satisfy the "temporal/PDDL planners" requirement (charter §7).
+    style backends. These satisfy the "temporal/PDDL planners" requirement (charter §6).
   - *Task-and-motion planning:* a TAMP layer in the style of **PDDLStream** that interleaves the
     symbolic backend above with motion feasibility checks.
   - *Motion planning:* **OMPL** (sampling-based: RRT*, PRM*, BIT*) and optimization-based
@@ -209,11 +209,11 @@ and replan triggers: a phase plan is invalid if it would miss its window. The jo
   queues, and back-pressure (conventions.md §8). Library-first; the same code runs as a long-lived
   gRPC service in [Ops](ops.md) (one Mind instance per agent or per agent-group, plus a mission-
   tier coordinator).
-- **Build/packaging:** Python wheel `astro-mine-mind` (the behavior-tree engine is pure Python, no
-  native build); the optional native planner deps (OMPL, FCL) ship as manylinux wheels / vendored in
-  the OCI image behind extras; SemVer; OCI image for the ops service
-  (conventions.md §7). Declares the [Core](core.md) Policy/Planner interface major versions it
-  supports (conventions.md §13).
+- **Build/packaging:** ships in the [`astro-mine-platform`](platform.md) wheel (the behavior-tree
+  engine is pure Python, no native build); the optional native planner deps (OMPL, FCL) sit behind
+  `mind-*` extras and are vendored into the OCI image for the ops service (conventions.md §7.1).
+  Declares the [Core](core.md) Policy/Planner interface major versions it supports
+  (conventions.md §13).
 
 ---
 
@@ -249,7 +249,7 @@ seed — so a decision is reproducible and a [Bench](bench.md) submission is aud
 ## 6. Integration architecture
 
 Mind sits at the center of both charter loops; **every arrow crosses a [Core](core.md) interface**
-(charter §6; conventions.md §1).
+(charter §5; conventions.md §1).
 
 - **[Core](core.md) (implements/composes):** Mind implements the **Policy/Planner API** at all
   three tiers and composes the sub-interfaces (`MissionPlanner`, `TaskMotionPlanner`, `Controller`)
@@ -264,7 +264,7 @@ Mind sits at the center of both charter loops; **every arrow crosses a [Core](co
   task-allocation/scheduling problem (coupled power, comms-window, terrain constraints) to
   [Allocate](allocate.md) — over gRPC in ops, in-process in design — and turns the returned
   assignment into roles/regions. Mind owns *decomposition and execution*; Allocate owns *who does
-  what, when, where*. **Multi-regime (RFC-0001):** for multi-phase missions the delegated problem
+  what, when, where*. **Multi-regime:** for multi-phase missions the delegated problem
   widens to the joint **asset↔target↔window↔trajectory** assignment; Mind passes the per-leg
   `ManeuverBudget`s and window constraints through and consumes the result as the per-phase plan.
 - **[Learn](learn.md) (embeds from):** learned mission planners, TAMP heuristics, and controllers
@@ -272,19 +272,19 @@ Mind sits at the center of both charter loops; **every arrow crosses a [Core](co
   ONNX Runtime. Training is Learn's job; hosting/invoking is Mind's.
 - **[Guard](guard.md) (wrapped by):** the final, mandatory stage. Every action — whether from a
   classical controller or a learned policy — is filtered by [Guard](guard.md)'s shield/monitor
-  before becoming an Environment API action (charter §5.4, §9; conventions.md §9).
+  before becoming an Environment API action (charter §4.4, §8; conventions.md §9).
 - **[Studio](studio.md) (orchestrated by, design):** Studio authors stack specs and BTs, runs
-  Mind-driven trade studies, and captures intent into a campaign. **Per RFC-0001 R2,** the
+  Mind-driven trade studies, and captures intent into a campaign. The
   **cross-phase replanning policy** (phase ordering, contingencies, window-miss responses) is
   *Studio's* (design) concern, not Mind's; Mind composes the per-phase decision stack it implies.
 - **[Ops](ops.md) (orchestrated by, online):** the same Mind stack runs inside Ops as a service;
   anomalies and monitor breaches trigger **online replanning** back through Mind →
-  [Allocate](allocate.md) → [Guard](guard.md) (charter §6), with the digital-twin shadow vetting a
-  replan before it commits. **Per RFC-0001 R2,** Ops owns the live cross-phase replanning *policy*;
+  [Allocate](allocate.md) → [Guard](guard.md) (charter §5), with the digital-twin shadow vetting a
+  replan before it commits. Ops owns the live cross-phase replanning *policy*;
   Mind executes the per-phase stack under the higher latency of deep-space phases.
 - **[Trajectory](trajectory.md) (consumes, design-time):** descriptive `TrajectoryRef` /
   `ManeuverBudget` artifacts supply Δv and launch/transfer/return **window** feasibility that Mind
-  treats as hard plan constraints and replan triggers (RFC-0001 §4 / R3) — never as executable
+  treats as hard plan constraints and replan triggers ([mission-model.md](mission-model.md)) — never as executable
   guidance; converting them to flight guidance is gated out by the `operational_targeting` tag.
 - **[Fleet](fleet.md) (consumes):** SADF capability declarations bound each agent's action space.
 - **[Link](link.md) (consumes):** comms geometry/latency/windows set plan validity horizons and
@@ -306,7 +306,7 @@ Mind sits at the center of both charter loops; **every arrow crosses a [Core](co
 - **Tier 2 — Cloud (training/eval):** during training and large sweeps, many Mind instances run as
   Gymnasium/PettingZoo agents inside **Ray** rollouts on **Kubernetes** (KubeRay), co-scheduled
   with [Sim](sim.md) and [Learn](learn.md); [Bench](bench.md) eval runs the same way.
-- **Tier 3 — Operations/ground (charter §6):** Mind deployed as OCI containers in the [Ops](ops.md)
+- **Tier 3 — Operations/ground (charter §5):** Mind deployed as OCI containers in the [Ops](ops.md)
   cluster: a **mission-tier coordinator** service plus **per-agent (or per-group) executive**
   services, each pairing with a [Guard](guard.md) sidecar; ROS 2/DDS reached only through
   [Bridge](bridge.md).
@@ -358,7 +358,7 @@ multi-agent benchmarks whose results are reproducible (conventions.md §8).
 ## 9. Security, safety & compliance
 
 - **Safety is the defining concern.** Mind's outputs drive (eventually) real hardware with no
-  recovery and minutes of latency (charter §9). The architectural guarantee: **no action leaves
+  recovery and minutes of latency (charter §8). The architectural guarantee: **no action leaves
   Mind un-wrapped by [Guard](guard.md)** (principle 7). Hard constraints (collision, power floors,
   keep-out zones) are enforced by Guard *independently of any learned component* (conventions.md
   §9) — a learned controller cannot disable its own shield.
@@ -376,7 +376,7 @@ multi-agent benchmarks whose results are reproducible (conventions.md §8).
   dual-use-sensitive. Coordination logic for the **science/simulation commons is open**; any
   capability that drifts toward operational targeting is **capability-tagged** (via the
   [Core](core.md) manifest taxonomy) and partitioned/access-controlled. Mind documents an EAR/ITAR
-  posture and gates sensitive planner backends at load via OPA (conventions.md §12; charter §10.5).
+  posture and gates sensitive planner backends at load via OPA (conventions.md §12; charter §9.5).
 
 ---
 
@@ -409,37 +409,37 @@ multi-agent benchmarks whose results are reproducible (conventions.md §8).
 
 | Decision | Options | Recommendation |
 |---|---|---|
-| **Coordination paradigm** | Centralized (one global planner); fully decentralized/distributed; hierarchical-hybrid | **Hierarchical-hybrid.** Centralized mission tier for global coherence + decentralized neighbor coordination at the agent tier for comms-robustness. Pure-central collapses under comms loss; pure-decentral can't reason globally about coupled ISRU goals. Hybrid degrades gracefully (charter §8/§9). |
-| **Plan representation / execution** | Behavior trees; hierarchical state machines (HSM); HTN | **Behavior trees** as the execution scaffold (charter §7) for reactive fallbacks and composability — a **pure-Python engine for the Groot v4 XML dialect** (BehaviorTree.CPP's authoring format), the native BehaviorTree.CPP/pybind11 runtime re-scoped out to hold the tier-1 local-install rule (conventions.md §7; astro-mine-mind#17); **HTN available as a pluggable mission/TAMP backend** where hierarchical decomposition fits better than reactive BTs. HSMs are a weaker default (state explosion). |
+| **Coordination paradigm** | Centralized (one global planner); fully decentralized/distributed; hierarchical-hybrid | **Hierarchical-hybrid.** Centralized mission tier for global coherence + decentralized neighbor coordination at the agent tier for comms-robustness. Pure-central collapses under comms loss; pure-decentral can't reason globally about coupled ISRU goals. Hybrid degrades gracefully (charter §7/§9). |
+| **Plan representation / execution** | Behavior trees; hierarchical state machines (HSM); HTN | **Behavior trees** as the execution scaffold (charter §6) for reactive fallbacks and composability — a **pure-Python engine for the Groot v4 XML dialect** (BehaviorTree.CPP's authoring format), the native BehaviorTree.CPP/pybind11 runtime re-scoped out to hold the tier-1 local-install rule (conventions.md §7; astro-mine-mind#17); **HTN available as a pluggable mission/TAMP backend** where hierarchical decomposition fits better than reactive BTs. HSMs are a weaker default (state explosion). |
 | **Mission-planner backend** | PDDL/temporal; HTN; learned policy; scripted | **Pluggable, PDDL/temporal default** via unified-planning; HTN and learned backends as drop-in alternatives. The framework commits to *none* — it commits to the interface. |
 | **TAMP backend** | Classical PDDL+motion (PDDLStream-style); sampling-based motion only; learned end-to-end; hybrid | **Hybrid:** symbolic task planning over **OMPL** sampling-based motion, with learned samplers/heuristics from [Learn](learn.md) slotted in. Pure-learned lacks guarantees; pure-classical is too slow at swarm scale. |
 | **Controller backend** | Classical (MPC/PID); learned (ONNX); hybrid | **Pluggable per asset class:** classical MPC/PID baselines that always work + learned ONNX controllers where they win — all behind one Core Controller contract, all Guard-wrapped. |
 | **Layer composition mechanism** | Hard-coded pipeline; Core-interface plugins + stack spec; full DSL | **Core-interface plugins + declarative stack spec.** Each tier implements a Core sub-interface; a JSON-Schema'd stack spec wires them. Composable and swappable without code change (principle 2). |
-| **Where Mind runs in ops** | All ground-side; all onboard-analog edge; **split** (mission ground, executive/control edge) | **Split.** Mission tier ground-side (heavy search, human-in-loop); per-agent executive + controller + [Guard](guard.md) on onboard-analog edge so agents stay safe and productive through comms blackouts (charter §6/§8). |
-| **Allocation** | Embed a solver in Mind; delegate to [Allocate](allocate.md) | **Delegate to [Allocate](allocate.md).** Mind owns decomposition/execution, not the combinatorial core (boundary; charter §5.4). For multi-regime missions the delegated problem widens to the joint asset↔target↔window↔trajectory assignment (RFC-0001). |
-| **Cross-phase planning (RFC-0001)** | One flat plan over all regimes; per-phase stacks composed across `PhaseTransition` handoffs | **Per-phase decision stacks, window-gated, composed across handoffs.** Each Phase gets the coordination/fallback/horizon posture its regime needs; cross-phase replanning *policy* lives in [Studio](studio.md)/[Ops](ops.md) (R2), Mind composes the stack. Orbital-mechanics windows from [Trajectory](trajectory.md) are hard constraints; outputs still pass [Guard](guard.md). |
+| **Where Mind runs in ops** | All ground-side; all onboard-analog edge; **split** (mission ground, executive/control edge) | **Split.** Mission tier ground-side (heavy search, human-in-loop); per-agent executive + controller + [Guard](guard.md) on onboard-analog edge so agents stay safe and productive through comms blackouts (charter §5/§8). |
+| **Allocation** | Embed a solver in Mind; delegate to [Allocate](allocate.md) | **Delegate to [Allocate](allocate.md).** Mind owns decomposition/execution, not the combinatorial core (boundary; charter §4.4). For multi-regime missions the delegated problem widens to the joint asset↔target↔window↔trajectory assignment. |
+| **Cross-phase planning** | One flat plan over all regimes; per-phase stacks composed across `PhaseTransition` handoffs | **Per-phase decision stacks, window-gated, composed across handoffs.** Each Phase gets the coordination/fallback/horizon posture its regime needs; cross-phase replanning *policy* lives in [Studio](studio.md)/[Ops](ops.md) (R2), Mind composes the stack. Orbital-mechanics windows from [Trajectory](trajectory.md) are hard constraints; outputs still pass [Guard](guard.md). |
 | **Learned-policy runtime** | Framework-native (PyTorch); **ONNX Runtime** | **ONNX Runtime** — portable, edge-friendly, framework-neutral (conventions.md §6). |
 
 **Open questions / research dependencies:**
 
 - **Robust cooperation under partial observability + intermittent/delayed comms** is an open
-  research problem (charter §8); Mind provides the *framework* (validity horizons, decentralized
+  research problem (charter §7); Mind provides the *framework* (validity horizons, decentralized
   `coord/`, fallback BTs), but the *good policies* come from [Learn](learn.md) — co-designed.
-- **TAMP at swarm scale within deadlines** (charter §9 "heterogeneous, tightly-coupled allocation"
+- **TAMP at swarm scale within deadlines** (charter §8 "heterogeneous, tightly-coupled allocation"
   abutting continuous motion) — the symbolic↔motion↔allocation interleaving boundary is
   co-designed with [Allocate](allocate.md) and [Sim](sim.md).
 - **Plan-to-belief interface for active perception** (decision-making under deep resource
-  uncertainty, charter §8) — how belief views expose information value to the planner — co-designed
+  uncertainty, charter §7) — how belief views expose information value to the planner — co-designed
   with [Prospect](prospect.md) and [Core](core.md).
 - **Exact split point for onboard-analog deployment** and the validity-horizon semantics for
-  delay-tolerant supervisory autonomy (charter §8) — co-designed with [Ops](ops.md) and
+  delay-tolerant supervisory autonomy (charter §7) — co-designed with [Ops](ops.md) and
   [Guard](guard.md).
 
 ---
 
 ## 12. Roadmap alignment
 
-- **Phase 1 (this component, charter §11):** ship Mind alongside [Learn](learn.md),
+- **Phase 1 (this component, charter §10):** ship Mind alongside [Learn](learn.md),
   [Allocate](allocate.md), [Guard](guard.md), [Studio](studio.md), and [Hub](hub.md) to "become
   the MARL and planning commons for planetary swarms."
 - **MVP:** the three-tier hierarchy over the [Core](core.md) Policy/Planner API; a **pure-Python
@@ -453,11 +453,11 @@ multi-agent benchmarks whose results are reproducible (conventions.md §8).
   strategies, stack specs shareable via [Hub](hub.md), and Studio-authored composition.
 - **Phase 2:** online replanning inside [Ops](ops.md) with the digital-twin shadow; the split
   ground/edge deployment validated against terrestrial analog rover-swarm field tests
-  (charter §11).
+  (charter §10).
 - **Phase 3:** Guard-wrapped actions reaching real flight hardware via [Bridge](bridge.md); new
   environments (asteroids, icy moons) handled purely by swapping [Worlds](worlds.md)/[Fleet](fleet.md)
   plugins — Mind unchanged, proving the abstraction held.
-- **Phase 3 (multi-regime, RFC-0001):** window-gated cross-phase composition over the Core
+- **Phase 3 (multi-regime):** window-gated cross-phase composition over the Core
   `MissionSpec`/`PhaseTransition` schema (whose hooks are reserved in **Phase 1**), consuming
   [Trajectory](trajectory.md) feasibility/Δv via [Allocate](allocate.md), with cross-phase
   replanning policy in [Studio](studio.md)/[Ops](ops.md) and outputs still [Guard](guard.md)-wrapped

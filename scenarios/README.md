@@ -54,7 +54,7 @@ links to charter / RFC-0001 / architecture), then:
 6. **Fleet & assets** — the heterogeneous robots/spacecraft, roles, key declared SADF capabilities, scale, reusable-LEO inventory.
 7. **Concept of operations (ConOps)** — narrative walkthrough of the *mission* unfolding.
 8. **Design & operation workflows** — complete, end-to-end description of how the *platform* is used to design and to run the scenario, in both modes.
-9. **Hard problems exercised** — which charter §7 (research) and §8 (engineering) problems the scenario stresses.
+9. **Hard problems exercised** — which charter §6 (research) and §8 (engineering) problems the scenario stresses.
 10. **Constraints & assumptions** — power, comms, thermal, Δv, schedule, microgravity, export-control + explicit modeling assumptions.
 11. **Components exercised** — per-package mapping: what the scenario demands of each `Astro-Mine-*` component.
 12. **Derived requirements** — the authoritative, traceable requirements, in four parts: **functional & technical**, **UX / high-level workflows**, **data**, and **security**.

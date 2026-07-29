@@ -1,6 +1,6 @@
 # Astro-Mine-Seal — Technology Architecture
 
-> Layer: **Commons backbone** (a *Core companion*) · Phase: **1** · Added by [RFC-0005](../rfc/0005-seal-supply-chain-companion.md) (accepted)
+> Layer: **Commons backbone** (a *Core companion*) · Phase: **1** · Ships in: [`astro-mine-platform`](platform.md)
 > The single shared home for artifact integrity: signing, verification, SLSA provenance, and
 > SBOM — built on [Core](core.md)'s frozen `Signature`/`Verifier` surface, so Core stays crypto-free.
 > Cross-cutting standards: see [conventions.md](conventions.md).
@@ -37,7 +37,7 @@ key format, digest/signature encoding, provenance/SBOM layout, and the verify-tw
 - **the `Signature` / `Verifier` vocabulary or `hashing`** — those are [Core](core.md)'s frozen
   surface; Seal is built *on* them, never a fork of them;
 - **the production trust-root policy** — cosign identities, key distribution, rotation/revocation are
-  org policy decided with [Hub](hub.md) ([astro-mine-hub#14](https://github.com/astro-mine/astro-mine-hub/issues/14)),
+  org policy decided with [Hub](hub.md) (the production trust-root policy, still open),
   even though the *mechanism* lives here;
 - **the registry / index / publish plane** — storing and serving artifacts is [Hub](hub.md); Seal
   only proves and checks what an artifact is and who produced it.
@@ -67,8 +67,11 @@ Sigstore/cosign bridge plainly.
    copied in the first place. Core depends on it not at all.
 2. **The one home for `cryptography`.** Core stays crypto-free by design; Seal is the single place the
    EC library lives. New shared crypto / supply-chain code belongs here, never re-copied per package.
-   This is the RFC-0005 routing rule made concrete: *lightweight+dependency-free → Core; heavy+cohesive
-   → a focused companion* — never a general-purpose `common`/`utils` grab-bag.
+   This is the companion routing rule made concrete: *lightweight and dependency-free → Core;
+   heavy and cohesive → a focused companion* — never a general-purpose `common`/`utils` grab-bag.
+   Consolidation does not retire the rule. Every install now carries `cryptography` regardless, and
+   the point was never that a user could avoid it: it is that exactly one code path decides whether
+   a signature is valid.
 3. **Byte-stable interoperation.** Signatures and attestations only interoperate if every producer and
    verifier agrees, byte-for-byte, on digest encoding, key format, signature encoding, and
    provenance/SBOM layout. One implementation means one agreement — a **cross-package conformance
@@ -145,10 +148,10 @@ unsigned `SafetySpec`/model never loads.
 - **Config & schemas:** none of its own; it speaks Core's `Signature`/`Verifier` types and the
   standard SLSA/CycloneDX document shapes.
 - **Runtime model:** in-process importable library only — no FastAPI/gRPC surface.
-- **Build/packaging:** Python wheel `astro-mine-seal` (import `astro_mine.seal`); SemVer,
-  version-from-Git-tag; depends on a pinned `astro-mine-core` interface major version (conventions.md
-  §7, §13). `CORE_INTERFACE_VERSIONS` is **unchanged** by this package (stays `0.1.0`) — Seal adds no
-  Core enum, message, schema, or wire form.
+- **Build/packaging:** ships in the [`astro-mine-platform`](platform.md) wheel as
+  `astro_mine.seal`, and is the one place `cryptography` is imported from (conventions.md §7.1, §9).
+  `CORE_INTERFACE_VERSIONS` is **unchanged** by it (stays `0.1.0`) — Seal adds no Core enum, message,
+  schema, or wire form.
 
 ---
 
@@ -195,11 +198,11 @@ surface for the most sensitive code the platform ships.
   (a research laptop, a Fleet authoring tool, a Hub verifier, a Guard load gate).
 - **Keys at runtime:** supplied by the host — a developer key locally, an org signing identity in CI /
   Ops. The **production trust-root** (identities, distribution, rotation/revocation) is decided with
-  Hub ([astro-mine-hub#14](https://github.com/astro-mine/astro-mine-hub/issues/14)); Seal provides the
+  Hub (the production trust-root policy, still open); Seal provides the
   mechanism, not the policy.
-- **Distribution:** pinned downstream via a `uv` Git source + CI token during private incubation,
-  identical to the `astro-mine-core` / `astro-mine-spice` pattern. Public PyPI wheel and signed
-  releases deferred to the public flip.
+- **Distribution:** none of its own; every consumer gets it with the platform. Signed releases of
+  that wheel — the supply chain applied to the supply-chain component — are deferred to the public
+  flip.
 
 ---
 
@@ -231,7 +234,7 @@ half of [guard.md §9.5](guard.md) as one shared implementation:
 - **No operational-targeting capability.** Proving *what an artifact is and who produced it* is generic
   integrity, not guidance; Seal carries no guided-EDL / maneuver-targeting surface and is **not** gated
   by the `operational_targeting` capability tag (conventions.md §12; mirrors spice.md §9 and the
-  [RFC-0001](../rfc/0001-multi-regime-missions.md) dual-use boundary).
+  [multi-regime missions](mission-model.md) dual-use boundary).
 - **Crypto stays out of any TCB.** Per guard.md §9.1, the signing/verification crypto lives in the
   untrusted load gate, **never** inside the Rust safety core — Seal is that untrusted, auditable gate,
   shared.
@@ -253,7 +256,7 @@ half of [guard.md §9.5](guard.md) as one shared implementation:
 
 | Decision | Options | Recommendation |
 |---|---|---|
-| **Home for signing/attestation** | Promote into Core; a companion package; fold into Hub; a `common`/`utils` bag | **A focused companion (`astro-mine-seal`)** — keeps Core crypto-free, lets Fleet/Guard sign without heavyweight Hub, and avoids a dependency-magnet utils grab-bag (RFC-0005 Alternatives). |
+| **Home for signing/attestation** | Promote into Core; a companion package; fold into Hub; a `common`/`utils` bag | **A focused companion (`astro-mine-seal`)** — keeps Core crypto-free, lets Fleet/Guard sign without heavyweight Hub, and avoids a dependency-magnet utils grab-bag. |
 | **Package scope** | Sign-only (`astro-mine-sign`); the full artifact-integrity domain | **Full domain** (sign + verify + SLSA + SBOM + verify-twice) — SLSA/SBOM share the domain and dependency footprint; sign-only would force a rename within a phase. |
 | **Signing scheme** | Key-based cosign (offline); keyless Fulcio/Rekor | **Key-based ECDSA P-256, offline** now; keyless additive behind the same surface, with the trust-root decision. |
 | **SBOM format** | CycloneDX; SPDX | **CycloneDX** — the existing Hub `_attest.py` lineage; one format, not two. |
@@ -264,7 +267,7 @@ half of [guard.md §9.5](guard.md) as one shared implementation:
 ## 12. Roadmap alignment
 
 Phase-1 deliverable, **additive and non-urgent** — the mirrored signer copies interoperate today, so
-nothing is blocked and it **must not gate the lunar MVP** ([RFC-0005](../rfc/0005-seal-supply-chain-companion.md)
+nothing is blocked and it **must not gate the lunar MVP** ([Seal](seal.md)
 §Sequencing). Landed **signer-dedup-first**:
 
 - **RM-P1-SEAL-01** — package scaffold (`astro_mine.seal`, Core-pinned wiring, the one `cryptography`
@@ -277,5 +280,5 @@ nothing is blocked and it **must not gate the lunar MVP** ([RFC-0005](../rfc/000
 [Fleet](fleet.md), and [Hub](hub.md) — Hub after SEAL-03. **Future members** (charter, additive, no
 rename): keyless cosign (Fulcio/Rekor) and the production **trust-root policy** — cosign identities,
 key distribution, rotation/revocation — tracked as
-[astro-mine-hub#14](https://github.com/astro-mine/astro-mine-hub/issues/14) (Phase 2): the mechanism
+the open Hub trust-root question (Phase 2): the mechanism
 lives in Seal, the org policy is decided with Hub.

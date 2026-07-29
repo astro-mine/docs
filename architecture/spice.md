@@ -1,6 +1,6 @@
 # Astro-Mine-Spice — Technology Architecture
 
-> Layer: **Commons backbone** (a *Core companion*) · Phase: **0** · Added by [RFC-0002](../rfc/0002-shared-spice-foundation.md) (accepted)
+> Layer: **Commons backbone** (a *Core companion*) · Phase: **0** · Ships in: [`astro-mine-platform`](platform.md)
 > The SPICE-backed realization of [Core](core.md)'s frame/time vocabulary: resolves names into
 > positions, rotations, and topocentric geometry — and nothing more.
 > Cross-cutting standards: see [conventions.md](conventions.md).
@@ -134,10 +134,11 @@ Transit consume the same primitives for ephemerides/frames.
   must not transitively install raster libraries to position a body).
 - **Config & schemas:** none of its own; it speaks Core's frame/time types.
 - **Runtime model:** in-process importable library only — no FastAPI/gRPC surface.
-- **Build/packaging:** Python wheel `astro-mine-spice` (import `astro_mine.spice`); SemVer,
-  version-from-Git-tag; depends on a pinned `astro-mine-core` interface major version
-  (conventions.md §7, §13). Native CSPICE ships inside the SpiceyPy manylinux wheel. NAIF **kernels are
-  furnished by the consumer**, not bundled.
+- **Build/packaging:** ships in the [`astro-mine-platform`](platform.md) wheel as
+  `astro_mine.spice`; it declares the Core interface major version it speaks rather than a package
+  version of its own (conventions.md §7.1, §13). Native CSPICE arrives inside the SpiceyPy manylinux
+  wheel, a base dependency of the platform. NAIF **kernels are furnished by the consumer**, not
+  bundled — the wheel carries the resolver, never the ephemerides.
 
 ---
 
@@ -163,14 +164,14 @@ dependencies (no service plane, no side-channels — conventions.md §1.1):
   guard. Core does **not** depend on Spice; the narrow waist stays free of heavy deps (core.md §2 principle 3).
 - **→ [Worlds](worlds.md).** Worlds resolves SPICE frames/epochs/Sun-Earth geometry through Spice
   (illumination/PSR, RM-P0-WORLDS-03); `worlds.crs` re-imports `MOON_RADIUS_M`. Replaces the former
-  in-package `astro_mine.worlds.spice` (extracted on RFC-0002 acceptance).
+  in-package `astro_mine.worlds.spice`, extracted here when the foundation was factored out.
 - **→ [Link](link.md).** Link resolves Earth/relay body-fixed positions through Spice for LOS, then
   evaluates terrain occlusion via the Core `WorldProvider` contract — **no dependency on
-  `astro-mine-worlds`** (RFC-0002).
+  `astro-mine-worlds`**.
 - **→ [Sim](sim.md), [Bridge](bridge.md), [Trajectory](trajectory.md), [Transit](transit.md).** Sim's
   orbital engine (SIM-03, Phase 0), Bridge's time/frame transforms (Phase 2), and Trajectory/Transit
-  (Phase 3) consume the same primitives when they next touch SPICE — additive, no rework (RFC-0002
-  deferred cut-over).
+  (Phase 3) consume the same primitives when they next touch SPICE — additive, no rework, because
+  the cut-over was deliberately deferred to each consumer's next SPICE change rather than forced.
 
 **This is the seam fix.** By being the one package every consumer depends on, Spice eliminates both the
 "re-derive a thin SPICE adapter per package" drift and the "depend on `astro-mine-worlds` just for
@@ -184,9 +185,9 @@ SPICE" edge→edge side-channel that `conventions.md §1.1` forbids.
   consumer (a research laptop, a Sim worker, a Cloud job).
 - **Kernels at runtime:** consumers furnish a pinned meta-kernel; container images that need geometry
   pin a CSPICE build (via the SpiceyPy wheel) and mount/copy a content-addressed kernel set.
-- **Distribution:** pinned downstream via a `uv` Git source + CI token during private incubation,
-  identical to the `astro-mine-core` pattern (VERSIONING.md §5–7). Public PyPI wheel deferred to the
-  public flip.
+- **Distribution:** none of its own. A consumer that has the platform has Spice, at exactly the
+  version the rest of the platform was tested against — which is the property the old cross-repo pin
+  was trying to approximate (VERSIONING.md).
 
 ---
 
@@ -206,7 +207,7 @@ SPICE" edge→edge side-channel that `conventions.md §1.1` forbids.
 - **No operational-targeting capability.** Generic SPICE geometry over **public ephemerides** is
   open-commons science; Spice carries no guided-EDL / maneuver-targeting surface and is **not** gated by
   the `operational_targeting` capability tag (conventions.md §12; mirrors worlds.md §9 and the
-  [RFC-0001](../rfc/0001-multi-regime-missions.md) dual-use boundary).
+  [multi-regime missions](mission-model.md) dual-use boundary).
 - **Provenance:** kernels are pinned and content-hashed by consumers; the same kernel set + epoch +
   frame ⇒ identical geometry, which is what makes downstream products reproducible.
 - **Supply chain:** SpiceyPy/CSPICE and NumPy are the only third-party runtime deps; pinned via
@@ -228,7 +229,7 @@ SPICE" edge→edge side-channel that `conventions.md §1.1` forbids.
 
 | Decision | Options | Recommendation |
 |---|---|---|
-| **SPICE binding** | SpiceyPy (CSPICE); native CSPICE; pure-Python reimpl | **SpiceyPy** — the canonical, NAIF-aligned binding; CSPICE correctness, Python ergonomics (charter §7). |
+| **SPICE binding** | SpiceyPy (CSPICE); native CSPICE; pure-Python reimpl | **SpiceyPy** — the canonical, NAIF-aligned binding; CSPICE correctness, Python ergonomics (charter §6). |
 | **Resolver scope** | Thin primitives only; full astrodynamics toolkit | **Thin primitives only** — propagation/force models are Transit/Sim; Spice resolves, it does not propagate. |
 | **Cross-checks / oracles** | Trust SPICE; validate against Astropy/Skyfield/GMAT/STK | **SPICE canonical; others as oracles only** — written once here and trusted everywhere (conventions.md §11). |
 | **Units boundary** | Expose km (SPICE-native); convert to SI metres | **SI metres at the boundary** — no km leaks past the package surface (conventions.md §5). |
@@ -247,4 +248,4 @@ Phase-0 deliverable, sequenced **before the Link MVP** (see [roadmap/phase-0](..
 **Consumed by** RM-P0-WORLDS-02/03 (illumination/PSR) and RM-P0-LINK-01 (LOS geometry) in Phase 0.
 **Deferred:** Sim's orbital engine (SIM-03, Phase 0), [Bridge](bridge.md) (Phase 2), and
 [Trajectory](trajectory.md)/[Transit](transit.md) (Phase 3) adopt the foundation when they next touch
-SPICE — additive, no rework ([RFC-0002](../rfc/0002-shared-spice-foundation.md) resolved decisions).
+SPICE — additive, no rework.

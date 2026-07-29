@@ -39,7 +39,7 @@ exploration only**. It produces **descriptive** reference arcs and budgets for t
 is **not** operational maneuver targeting, **not** guidance, **not** closed-loop or
 certification-grade flight code, and it performs **no conversion of a reference arc into executable
 burns**. That capability — `operational_targeting` (mission-model.md §2.4) — is **excluded from
-the open commons** (charter §10.5,
+the open commons** (charter §9.5,
 [EXPORT_CONTROL.md](https://github.com/astro-mine/.github/blob/main/EXPORT_CONTROL.md)) and is
 partitioned at the [Bridge](bridge.md) boundary. Trajectory also does **no** guided atmospheric
 EDL; `earth_interface` is a mass/Δv accounting event, not a re-entry simulator (mission-model.md
@@ -158,7 +158,7 @@ worker fleet with **NATS+JetStream** job lifecycle (conventions.md §4), deploye
   `orekit_jpype`, Basilisk) is Python-native or Python-bound; hot custom kernels (e.g., a bespoke
   collocation transcription) drop to **C++20** via pybind11 only where profiling justifies it.
 - **Optimization & astrodynamics libraries:**
-  - **pykep + pygmo (ESA)** — the primary engine (charter §7). pykep supplies Lambert solvers,
+  - **pykep + pygmo (ESA)** — the primary engine (charter §6). pykep supplies Lambert solvers,
     multiple-gravity-assist (MGA / MGA-1DSM) transcriptions, and **Sims-Flanagan low-thrust**
     models; pygmo supplies the **global-optimization** layer (metaheuristics, multi-objective,
     the island model) for window/global sweeps. This pair is the natural fit for preliminary
@@ -170,7 +170,7 @@ worker fleet with **NATS+JetStream** job lifecycle (conventions.md §4), deploye
     here only for trajectory-specific refinement).
   - **Basilisk** — flight-like spacecraft dynamics for cross-checking proximity/return arcs at the
     refinement tier (shared with [Sim](sim.md)'s orbital regime).
-  - **External verification oracles (charter §7):** **GMAT** (open), **STK**, **Copernicus** —
+  - **External verification oracles (charter §6):** **GMAT** (open), **STK**, **Copernicus** —
     invoked through the `verify`/`Oracle` adapter to independently confirm a final `TrajectoryRef`.
     These are **optional, license-gated, never default dependencies**, exactly as Gurobi is for
     [Allocate](allocate.md).
@@ -322,7 +322,7 @@ Core contracts (conventions.md §1.1); it creates no private side-channels.
 ## 9. Security, safety & compliance
 
 This section is **central** to Trajectory; the dual-use boundary is the defining design concern
-(charter §10.5, conventions.md §12, mission-model.md §4).
+(charter §9.5, conventions.md §12, mission-model.md §4).
 
 - **The design-time-vs-operational-targeting boundary (the load-bearing line).** Trajectory
   produces **descriptive** reference arcs and Δv/ToF budgets *for trade studies*. It contains, and
@@ -332,7 +332,7 @@ This section is **central** to Trajectory; the dual-use boundary is the defining
   - **closed-loop / feedback** targeting or guidance laws;
   - **guided atmospheric EDL** or re-entry targeting (`earth_interface` is a mass/Δv accounting
     *event*, not a re-entry simulator — mission-model.md §4);
-  - certification-grade flight code (the charter §10.5 "P3 concept", explicitly excluded).
+  - certification-grade flight code (the charter §9.5 "P3 concept", explicitly excluded).
   Anything crossing this line is the `operational_targeting` capability — **excluded from the open
   commons**, **partitioned** into separate access-controlled repos, and reachable (if at all) only
   through the [Bridge](bridge.md) boundary, **never** inside Trajectory. The exclusion is not
@@ -404,9 +404,9 @@ This section is **central** to Trajectory; the dual-use boundary is the defining
 |---|---|---|
 | **Build vs bridge** | Build a new in-house optimizer; **bridge to pykep/Orekit/poliastro and orchestrate** | **Bridge and orchestrate** — the charter's "integrate aggressively, reinvent little" (§7); the commons value is the uniform interface + provenance + window orchestration + Core integration, not new astrodynamics |
 | **Optimization approach** | Impulsive patched-conic only; full low-thrust optimal control only; global metaheuristics (pygmo) only; **tiered combination** | **Tiered** — fast impulsive/Lambert scan → low-thrust (Sims-Flanagan → collocation) refinement → global (pygmo) where sequencing is combinatorial → oracle verification. No single method spans preliminary breadth and high-fidelity depth |
-| **Primary library stack** | **pykep + pygmo (ESA)**; poliastro; custom | **pykep + pygmo** for Lambert/MGA/Sims-Flanagan + global search (charter §7); **poliastro/astropy** for clean two-body/porkchop primitives |
+| **Primary library stack** | **pykep + pygmo (ESA)**; poliastro; custom | **pykep + pygmo** for Lambert/MGA/Sims-Flanagan + global search (charter §6); **poliastro/astropy** for clean two-body/porkchop primitives |
 | **Low-thrust transcription** | **Sims-Flanagan**; direct collocation (CasADi/IPOPT); indirect/shooting | **Sims-Flanagan** as the robust global-search workhorse; **direct collocation** for high-fidelity refinement; indirect as a research plugin |
-| **High-fidelity / verification** | Trust the optimizer; **independent propagation in Sim + external oracle** | **Independent verification** — propagate in [Sim](sim.md) (Basilisk/Orekit) and confirm against **GMAT/STK/Copernicus** (charter §7) as optional, license-gated oracles; never a default dependency |
+| **High-fidelity / verification** | Trust the optimizer; **independent propagation in Sim + external oracle** | **Independent verification** — propagate in [Sim](sim.md) (Basilisk/Orekit) and confirm against **GMAT/STK/Copernicus** (charter §6) as optional, license-gated oracles; never a default dependency |
 | **Fidelity tiers** | Single fidelity; **preliminary → high-fidelity → oracle** | **Three tiers** — patched-conic preliminary, high-fidelity refinement, oracle validation; the scheduler trades breadth for accuracy (conventions.md §8) |
 | **`TrajectoryRef` representation** | Full flight-rate state/command history; **boundary states + budget + coarse reference envelope** | **Boundary states + maneuver budget + coarse-epoch reference envelope** — carries enough for a trade study, deliberately *omits* command-format fields so it cannot become a back-door command channel (mission-model.md §6, §5, §9) |
 | **Window/global parallelism** | Single-node; **Ray/Argo fan-out on Cloud** | **Embarrassingly-parallel on [Cloud](cloud.md)** — window cells, seeds, and pygmo islands are independent units (conventions.md §8) |
@@ -440,7 +440,7 @@ This section is **central** to Trajectory; the dual-use boundary is the defining
 - **Phase 3 (this component's debut, proposed).** Trajectory ships with the new
   mission-architecture layer — [Transit](transit.md), [Sizing](sizing.md), and the
   Mission/Phase/Regime model — to make Astro-Mine span end-to-end interplanetary resource
-  missions, alongside "new environments (asteroids, icy moons) as plugins" (charter §11 Phase 3).
+  missions, alongside "new environments (asteroids, icy moons) as plugins" (charter §10 Phase 3).
 - **Phase-3 MVP:** the **impulsive tier** (Lambert/patched-conic + porkchop window scans via
   pykep/poliastro) behind the [Core](core.md) trajectory-optimization sub-interface; the
   descriptive `TrajectoryRef`/`ManeuverBudget`; validation in [Sim](sim.md) and against GMAT;

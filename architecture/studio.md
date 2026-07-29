@@ -1,6 +1,7 @@
 # Astro-Mine-Studio — Technology Architecture
 
-> Layer: **Design studio (offline mode)** · Phase: **1** · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
+> Layer: **Design studio (offline mode)** · Phase: **1** · Extended for multi-regime missions (Phase 3)
+> Ships in: [`astro-mine-platform`](platform.md) (library, trade studies, orchestration) · [`astro-mine-api`](api.md) (the Studio API) · [`astro-mine-ui`](ui.md) (`@astro-mine/studio-ui`)
 > The design front door — goal-in, design-out: capture intent, explore the design space, author campaigns.
 > Cross-cutting standards: see [conventions.md](conventions.md).
 
@@ -36,14 +37,14 @@ component reached through [Core](core.md) contracts.
 **Primary users:** mission designers, startups, and educators — people exploring *what to build*
 and *how to operate it* rather than implementing the engines underneath.
 
-**Mission Architect mode (RFC-0001).** Studio gains an upstream design *stage* — the **Mission
+**Mission Architect mode.** Studio gains an upstream design *stage* — the **Mission
 Architect** — that authors a `MissionSpec` (an ordered set of phases across regimes; see
 [mission-model](mission-model.md)) and **co-optimizes trajectory ⇄ fleet ⇄ swarm ⇄ economics** in
 one loop. It is a **new mode/stage inside Studio, not a separate application**: the same backend
 and trade-study engine, extended to orchestrate [Trajectory](trajectory.md),
 [Sizing](sizing.md), and [Ledger](ledger.md) alongside the existing Sim/Learn/Mind/Allocate/Guard.
 A distinct *workspace and persona* (mission & systems engineers, astrodynamicists, resource
-economists) is honored in the UI without forking the loop. Per RFC-0001 R2, the **phase-sequencing
+economists) is honored in the UI without forking the loop. The **phase-sequencing
 policy** (phase ordering, contingencies, cross-phase replanning) is authored here; the validated
 `MissionSpec` is handed to [Ops](ops.md), which owns the live executor. This stage gates behind the
 lunar MVP and is opt-in — a single-`surface`-phase mission is exactly today's campaign.
@@ -106,16 +107,18 @@ astro_mine.studio
 │   ├── search/      # Optimizer adapters (Optuna/Ax/pymoo/Ray Tune) behind one interface
 │   ├── pareto/      # Pareto-front computation, dominance, hypervolume, ranking
 │   ├── encode/      # Design <-> decision-variable encoding/decoding
-│   └── mdo/         # RFC-0001: Sizing+Ledger shared OpenMDAO graph (vehicle⇄economics inner loop)
-├── mission/         # RFC-0001 Mission Architect: MissionSpec authoring + Trajectory/Sizing/Ledger orchestration (phase 3)
+│   └── mdo/         # Phase 3: Sizing+Ledger shared OpenMDAO graph (vehicle⇄economics inner loop)
+├── mission/         # Mission Architect (Phase 3): MissionSpec authoring + Trajectory/Sizing/Ledger orchestration
 ├── orchestrate/     # The design loop: fan out candidates to Sim/Learn/Mind/Allocate/Guard/Bench
 │   ├── jobs/        # Async job model: submit, track, cancel, resume; Cloud offload
 │   └── clients/     # gRPC clients to sibling components (generated from Core schemas)
 ├── workspace/       # Projects, designs, comparisons, versioning, provenance (PostgreSQL)
-├── campaign/        # Campaign + contingency authoring; hand-off package for Ops
-├── api/             # FastAPI app: REST/OpenAPI 3.1 edge + (optional) GraphQL for UI queries
-└── webui/           # React + TypeScript front end (separate build; talks to api/)
+└── campaign/        # Campaign + contingency authoring; hand-off package for Ops
 ```
+
+The **REST/OpenAPI edge** over these modules ships in [`astro-mine-api`](api.md) and the **front
+end** as `@astro-mine/studio-ui` in [`astro-mine-ui`](ui.md) — a deployment of the library, per
+principle 8 below, not a second codebase.
 
 ### Key abstractions exposed
 
@@ -131,7 +134,7 @@ astro_mine.studio
   Pareto front**. The unit of reproducible design work.
 - **`Campaign`** — a chosen design plus its timeline, phases, and contingency branches; the
   Core-defined artifact handed to [Ops](ops.md).
-- **`MissionSpec`** *(RFC-0001)* — the Mission Architect's top-level artifact: an objective
+- **`MissionSpec`** *(Phase 3)* — the Mission Architect's top-level artifact: an objective
   reference, fleet (incl. reusable LEO inventory), global constraints, and an ordered list of
   **phases across regimes**, each with entry/exit conditions, an optional per-phase swarm campaign,
   and per-leg `ManeuverBudget`s. Per R4 it stays **declarative** — it records the *result* of the
@@ -196,9 +199,8 @@ Results stream back to the UI (SSE/WebSocket) as candidates are evaluated. Studi
 - **Async work:** job queue + workers (see §6/§7). NATS + JetStream is the default eventing/queue
   substrate (conventions.md §4); a workflow engine (Argo/Temporal — see §11) sequences multi-stage
   studies.
-- **Build/packaging:** back end as a Python wheel `astro-mine-studio` + an OCI image; front end as
-  static assets served by the API container or a CDN. **SemVer**; declares the Core interface major
-  versions it supports (conventions.md §13).
+- **Build/packaging:** the library ships in the platform wheel; the REST edge in the API image; the
+  front end as static assets served by that image or a CDN (conventions.md §7.1).
 
 ---
 
@@ -211,7 +213,7 @@ asset, policy, or result data (those belong to siblings and are referenced by co
 |---|---|---|
 | Projects, designs, trade studies, comparisons, audit log | **Owned** | **PostgreSQL** (+ **pgvector** for intent/design embeddings used in search & similarity; conventions.md §5) |
 | `ObjectiveSpec`, `DesignCandidate`, `TradeStudy`, `Campaign` | **Produced** | Core-schema'd JSON/YAML (JSON Schema + Pydantic v2); canonical Protobuf wire form for cross-component calls |
-| `MissionSpec` + per-leg `ManeuverBudget`s (RFC-0001, Mission Architect) | **Produced** | Core-schema'd JSON/YAML; `TrajectoryRef`/`ManeuverBudget` are *descriptive design-time* artifacts (no guidance), consumed by [Ops](ops.md) unchanged |
+| `MissionSpec` + per-leg `ManeuverBudget`s (Mission Architect) | **Produced** | Core-schema'd JSON/YAML; `TrajectoryRef`/`ManeuverBudget` are *descriptive design-time* artifacts (no guidance), consumed by [Ops](ops.md) unchanged |
 | Captured intent (raw NL + LLM transcript/tool calls) | **Owned** | PostgreSQL (provenance); large transcripts in object store, content-addressed |
 | Large artifacts (exported campaign bundles, big result sets) | **Produced** | **S3-compatible object store** (MinIO/S3/GCS), **content-addressed** (conventions.md §5) |
 | Cache / session / job status | Ephemeral | **Redis** |
@@ -250,7 +252,7 @@ Studio is a **pure consumer** of Core contracts — it integrates with nearly ev
   5. wrap and certify with [Guard](guard.md) (hard-constraint check);
   6. simulate the candidate on [Sim](sim.md) (multi-fidelity, [Surrogate](surrogate.md)-accelerated);
   7. **score** the candidate via [Bench](bench.md) against the objective metrics.
-- **Mission Architect loop (RFC-0001, Phase 3):** for a multi-regime `MissionSpec`, the same
+- **Mission Architect loop (Phase 3):** for a multi-regime `MissionSpec`, the same
   trade-study engine additionally orchestrates [Trajectory](trajectory.md) (design-time Δv/ToF and
   window scans → `TrajectoryRef`/`ManeuverBudget`), [Sizing](sizing.md) (mass/power/propellant/
   staging → sized SADF), and [Ledger](ledger.md) (techno-economic objective). Per R4,
@@ -332,7 +334,7 @@ Studio is a **pure consumer** of Core contracts — it integrates with nearly ev
     learned/generated components).
   - **Every LLM output is validated against Core schemas at the boundary** (Core principle:
     "fail validation early and loudly"). An `ObjectiveSpec` that doesn't validate is rejected and
-    surfaced for human correction — it never flows downstream. *(RFC-0001)* The same optional,
+    surfaced for human correction — it never flows downstream. *(Phase 3)* The same optional,
     provider-abstracted LLM may now also help draft a `MissionSpec`; it is validated against Core
     schemas identically and is **never on a safety, planning-guarantee, or flight path** — and never
     near trajectory guidance, which is descriptive-only by schema.
@@ -408,7 +410,7 @@ Studio is a **pure consumer** of Core contracts — it integrates with nearly ev
 
 ## 12. Roadmap alignment
 
-- **Phase 1** (charter §11, "Autonomy & studio"): Studio ships as the authoring front end once the
+- **Phase 1** (charter §10, "Autonomy & studio"): Studio ships as the authoring front end once the
   autonomy stack ([Mind](mind.md)/[Learn](learn.md)/[Allocate](allocate.md)/[Guard](guard.md)) and
   [Hub](hub.md) exist. The **MVP**: structured (no-LLM) intent capture → a single-objective or
   small multi-objective trade study driving [Sim](sim.md)+[Bench](bench.md) over the Phase-0
@@ -419,11 +421,11 @@ Studio is a **pure consumer** of Core contracts — it integrates with nearly ev
   [View](view.md); Pareto-front exploration UI; publish-to-[Hub](hub.md).
 - **Phase 2** (ops bridge): the `Campaign` hand-off to [Ops](ops.md) matures into the design→operations
   loop, so a Studio-authored campaign drives the operations runtime over Earth analogs.
-- **Phase 3** (RFC-0001): the **Mission Architect mode** ships — `MissionSpec` authoring and the
+- **Phase 3**: the **Mission Architect mode** ships — `MissionSpec` authoring and the
   trajectory⇄fleet⇄swarm⇄economics co-optimization over [Trajectory](trajectory.md)/[Sizing](sizing.md)/[Ledger](ledger.md).
   The additive Core schema hooks it depends on (`MissionSpec`/`regime`/`PhaseTransition`) are
   **reserved in Phase 1** (R5); only the implementations are Phase 3, and the track is opt-in and
   off the lunar-MVP critical path.
 - **Stability stance:** Studio adds no Core surface of its own — it is a *consumer*. Its measure of
   success is how much design power it unlocks while changing [Core](core.md) as little as possible;
-  any new contract it needs goes through the RFC process (conventions.md, GOVERNANCE.md).
+  any new contract it needs lands as an additive Core change (conventions.md §3).

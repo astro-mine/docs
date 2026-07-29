@@ -1,6 +1,6 @@
 # Astro-Mine-Fleet — Technology Architecture
 
-> Layer: **Asset & agent models** · Phase: **0** · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
+> Layer: **Asset & agent models** · Phase: **0** · Ships in: [`astro-mine-platform`](platform.md) · Extended for multi-regime missions (Phase 3)
 > The content library of concrete, parameterizable robot/asset models authored *in* SADF.
 > Cross-cutting standards: see [conventions.md](conventions.md).
 
@@ -15,15 +15,15 @@ Description Format (SADF)**. Where [Core](core.md) *owns and defines* SADF as a 
 *authors content against it*. Fleet provides:
 
 - a **reference vehicle library** of complete, validated assets covering every regime the
-  charter spans (orbital → surface → manipulation → ISRU, charter §5.2);
+  charter spans (orbital → surface → manipulation → ISRU, charter §4.2);
 - **parametric asset families** — templated models whose dimensions, masses, power budgets,
   sensor fits, and capability sets are exposed as validated parameters;
 - **authoring, validation, linting, and import/export tooling** that turns CAD/URDF/USD inputs
   into well-formed SADF and checks it against the Core schema and physical-plausibility rules;
 - **asset packaging** as signed OCI artifacts published and discovered through [Hub](hub.md).
 
-**Propulsive spacecraft & launch/return vehicles (RFC-0001).** For multi-regime missions
-([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3), Fleet adds the corresponding asset
+**Propulsive spacecraft & launch/return vehicles.** For multi-regime missions
+(Phase 3), Fleet adds the corresponding asset
 **content** — not new components — against the additive SADF propulsion / Δv-budget / staging /
 return capabilities that [Core](core.md) gains (per [mission-model](mission-model.md) §2.1). This
 includes two new asset *kinds*, **`launch_vehicle`** and **`return_vehicle`**, authored in the
@@ -57,7 +57,8 @@ Sim, Worlds, Bench).
 ## 2. Architecture principles
 
 1. **Consume the waist, never widen it.** Fleet authors *content* against the SADF contract from
-   [Core](core.md). If an asset cannot be expressed in current SADF, the response is an RFC to
+   [Core](core.md). If an asset cannot be expressed in current SADF, the response is a proposed
+   additive change to
    Core (conventions.md §3), never a private Fleet extension or side-channel.
 2. **Declarative assets, no executable behavior.** A SADF document is pure data — geometry refs,
    parameters, budgets, sensor/comms specs, capability tags. Behavior lives in
@@ -71,11 +72,11 @@ Sim, Worlds, Bench).
    asset changing identity.
 5. **Capabilities are declared, gated, and negotiated.** Every asset carries Core capability tags
    that drive autonomy negotiation ([Mind](mind.md)/[Allocate](allocate.md)) *and* export-control
-   gating (conventions.md §12, charter §10.5). Capability vocabulary is owned by Core; Fleet only
+   gating (conventions.md §12, charter §9.5). Capability vocabulary is owned by Core; Fleet only
    applies it.
 6. **Engine-neutral content.** SADF assets reference [Sim](sim.md) physics by capability, not by
    engine. The same asset must instantiate in MuJoCo, Drake, or Isaac without rewriting the asset
-   (charter §7 interop-first).
+   (charter §6 interop-first).
 7. **Validate at author time, not run time.** Linting and schema/physical-plausibility checks run
    in CI on every asset and parameter combination, so [Sim](sim.md) never spawns a malformed or
    physically nonsensical vehicle (mirrors core.md principle "fail validation early and loudly").
@@ -84,7 +85,7 @@ Sim, Worlds, Bench).
    content hashes it was derived from.
 9. **Reference assets are replaceable examples.** The shipped library is exemplary, not
    privileged. Third-party assets discovered via [Hub](hub.md) are first-class equals
-   (charter §10.2).
+   (charter §9.2).
 
 ---
 
@@ -102,7 +103,7 @@ astro_mine.fleet
 │   ├── manipulation/#   manipulators, excavators
 │   ├── logistics/   #   haulers
 │   ├── isru/        #   ISRU plants (process-bearing assets)
-│   └── transit/     #   RFC-0001: launch_vehicle, return_vehicle, propulsive spacecraft (Phase 3)
+│   └── transit/     #   Phase 3: launch_vehicle, return_vehicle, propulsive spacecraft (Phase 3)
 ├── templates/       # parametric asset families: base template + parameter JSON Schema + range constraints
 ├── params/          # parameter-resolution engine: bind values → emit a concrete, validated SADF doc
 ├── authoring/       # programmatic SADF builders / helpers atop Core's SADF types
@@ -137,8 +138,8 @@ astro_mine.fleet
 
 ### Extension / plugin points
 
-- A **new vehicle type** is a new asset package (charter §10.2) — author SADF, lint, package,
-  publish to [Hub](hub.md). No Fleet code change required. The RFC-0001 `launch_vehicle` /
+- A **new vehicle type** is a new asset package (charter §9.2) — author SADF, lint, package,
+  publish to [Hub](hub.md). No Fleet code change required. The `launch_vehicle` /
   `return_vehicle` kinds and propulsive spacecraft arrive this way (content, not new components).
 - **Custom importers/exporters and lint rules** register via Python entry points so a
   contributor can support a niche CAD pipeline or a domain-specific plausibility check.
@@ -171,10 +172,11 @@ a per-tick hot path.
   - **`typer`/`click`** for the CLI; **`rich`** for diagnostics.
 - **Runtime model.** A pure library + CLI; "library first, service second" (conventions.md §1).
   The only "service-like" behavior is a CI publish step that authenticates to [Hub](hub.md).
-- **Build/packaging.** Python wheel `astro-mine-fleet` (import `astro_mine.fleet`,
-  conventions.md §13); **SemVer**. The asset *content* is versioned and distributed
-  independently of the toolchain, as **OCI artifacts** (conventions.md §7) — the library wheel
-  ships only tooling and may bundle a thin "starter" set by reference.
+- **Build/packaging.** Ships in the [`astro-mine-platform`](platform.md) wheel as
+  `astro_mine.fleet`; its commands are `astro-mine fleet …` in [`astro-mine-cli`](cli.md). The asset
+  *content* is versioned and distributed independently of the toolchain, as **OCI artifacts**
+  (conventions.md §7) — the package ships only tooling and a reference set as package data
+  (conventions.md §13, shipped examples).
 
 ---
 
@@ -196,7 +198,7 @@ Fleet **owns and produces asset content**; it does not own any schema (that is [
 each asset targets, so Sim/Studio can negotiate compatibility (conventions.md §3 schema
 evolution; core.md §6 version negotiation).
 
-**Sized configurations are SADF, never a private format (RFC-0001).** [Sizing](sizing.md)
+**Sized configurations are SADF, never a private format.** [Sizing](sizing.md)
 *produces* mass/power/propellant/staging-sized spacecraft configurations and writes them back as
 SADF (per [mission-model](mission-model.md) §2.1); Fleet *holds* them as ordinary asset content.
 Sizing produces, Fleet holds — the propulsion / Δv-budget / staging / return fields are Core SADF
@@ -217,7 +219,7 @@ asset reproducible down to the exact geometry and parameter values.
 
 ## 6. Integration architecture
 
-Fleet sits at the upstream edge of the design/training loop (charter §6: "Astro-Mine-Fleet
+Fleet sits at the upstream edge of the design/training loop (charter §5: "Astro-Mine-Fleet
 describes the robots"). Every integration crosses a [Core](core.md) contract — no private
 side-channels (conventions.md §1).
 
@@ -230,15 +232,15 @@ side-channels (conventions.md §1).
   is the key design seam (see §11): SADF declares engine-neutral physical *parameters and
   fidelity profiles*; Sim maps them to engine-specific config (MuJoCo/Drake/Isaac).
 - **[Mind](mind.md) & [Allocate](allocate.md):** consume **capability declarations** — what each
-  asset can do — to negotiate roles and solve heterogeneous task allocation (charter §5.4).
+  asset can do — to negotiate roles and solve heterogeneous task allocation (charter §4.4).
   Capability tags are the contract; Fleet never embeds planner logic.
 - **[Studio](studio.md):** presents the Fleet/[Hub](hub.md) catalog as the **selectable robot
-  menu** for assembling a campaign (charter §5.2), using glTF/USD geometry for preview.
+  menu** for assembling a campaign (charter §4.2), using glTF/USD geometry for preview.
 - **[Hub](hub.md):** Fleet **publishes** signed OCI asset bundles and emits catalog metadata;
-  Hub indexes and serves them for discovery/reuse (charter §5.7).
+  Hub indexes and serves them for discovery/reuse (charter §4.7).
 - **[Bridge](bridge.md):** an asset's SADF (and its URDF/SDF export) is the description that may
   **map to real hardware** through ROS 2/cFS/F´ adapters, so the same asset identity spans sim
-  and flight (charter §5.6; conventions.md §4 ROS 2/DDS data plane). Fleet provides the
+  and flight (charter §4.6; conventions.md §4 ROS 2/DDS data plane). Fleet provides the
   description; Bridge owns the binding and its export-control posture.
 - **[Worlds](worlds.md)/[Prospect](prospect.md):** indirect — assets are instantiated *into* a
   world by [Sim](sim.md); Fleet shares the conventions.md §5 CRS/frame rules so an asset placed
@@ -310,7 +312,7 @@ side-channels (conventions.md §1).
 - **Plugin isolation:** assets are *data*, not code — they carry no executable behavior, which
   sharply limits the threat surface. Pluggable importers/lint rules that run third-party code
   follow conventions.md §9 (entry points for trusted; sandboxed out-of-process for untrusted).
-- **Export-control / dual-use (conventions.md §12, charter §10.5):** capability tags are
+- **Export-control / dual-use (conventions.md §12, charter §9.5):** capability tags are
   **first-class gating metadata**. Sensitive vehicle classes or capabilities (e.g. certain
   comms/RF, precision-targeting-adjacent payloads, anything that maps to controlled flight
   hardware via [Bridge](bridge.md)) are **tagged at the asset level** so OPA policy can gate
@@ -353,7 +355,7 @@ side-channels (conventions.md §1).
 
 | Decision | Options | Recommendation |
 |---|---|---|
-| Physics/dynamics parameterization split | All physics in SADF; minimal SADF + most config in [Sim](sim.md); **engine-neutral physical params in SADF, engine-specific config in Sim** | **Engine-neutral physical params (mass, inertia, joint limits, motor/torque, friction priors, sensor specs, power/thermal budgets) in SADF; numerical/solver/engine knobs in [Sim](sim.md)** — keeps assets engine-portable (charter §7) and the waist neutral (core.md §11 SADF base) |
+| Physics/dynamics parameterization split | All physics in SADF; minimal SADF + most config in [Sim](sim.md); **engine-neutral physical params in SADF, engine-specific config in Sim** | **Engine-neutral physical params (mass, inertia, joint limits, motor/torque, friction priors, sensor specs, power/thermal budgets) in SADF; numerical/solver/engine knobs in [Sim](sim.md)** — keeps assets engine-portable (charter §6) and the waist neutral (core.md §11 SADF base) |
 | Geometry pipeline | Author natively in USD; convert from CAD/STEP; convert from URDF/SDF; support all | **Support all via importers, store USD (sim) + glTF (web) as the two canonical refs** (conventions.md §3 "USD preferred, glTF for web") |
 | Parametric modeling approach | Hand-authored variants; **template + parameter JSON Schema**; full procedural generators | **Template + validated parameter schema as the default; pluggable procedural generators for advanced families** — matches "plugins over patches" (conventions.md §1) and keeps the common case diff-friendly |
 | Fidelity tiers for one asset | Single high-fi model; single low-fi model; **multiple profiles under one identity** | **Multiple fidelity profiles (`massmodel`/`kinematic`/`articulated`) under one stable asset identity** — feeds Sim's multi-fidelity scheduler (conventions.md §8) |
@@ -364,11 +366,12 @@ side-channels (conventions.md §1).
 
 **Open questions / research dependencies:**
 
-- **How much physics belongs in SADF before it becomes a leaky god-schema** (charter §9 "durable
+- **How much physics belongs in SADF before it becomes a leaky god-schema** (charter §8 "durable
   abstraction"; core.md open question)? Resolve empirically as the reference assets span
-  orbiter → excavator; escalate gaps to a Core RFC rather than widening SADF unilaterally.
+  orbiter → excavator; escalate gaps to a Core change with a named consumer rather than widening
+  SADF unilaterally.
 - **Granular/excavation asset parameterization.** Excavators and ISRU intake are the charter's
-  hardest physics (charter §9); the *asset-side* parameters needed to drive granular contact in
+  hardest physics (charter §8); the *asset-side* parameters needed to drive granular contact in
   [Sim](sim.md)/[Surrogate](surrogate.md) are unsettled — co-design with both.
 - **Lossy URDF/SDF/USD round-trips.** Exactly which fields survive conversion, and how to flag
   loss, needs a documented fidelity contract per converter.
@@ -376,19 +379,19 @@ side-channels (conventions.md §1).
   haulers): when does a generator earn its complexity over a parameter schema?
 - **Sensor/comms model depth in SADF** vs deferring to [Sim](sim.md)/[Link](link.md) — how much
   of a sensor's noise/range model is asset-intrinsic vs environment-coupled.
-- **Propulsion-fidelity depth in SADF (RFC-0001)** — how much of the propulsion / Δv / staging /
+- **Propulsion-fidelity depth in SADF** — how much of the propulsion / Δv / staging /
   return model is asset-intrinsic before it leaks into [Sim](sim.md)/[Trajectory](trajectory.md)
   territory; the same "leaky god-schema" caution applies. As with all tags, the new mobility,
   propulsion, and return capability tags double as **autonomy-negotiation** input
   ([Mind](mind.md)/[Allocate](allocate.md)) *and* **export-control gating** metadata
-  (conventions.md §12, charter §10.5) — Core owns the vocabulary, Fleet only applies it.
+  (conventions.md §12, charter §9.5) — Core owns the vocabulary, Fleet only applies it.
 
 ---
 
 ## 12. Roadmap alignment
 
 - **Phase 0 (now):** Fleet is a **Phase-0 deliverable** alongside Core/Sim/Worlds/Bench
-  (charter §11). MVP ships:
+  (charter §10). MVP ships:
   - the SADF authoring/validation/lint toolchain and CLI;
   - URDF/SDF importers and USD/glTF geometry handling;
   - a **minimal reference library sufficient for the anchor scenario** (lunar polar water-ice
@@ -398,7 +401,7 @@ side-channels (conventions.md §1).
   - packaging of assets as signed OCI artifacts (pre-[Hub](hub.md): a local/object-store path,
     upgraded to Hub publish when Hub lands in Phase 1).
   - **Goal:** a researcher can clone, pick robots, and run/score the reference scenario in an
-    afternoon (charter §13), with assets that [Sim](sim.md) instantiates and [Bench](bench.md)
+    afternoon (charter §12), with assets that [Sim](sim.md) instantiates and [Bench](bench.md)
     pins by hash.
 - **Phase 1:** broaden the parametric families and capability taxonomy; integrate publish/discover
   through [Hub](hub.md); expose the asset menu in [Studio](studio.md); feed capability
@@ -407,8 +410,8 @@ side-channels (conventions.md §1).
   analog rover-swarm field tests; tighten export-control gating on hardware-mappable assets.
 - **Phase 3:** community-contributed vehicle types and new-body assets (asteroid/icy-moon
   platforms) as plugins; third-party commercial asset packages atop the open library
-  (charter §11). The measure of success: new vehicle types arrive as packages, never as Fleet
-  code changes. **Multi-regime mission content lands here** ([RFC-0001](../rfc/0001-multi-regime-missions.md)):
+  (charter §10). The measure of success: new vehicle types arrive as packages, never as Fleet
+  code changes. **Multi-regime mission content lands here** ([multi-regime missions](mission-model.md)):
   `launch_vehicle` / `return_vehicle` kinds and propulsive spacecraft authored against the additive
   Core SADF propulsion/return capabilities — whose **schema hooks are reserved in Phase 1** (per
   [mission-model](mission-model.md) §3), so no Fleet code change is needed when the content arrives.

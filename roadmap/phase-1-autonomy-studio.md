@@ -2,7 +2,7 @@
 
 > **Window:** ~12–30 mo · **Theme:** Autonomy & studio · **Roadmap home:** [README](README.md)
 > **Goal:** become the **MARL and planning commons** for planetary swarms — first public
-> leaderboards and community plugins (charter §10; system.md §11).
+> leaderboards and community plugins (charter §9; system.md §11).
 
 **Entry dependencies:** Phase 0 complete — a runnable, reproducible anchor benchmark on
 `Core v0.1` + Sim + Worlds + Fleet + Bench (+ Prospect, Link MVP, local Cloud).
@@ -33,7 +33,7 @@ this is the *only* phase where the mission-architecture track touches the critic
 
 - **RM-P1-CORE-01** — **Policy/Planner API hardening for composition**: the sub-interfaces
   ([Mind](../architecture/mind.md)/[Allocate](../architecture/allocate.md)/[Guard](../architecture/guard.md)/[Learn](../architecture/learn.md))
-  compose cleanly; ONNX policy artifacts satisfy the contract. *(trace: core.md §12; charter §5.4)*
+  compose cleanly; ONNX policy artifacts satisfy the contract. *(trace: core.md §12; charter §4.4)*
 - **RM-P1-CORE-02** — **Hub-indexing manifest fields** (capability negotiation, provenance,
   signatures) finalized so [Hub](../architecture/hub.md) indexes by the Core manifest, not a private
   schema. *(trace: core.md §3, §6; hub.md §2)*
@@ -77,7 +77,7 @@ or epochs passes the shared `units` conformance vectors. **Deferred → P3:** al
   behind the Core physics-step contract; `predict(state, action=None) → Prediction` (channels +
   calibrated uncertainty + `in_domain`/`ood_margin`). *(trace: surrogate.md §3)*
 - **RM-P1-SURR-02** — **Granular/excavation GNN particle simulator** with **deep-ensemble + conformal**
-  calibrated error bounds and enforced trust regions. *(trace: surrogate.md §11, §12; charter §8, §9; `LUNAR-TR-002`)*
+  calibrated error bounds and enforced trust regions. *(trace: surrogate.md §11, §12; charter §7, §8; `LUNAR-TR-002`)*
 - **RM-P1-SURR-03** — **`datagen` from high-fidelity Sim** (Sobol/LHS + active learning) and the
   **offline-retrain + gated-promotion** loop. *(trace: surrogate.md §3, §11)*
 - **RM-P1-SURR-04** — **ONNX-served fidelity tier loaded by Sim**, whose **scheduler consumes the
@@ -100,8 +100,8 @@ scenario; Sim substitutes the tier only within budget. **Deferred → P2:** neur
 - **RM-P1-LEARN-01** — **`SwarmEnv` adapter**: Core Environment API → Gymnasium / PettingZoo
   `ParallelEnv`, with per-agent observation/action spaces keyed by SADF capabilities. *(trace: learn.md §3; `LUNAR-FR-005`)*
 - **RM-P1-LEARN-02** — **`CommsModel` wrapper**: declarative observation masks + drop/delay/budget
-  channel, driven by [Link](../architecture/link.md) when present — the knob that makes charter §8
-  measurable and comparable across algorithms. *(trace: learn.md §3, §11; charter §8)*
+  channel, driven by [Link](../architecture/link.md) when present — the knob that makes charter §7
+  measurable and comparable across algorithms. *(trace: learn.md §3, §11; charter §7)*
 - **RM-P1-LEARN-03** — **Baselines: IPPO + MAPPO + QMIX** as reproducible plugins (CTDE default;
   comms-learning as a first-class research track). *(trace: learn.md §11, §12)*
 - **RM-P1-LEARN-04** — **Single-GPU-workstation training that just works** (tier 1) + **KubeRay
@@ -110,7 +110,7 @@ scenario; Sim substitutes the tier only within budget. **Deferred → P2:** neur
   equivalence check and honest provenance (comms/observability assumptions, surrogate-fidelity
   caveats). *(trace: learn.md §3, §5, §10)*
 - **RM-P1-LEARN-06** — **Honest evaluation harness**: held-out eval envs, seed sweeps, variance and
-  comms-stress curves. *(trace: learn.md §10; charter §8)*
+  comms-stress curves. *(trace: learn.md §10; charter §7)*
 
 **Dependencies:** Core (`RM-P1-CORE-01`), Sim, Surrogate, Link (full), Cloud (full). **Exit criteria:**
 a comms-limited cooperative prospecting policy trains overnight on one GPU, exports to ONNX, and is
@@ -133,7 +133,7 @@ heuristics for Allocate, sim-to-real-aware training validated on analogs.
   consuming Link contact graph, Worlds traversability, Fleet budgets, Prospect value (with
   uncertainty). *(trace: allocate.md §3, §5; `LUNAR-FR-004`)*
 - **RM-P1-ALLOC-04** — **Info-gain-vs-ROI objective** (active perception traded against extraction).
-  *(trace: allocate.md §11; scenario §7; charter §8)*
+  *(trace: allocate.md §11; scenario §7; charter §7)*
 - **RM-P1-ALLOC-05** — **Anytime contract** (streaming incumbents + monotone bounds + optimality gap)
   for online re-solve. *(trace: allocate.md §2, §3)*
 - **RM-P1-ALLOC-06** — **Explainability**: objective decomposition, binding constraints, and an
@@ -178,7 +178,7 @@ joint asset↔target↔window↔trajectory assignment.
   *(trace: mind.md §2, §7)*
 - **RM-P1-MIND-06** — **Degrade-not-collapse**: validity-horizoned `ContingentPlan`s + decentralized
   `coord/` so agents act on cached intent through comms-denied PSR intervals, validated under
-  injected blackouts. *(trace: mind.md §2, §10; `LUNAR-FR-005`; charter §8, §9)*
+  injected blackouts. *(trace: mind.md §2, §10; `LUNAR-FR-005`; charter §7, §8)*
 - **RM-P1-MIND-07** — **Determinism + decision-trace (MCAP)** for reproducibility and plan
   explanation. *(trace: mind.md §5, §10; `LUNAR-UX-003`)*
 
@@ -406,7 +406,7 @@ live-mission link prediction (capability-gated). **Deferred → P3:** deep-space
   surrogate.md §6; pairs with `RM-P1-SURR-04`)*
 - **RM-P1-SIM-04** — **Brax/MJX GPU-vectorized swarm-scale rollout**: a JAX (Brax/MJX) GPU-batched
   engine/rollout path behind the `RegimeEngine` framework for [Learn](../architecture/learn.md)
-  swarm-scale training, with Ray fan-out on Cloud. *(trace: sim.md §12; charter §8)*
+  swarm-scale training, with Ray fan-out on Cloud. *(trace: sim.md §12; charter §7)*
 - **RM-P1-SIM-05** — **Richer sensor models**: extend the `RM-P0-SIM-06` sensor suite with additional
   / higher-fidelity models, still rendering observations *of* Prospect fields (never a point guess).
   *(trace: sim.md §3; prospect.md §6)*
@@ -434,7 +434,7 @@ its error budget. **Deferred → P3:** microgravity/small-body regimes; multi-sp
 - **RM-P1-WORLDS-10** — **GPU on-demand fine illumination + learned illumination surrogate**
   (co-designed with [Surrogate](../architecture/surrogate.md)) for swarm-scale queries. *(trace: worlds.md §11, §12)*
 - **RM-P1-WORLDS-11** — **Mars worlds (MOLA/HiRISE) + Martian frames + richer dust model** as the
-  first non-anchor body, validating "support a new world = a package, not a core change." *(trace: worlds.md §12; charter §10.2)*
+  first non-anchor body, validating "support a new world = a package, not a core change." *(trace: worlds.md §12; charter §9.2)*
 - **RM-P1-WORLDS-12** — **Full per-cell topocentric horizon maps**: replace the `RM-P0-WORLDS-03`
   grid-azimuth horizon approximation (and its grid-convergence correction) with a rigorous per-cell
   topocentric computation — a drop-in fidelity upgrade behind the same `IlluminationModel` API and

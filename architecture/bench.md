@@ -1,6 +1,7 @@
 # Astro-Mine-Bench — Technology Architecture
 
-> Layer: **Commons backbone & platform infrastructure** · Phase: **0** · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
+> Layer: **Commons backbone & platform infrastructure** · Phase: **0** · Extended for multi-regime missions (Phase 3)
+> Ships in: [`astro-mine-platform`](platform.md) (harness, scoring, the leaderboard library) · [`astro-mine-api`](api.md) (the leaderboard routes) · [`astro-mine-ui`](ui.md) (`@astro-mine/bench-ui`)
 > The academic flywheel / the growth engine. Clone, run, and score a baseline in an afternoon.
 > Cross-cutting standards: see [conventions.md](conventions.md).
 
@@ -22,18 +23,17 @@ Concretely, Bench owns and only owns:
   [Prospect](prospect.md), [Link](link.md)) by content hash, plus seeds, episode/horizon
   definitions, and the metric set;
 - the **scenario zoo** — the curated catalog of those specs, anchored by the **lunar polar
-  water-ice prospecting** reference scenario (charter §13);
+  water-ice prospecting** reference scenario (charter §12);
 - the **metric & scoring library** — standardized, pluggable metrics and aggregation rules
-  ("evaluation science for swarm campaigns", charter §8);
+  ("evaluation science for swarm campaigns", charter §7);
 - the **reproducibility harness** — containerized, seeded, lockfile-pinned execution with
   determinism gates;
 - the **leaderboard service** — submission intake, evaluation orchestration, ranking, and a
   public web UI.
 
-**Multi-regime mission scenarios (RFC-0001).** The scenario zoo extends beyond single-body
+**Multi-regime mission scenarios.** The scenario zoo extends beyond single-body
 campaigns to **end-to-end missions** spanning multiple [regimes and phases](mission-model.md).
-RFC-0001 ([R5](../rfc/0001-multi-regime-missions.md#resolutions-and-implications)) adds two
-Phase-3 reference scenarios:
+The extension adds two Phase-3 reference scenarios:
 
 - **NEO rendezvous + sample-return** — the named Phase-3 *stepping-stone* benchmark: launch,
   interplanetary transit to a near-Earth object, proximity characterization, sampling, ascent,
@@ -53,7 +53,7 @@ fabric (that is [Cloud](cloud.md)). Bench *composes* these: it is a thin orchest
 scoring layer over the simulation, content, and compute substrate. It also does **not** train
 policies ([Learn](learn.md)) or author designs ([Studio](studio.md)) — it scores their outputs.
 
-**Primary users:** researchers and the whole community (charter §5.7). Secondarily,
+**Primary users:** researchers and the whole community (charter §4.7). Secondarily,
 [Studio](studio.md) consumes Bench to score candidate designs, and CI consumes Bench's
 determinism gates as a regression oracle.
 
@@ -91,8 +91,8 @@ afternoon"). Bench is one of the **first** things to ship.
    and the full result lineage are public and inspectable. Trust comes from transparency, not
    from a black box.
 8. **Evaluation is itself research.** Defining what "good" means for multi-week, multi-robot
-   ISRU campaigns is an open problem (charter §8); metric definitions are versioned, citable,
-   and debatable through the [RFC process](https://github.com/astro-mine/.github/blob/main/GOVERNANCE.md).
+   ISRU campaigns is an open problem (charter §7); metric definitions are versioned, citable,
+   and debatable as an ordinary change to this document (conventions.md §13).
 
 ---
 
@@ -110,7 +110,8 @@ astro_mine.bench
 ├── submit/        # submission intake, manifest validation, policy/plugin resolution
 ├── eval/          # evaluation-batch planner; dispatch to Sim via Cloud; result collection
 ├── verify/        # determinism/anti-cheat: re-execution, attestation, seed disclosure
-├── leaderboard/   # ranking, statistics, history; REST/OpenAPI service (FastAPI)
+├── leaderboard/   # ranking, statistics, history (the service library; its REST routes
+│               #   ship in astro-mine-api — see api.md)
 └── report/        # scorecards, provenance bundles, MCAP replay export, View handoff
 ```
 
@@ -123,7 +124,7 @@ astro_mine.bench
   **held-out seed set** (disclosed only at evaluation time); the metric set and aggregation
   rule; resource budgets (wall-clock, sim-step, compute) per submission; and the
   observation/action interface the submitted policy must satisfy. The spec *is* the task; its
-  content hash *is* the task identity. **Multi-regime mission scenarios (RFC-0001)** additionally
+  content hash *is* the task identity. **Multi-regime mission scenarios** additionally
   pin the new **`MissionSpec`/`regime`** mission schema at the pinned Core interface minor and
   reference small-body content, propulsive [Fleet](fleet.md), and design-time `TrajectoryRef`s by
   content hash — no new ScenarioSpec mechanism, just richer pinned content (see
@@ -164,7 +165,7 @@ rollouts; results flow back as Arrow/Parquet + MCAP and are ingested into the le
   API (conventions.md §3); internal service-to-service over **gRPC** where streaming/typed
   efficiency matters. The leaderboard's web UI follows the platform front-end baseline
   (conventions.md §2.1) and ships as the `@astro-mine/bench-ui` **surface** composed by the console
-  (RFC-0010) — greenfield work, since Bench ships no front-end code today. Rich scenario/replay
+  — greenfield work, since Bench ships no front-end code today. Rich scenario/replay
   views are delegated to [View](view.md): Bench owns the surface, View owns the globe and replay
   primitives it embeds.
 - **Schemas:** ScenarioSpec, Submission manifest, and Result as **JSON Schema + Pydantic v2**
@@ -174,10 +175,12 @@ rollouts; results flow back as Arrow/Parquet + MCAP and are ingested into the le
 - **Determinism tooling:** containerized execution (OCI), pinned base images, and lockfiles
   (`uv`/`pip` for Python, Conda where native deps demand it) captured into the provenance
   bundle.
-- **Build/packaging:** Python wheel `astro-mine-bench`; the leaderboard service as a multi-arch
-  OCI image; the scenario zoo published as **versioned OCI artifacts** (each ScenarioSpec +
-  its content references is itself content-addressed and signed). **SemVer** throughout
-  (conventions.md §7, §13).
+- **Build/packaging:** the harness, scoring and leaderboard *library* ship in the
+  [`astro-mine-platform`](platform.md) wheel; the leaderboard's REST routes ship in
+  [`astro-mine-api`](api.md) as a multi-arch OCI image. The scenario zoo is published as **versioned
+  OCI artifacts** (each ScenarioSpec plus its content references is itself content-addressed and
+  signed) — and the zoo, not the code, is what a result is reproducible against
+  (conventions.md §7.1, §13).
 
 ---
 
@@ -197,7 +200,7 @@ Bench owns the *evaluation* data; it references but does not own content or arti
 | **Held-out seeds / hidden specs** | encrypted; secrets-managed | Disclosed only at eval time (§9) |
 | **Cache / job state / rate limits** | **Redis** | Service ephemeral state (conventions.md §5) |
 
-**Mission-level metrics (RFC-0001).** Multi-regime scenarios extend the charter's "evaluation
+**Mission-level metrics.** Multi-regime scenarios extend the charter's "evaluation
 science" (§8) from campaign performance to **mission value**: delivered resource mass, Δv /
 propellant efficiency, and total mission duration, plus **ROI / value-with-uncertainty** computed
 through [Ledger](ledger.md)'s open techno-economic framework. These are ordinary pluggable
@@ -241,7 +244,7 @@ Bench sits at the confluence of the commons backbone and is deliberately a *comp
 - **[View](view.md)** — surfaces leaderboards, scorecards, and 3D/geospatial replays of
   evaluation episodes; Bench provides the data and MCAP replays, View renders them.
 - **[Studio](studio.md)** — consumes Bench programmatically to score candidate designs during
-  trade studies (the design loop, charter §6).
+  trade studies (the design loop, charter §5).
 - **[Learn](learn.md)** — links training runs (via **MLflow**, conventions.md §6) to Bench
   results by content hash, closing the train→evaluate loop.
 
@@ -256,7 +259,7 @@ REST/OpenAPI (conventions.md §3, §4).
 ## 7. Infrastructure & deployment
 
 - **Deployment tiers (conventions.md §7):**
-  1. **Local/dev** — `pip install astro-mine-bench`; run a scenario and score a baseline via
+  1. **Local/dev** — `pip install astro-mine-cli`; run a scenario and score a baseline via
      `docker compose` or a single Python env, offline. *This tier MUST always work* (charter
      §13). Determinism gates run here as ordinary tests.
   2. **Cloud** — the hosted leaderboard: FastAPI service + PostgreSQL + Redis + object store on
@@ -278,7 +281,7 @@ REST/OpenAPI (conventions.md §3, §4).
 ## 8. Performance & scalability
 
 - **Targets.** *Local*: clone → run anchor scenario → score one baseline **in an afternoon** on
-  a workstation (charter §13) — the headline SLO. *Hosted*: submission acknowledged in
+  a workstation (charter §12) — the headline SLO. *Hosted*: submission acknowledged in
   seconds; a standard-budget evaluation (e.g., 50 seeds of the anchor scenario) completes in
   minutes-to-low-hours on [Cloud](cloud.md); leaderboard re-rank in well under a second.
 - **Bottlenecks.** (1) Simulation cost dominates — owned by [Sim](sim.md)'s multi-fidelity
@@ -321,7 +324,7 @@ REST/OpenAPI (conventions.md §3, §4).
   - **Rate limiting and identity** bound brute-force seed-search attacks; results carry full
     provenance so disputes are auditable.
 - **Export control / dual use.** Bench is squarely inside the **open** science/simulation/
-  coordination commons (conventions.md §12, charter §10.5). It does not introduce sensitive
+  coordination commons (conventions.md §12, charter §9.5). It does not introduce sensitive
   operational targeting. Scenarios that would reference capability-gated content honor
   [Core](core.md) capability tags and OPA gating; genuinely sensitive scenarios are partitioned
   per `EXPORT_CONTROL.md`. The default posture is fully open and reproducible.
@@ -364,11 +367,11 @@ REST/OpenAPI (conventions.md §3, §4).
 
 **Open questions / research dependencies:**
 
-- **Evaluation science (charter §8).** What metrics actually capture "good" for a multi-week,
+- **Evaluation science (charter §7).** What metrics actually capture "good" for a multi-week,
   multi-robot ISRU campaign — throughput, energy survival across lunar night, robustness to
   comms dropout, resource-uncertainty reduction? The anchor scenario's metric set is a
-  Phase-0 *proposal* to be refined via RFC, co-designed with [Prospect](prospect.md) and
-  [Mind](mind.md)/[Allocate](allocate.md). **Mission value (RFC-0001).** Phase-3 multi-regime
+  Phase-0 *proposal* to be refined in the open, co-designed with [Prospect](prospect.md) and
+  [Mind](mind.md)/[Allocate](allocate.md). **Mission value.** Phase-3 multi-regime
   scenarios extend this question to mission-level value — delivered mass, Δv efficiency, duration,
   and ROI-with-uncertainty via [Ledger](ledger.md) — an open metric-definition problem for
   interplanetary resource campaigns.
@@ -387,19 +390,19 @@ REST/OpenAPI (conventions.md §3, §4).
 - **Phase 0 (now) — ships first, with the runnable loop.** The anchor **lunar polar water-ice
   prospecting** ScenarioSpec; the reproducibility harness (containerized, seeded,
   lockfile-pinned, determinism gates); the reference metric set; a baseline policy; the local
-  tier (`clone → run → score in an afternoon`, charter §13); and a minimal leaderboard service
+  tier (`clone → run → score in an afternoon`, charter §12); and a minimal leaderboard service
   (FastAPI + Postgres). This is what proves [Sim](sim.md) + [Worlds](worlds.md) +
-  [Fleet](fleet.md) + Core work end-to-end and attracts the first researchers (charter §11
+  [Fleet](fleet.md) + Core work end-to-end and attracts the first researchers (charter §10
   Phase 0). MVP integrity: submit-policy-we-run + held-out seeds + sampled re-execution.
 - **Phase 1 — the flywheel turns.** First **public leaderboards**; ingestion of community
   ONNX/plugin submissions from [Hub](hub.md); scale-out evaluation on [Cloud](cloud.md);
   pluggable community metrics; richer scenario zoo; [View](view.md) leaderboard/replay UI;
-  [Studio](studio.md) scoring integration (charter §11 Phase 1, §10.3).
+  [Studio](studio.md) scoring integration (charter §10 Phase 1, §10.3).
 - **Phase 2+ — breadth & rigor.** Hidden test scenarios, multi-objective ranking, terrestrial
   analog / digital-twin validation scenarios alongside [Ops](ops.md)/[Bridge](bridge.md), and
   expansion of the zoo to new bodies (asteroids, icy moons) as plugin content. Evaluation
   science matures into citable, RFC-governed metric standards.
-- **Phase 3 — multi-regime missions (RFC-0001).** The named **NEO rendezvous + sample-return**
+- **Phase 3 — multi-regime missions.** The named **NEO rendezvous + sample-return**
   stepping-stone and the **multi-asteroid mining + ore return** capstone scenarios land, with
   mission-level metrics (delivered mass, Δv efficiency, duration, ROI via [Ledger](ledger.md))
   on the same harness. The enabling Core hooks (`MissionSpec`/`regime`) are reserved in **Phase 1**

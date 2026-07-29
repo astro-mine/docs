@@ -222,7 +222,7 @@ under-modelled.
 - **A new inspector for an existing artifact kind** — declare a `Contribution`; no console change,
   and no coordination with the surface that renders the slot.
 - **A new slot** — additive to `SlotId` in `@astro-mine/surface`.
-- **A new `PluginKind`** — **not** an extension point here. That is a Core RFC, and an amendment to
+- **A new `PluginKind`** — **not** an extension point here. That is a Core change, and an amendment to
   RFC-0010. The console must never become a back door for widening the waist.
 
 ---
@@ -238,7 +238,7 @@ The stack is **not this component's to choose** — it is the platform front-end
   without the surface knowing where.
 - **No data-fetching or client-cache library.** The platform ships none; each surface receives an
   injected client and uses `fetch` with the design system's `AsyncState` primitive. Adding a cache
-  layer is an RFC, not an import.
+  layer is a deliberate change to the front-end baseline, not an import in one surface.
 - **visx + `d3-scale`** for charts, owned by `@astro-mine/ui`. Chosen because it enforces the
   discipline *by the API rather than by care*: a second y-axis is unrepresentable, and a value with
   no uncertainty bound renders as an open mark by construction. Parallel coordinates is the one form
@@ -412,7 +412,7 @@ have:
   **before** the surfaces exist, on purpose: reserve the hooks while the waist is soft — the
   [RFC-0001](../rfc/0001-multi-regime-missions.md) argument one layer up. Retrofitting a shell
   around three grown-up applications later is precisely the *"leaky, ever-growing god-interface"*
-  failure charter §8 warns against.
+  failure charter §7 warns against.
 - **Phase 1, Wave 24 — the surfaces.** `@astro-mine/bench-ui` (the leaderboard — Bench owns the
   surface and *uses* View's replay primitives), `@astro-mine/studio-ui`, `@astro-mine/hub-ui`, and
   the retirement of Hub's Pico CSS and Studio's ad-hoc CSS onto `@astro-mine/ui`.

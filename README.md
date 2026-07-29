@@ -13,7 +13,7 @@ exploration and in-situ resource utilization (ISRU).
 - **[Guide](guide/README.md)** — task-oriented how-tos: how to *do* things with the platform, as opposed to how it is designed.
 - **[Architecture](architecture/README.md)** — technology architecture for every component.
 - **[Scenarios](scenarios/README.md)** — flagship use scenarios that drive requirements (lunar polar ice; asteroid mining).
-- **[Roadmap](roadmap/README.md)** — detailed per-phase, per-component scope & requirements (planner-ready), derived from charter §10.
+- **[Roadmap](roadmap/README.md)** — detailed per-phase, per-component scope & requirements (planner-ready), derived from charter §9.
 - **[Charter](charter/Swarm_Exploration_ISRU_Orchestrator_OSS_Project.md)** — product envisioning & vision (source of truth).
 - **[RFCs](rfc/)** — accepted and proposed design changes.
 - **[Versioning & releases](VERSIONING.md)** — per-package SemVer, Git-tag versions, and the private-incubation distribution policy (no public PyPI yet).

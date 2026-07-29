@@ -33,8 +33,7 @@ Concretely, Bridge does:
 
 - **No certification-grade flight-code or targeting generation.** Bridge does *not* synthesize,
   optimize, or emit certifiable flight software, guidance/targeting solutions, or trajectory
-  burns for real vehicles. That is the deliberately excluded P3 capability (charter §2.2,
-  §10.5). Bridge *transports and translates* plans produced upstream; it does not *author*
+  burns for real vehicles. That is the deliberately excluded P3 capability (charter §9.5, §9.5). Bridge *transports and translates* plans produced upstream; it does not *author*
   operational targeting.
 - **No planning, allocation, or autonomy.** Decisions come from [Mind](mind.md),
   [Allocate](allocate.md), [Learn](learn.md); assurance from [Guard](guard.md); commitment from
@@ -71,7 +70,7 @@ drive either the simulator or real flight hardware … without changing the laye
    never depends on an adapter; adapters never leak upward. Adding a stack = adding an adapter.
 2. **Identical-plan invariant.** The committed plan artifact targeting [Sim](sim.md) and the one
    targeting hardware MUST be the same bytes. The only difference is Bridge configuration. This
-   is the whole point of the layer (charter §5.6); it is enforced by test (§8, §10).
+   is the whole point of the layer (charter §4.6); it is enforced by test (§8, §10).
 3. **Translation, never decision.** Bridge maps representations and rates; it never alters
    intent, re-plans, or relaxes a constraint. Anything that changes *what the swarm does*
    belongs above Bridge. Violating this would silently move targeting capability into the
@@ -79,12 +78,12 @@ drive either the simulator or real flight hardware … without changing the laye
 4. **Fail safe, never fail open.** On a mapping failure, schema mismatch, lost link, or
    un-acknowledged command, Bridge withholds, buffers, or escalates to [Ops](ops.md)/[Guard](guard.md)
    — it never invents a command or guesses a value. There are no second chances in space
-   (charter §9).
+   (charter §8).
 5. **Time and frame are explicit, always.** No command crosses an adapter without an explicit
    epoch (TDB/ET) and reference frame (conventions.md §5). Clock and frame skew are measured,
    bounded, and surfaced — never assumed away.
 6. **Link-honest.** Bridge assumes intermittent, delayed, bandwidth-limited links by default
-   (charter §8, §9). Back-pressure and store-and-forward are baseline behavior, not an
+   (charter §7, §8). Back-pressure and store-and-forward are baseline behavior, not an
    add-on; the path degrades gracefully (conventions.md §8).
 7. **Capability-partitioned by construction.** The open, default-shipped adapters are sim and
    generic/standard interop (ROS 2, CCSDS basics). Adapters that bind to specific sensitive
@@ -95,7 +94,7 @@ drive either the simulator or real flight hardware … without changing the laye
    because this is the platform's accountability line between the digital and the physical.
 9. **Interop over reinvention.** Bridge builds on `ros2`/`rclpy`/`rclcpp`, the cFS Software Bus,
    the F´ ground/uplink interfaces, and existing CCSDS libraries — it does not reimplement
-   robotics middleware or flight software (charter §7, conventions.md §1.7).
+   robotics middleware or flight software (charter §6, conventions.md §1.7).
 
 ---
 
@@ -189,7 +188,7 @@ egress → backend executes → native telemetry returns through `adapters/*` �
   - **Rust** is recommended for the **CCSDS codec** and the `ack`/idempotency/store-forward
     state machine — a high-assurance, memory-safe boundary handling untrusted wire bytes
     (conventions.md §2, §9). It is also the natural place for the capability-gate enforcement.
-- **External stacks & libraries** (charter §7):
+- **External stacks & libraries** (charter §6):
   - **ROS 2** (Humble/Jazzy LTS) over **DDS** (rmw_cyclonedds default; rmw_fastrtps supported) —
     the interop lingua franca and the operations data plane (conventions.md §4).
   - **NASA core Flight System (cFS)** — Software Bus, cFE, and the standard apps; integrated via
@@ -253,7 +252,7 @@ Bridge owns **mappings and delivery state**, not domain data.
 
 ## 6. Integration architecture
 
-Bridge sits at the bottom of the operations loop (charter §6), between the platform's planes and
+Bridge sits at the bottom of the operations loop (charter §5), between the platform's planes and
 the robots/flight stacks.
 
 - **Upstream — invoked by [Ops](ops.md):** [Ops](ops.md) commits a plan that
@@ -265,7 +264,7 @@ the robots/flight stacks.
 - **Downstream — two interchangeable targets:**
   - **[Sim](sim.md)** (today / Phase 2): the `sim` adapter speaks to the [Sim](sim.md)
     Environment API so [Sim](sim.md) runs as the **digital-twin shadow** [Ops](ops.md) vets
-    plans against before commitment (charter §5.6, §6).
+    plans against before commitment (charter §4.6, §5).
   - **Real flight hardware** (Phase 3): ROS 2/DDS robots, or vehicles fronted by cFS / F´, and
     ground links via CCSDS — selected by the same switch.
 - **Core interfaces used:** the command/action and telemetry **message schemas**, the
@@ -297,7 +296,7 @@ the robots/flight stacks.
   runtime (cFS/F´), reached through a controlled gateway — **not** scheduled by K8s.
 - **Topology & scaling:** one bridge instance (or sharded set) per **fleet segment / link** —
   e.g., per relay orbiter or per ground-station endpoint — so back-pressure and store-forward
-  are bounded per link (charter §5.3, [Link](link.md)). Horizontal scale is by partitioning
+  are bounded per link (charter §4.3, [Link](link.md)). Horizontal scale is by partitioning
   assets/links across instances; each instance is otherwise stateless with durable state
   externalized (§5).
 - **Deployment placement (export-relevant):** sensitive hardware adapters deploy only in
@@ -335,7 +334,7 @@ the robots/flight stacks.
 ## 9. Security, safety & compliance
 
 Bridge is the platform's **principal export-control / dual-use boundary** and its physical
-actuation line. This section is deliberately the most thorough (charter §10.5; conventions.md §9,
+actuation line. This section is deliberately the most thorough (charter §9.5; conventions.md §9,
 §12).
 
 ### Capability partitioning (the core posture)
@@ -350,7 +349,7 @@ actuation line. This section is deliberately the most thorough (charter §10.5; 
   load/`Session`-open time (conventions.md §9).
 - **Explicit exclusion (out of scope):** Bridge does **not** generate certification-grade flight
   code, guidance/targeting solutions, or burn/maneuver synthesis for real vehicles — the
-  excluded P3 capability (charter §2.2, §10.5). This is enforced architecturally: Bridge has no
+  excluded P3 capability (charter §9.5, §9.5). This is enforced architecturally: Bridge has no
   planner/solver and the principle "translation, never decision" (§2.3) is a contract test, not
   just a guideline. Genuinely sensitive operational targeting is therefore *structurally* absent
   from the open layer, not merely discouraged.
@@ -401,7 +400,7 @@ actuation line. This section is deliberately the most thorough (charter §10.5; 
   controlled hardware, controlled flight software, or specific mission targeting are treated as
   potentially ITAR/EAR-controlled** and kept in access-controlled repos with screened access,
   per-jurisdiction gating, and a documented classification per adapter.
-- "Open does not mean naive" (charter §10.5): capability gating, RBAC, and repo partitioning are
+- "Open does not mean naive" (charter §9.5): capability gating, RBAC, and repo partitioning are
   **first-class design elements** of Bridge, not bolt-ons. Each access-controlled adapter repo
   carries its own export classification and access policy.
 
@@ -422,12 +421,12 @@ actuation line. This section is deliberately the most thorough (charter §10.5; 
 - **Testing & validation strategy:**
   - **Identical-plan conformance test** (the headline gate): the same committed plan is driven
     through the **sim** adapter and through a **HIL/SIL** target; the two boundary recordings
-    must match within a declared tolerance. This *proves* charter §5.6 and is a CI gate.
+    must match within a declared tolerance. This *proves* charter §4.6 and is a CI gate.
   - **Software-in-the-loop (SIL):** adapters tested against cFS/F´ running in software and a ROS 2
     sim backend.
   - **Hardware-in-the-loop (HIL):** Phase-3 adapters tested against real flight units / engineering
     models behind the access-controlled boundary, with terrestrial analog rover-swarm field tests
-    (charter §11 Phase 2 goal).
+    (charter §10 Phase 2 goal).
   - **Contract tests** against [Core](core.md) interface versions (conventions.md §11); codec maps
     fuzzed and **property-tested** (Hypothesis) for round-trip and frame/unit/epoch invariants;
     **golden/determinism** comparisons on recorded boundaries (conventions.md §11).
@@ -444,7 +443,7 @@ actuation line. This section is deliberately the most thorough (charter §10.5; 
 | **Sim-path transport** | **ROS 2 bridge**; **gRPC**; **shared memory** | **gRPC by default** for the sim/digital-twin path (typed, streaming, matches conventions.md §4 control plane); **shared memory** for co-located high-rate twin; ROS 2 used when the twin already lives on the DDS plane |
 | **Robotics data plane** | ROS 2/DDS; custom transport | **ROS 2 / DDS** (rmw_cyclonedds default; Zenoh bridge for WAN) — the charter lingua franca (conventions.md §4); not negotiable |
 | **CCSDS handling depth** | Minimal SPP only; **SPP + TC/TM**; full stack incl. CFDP + DTN/BP | **SPP + TC/TM as baseline; CFDP and DTN Bundle Protocol (BPv7) added as link delay/file-transfer needs demand** — don't build the full stack before a real link requires it. Deep-space phases (RFC-0001) are what *demand* CFDP + DTN/BP; the **DSN telecommand/telemetry adapter** that rides on them is a Phase-3, access-controlled addition (§9) |
-| **cFS / F´ binding** | Reimplement; **link native (cFS SB app, F´ GDS ports)**; ground-only | **Link native** via a cFS Software Bus bridge app and the F´ ground data interface (charter §7) — interop, not reinvention |
+| **cFS / F´ binding** | Reimplement; **link native (cFS SB app, F´ GDS ports)**; ground-only | **Link native** via a cFS Software Bus bridge app and the F´ ground data interface (charter §6) — interop, not reinvention |
 | **Sim-vs-hardware switch** | Build-time flag; **runtime `BridgeTarget` config**; separate binaries | **Runtime `BridgeTarget` selection** with an **identical-plan conformance test** (HIL/SIL) as the CI gate — config differs, the plan bytes do not |
 | **Clock / time-sync** | Trust each stack's clock; **SPICE TDB/ET as canonical + measured correlation**; PTP/NTP only | **SPICE TDB/ET canonical**, with measured, bounded, surfaced correlation to each stack's clock (PTP/NTP where the medium allows) — explicit time, never assumed (conventions.md §5) |
 | **Hot-path implementation language** | All Python; **C++/Rust on hot/boundary paths + Python control** | **C++ for native ABIs (rclcpp, cFS, F´), Rust for the CCSDS codec & ack/store-forward state machine, Python everywhere else** (conventions.md §2) |
@@ -454,12 +453,12 @@ actuation line. This section is deliberately the most thorough (charter §10.5; 
 
 - **What is the minimal, durable command/telemetry vocabulary** that maps cleanly onto ROS 2,
   cFS, F´, *and* CCSDS without becoming a leaky god-schema? Co-designed with [Core](core.md)
-  (charter §9 "durable abstraction across orbital, surface, manipulation, and ISRU").
+  (charter §8 "durable abstraction across orbital, surface, manipulation, and ISRU").
 - **How tight can the identical-plan conformance tolerance be** between sim and HIL, given
   unavoidable real-world timing/quantization differences? This *is* the sim-to-real credibility
-  question (charter §9) localized to the boundary; co-designed with [Sim](sim.md) and
+  question (charter §8) localized to the boundary; co-designed with [Sim](sim.md) and
   [Guard](guard.md).
-- **Delay-tolerant supervisory semantics** (charter §8): how store-and-forward, acks, and
+- **Delay-tolerant supervisory semantics** (charter §7): how store-and-forward, acks, and
   arm/disarm should behave under minutes of latency so an operator's intent is neither lost nor
   stale-actuated — co-designed with [Ops](ops.md) and [View](view.md).
 - **Export-control classification taxonomy per adapter** — the concrete mapping from capability
@@ -474,7 +473,7 @@ actuation line. This section is deliberately the most thorough (charter §10.5; 
   command/telemetry **message schemas** and **capability-tag taxonomy** Bridge depends on are
   designed now — Bridge's needs (clean egress mapping, frame/epoch explicitness, capability
   gating) are an input to Core v0.1 so the waist is right before Bridge exists.
-- **Phase 2 — Operations bridge (Bridge's debut, charter §11):** ship the **hexagonal Bridge
+- **Phase 2 — Operations bridge (Bridge's debut, charter §10):** ship the **hexagonal Bridge
   port + the `sim` adapter + the generic ROS 2/DDS adapter**, the `BridgeTarget` runtime switch,
   time/frame/unit `transform`, and link-aware `delivery` (back-pressure + store-and-forward).
   This makes [Ops](ops.md)'s **digital-twin shadow mode** real and is validated against
@@ -485,11 +484,11 @@ actuation line. This section is deliberately the most thorough (charter §10.5; 
     observability, capability-gated registry.
   - **Later in Phase 2:** baseline **CCSDS SPP + TC/TM** for ground-link analogs; richer link
     profiles from [Link](link.md); HIL harness scaffolding.
-- **Phase 3 — Flight & ecosystem (charter §11):** **cFS** and **F´** adapters mature for real
+- **Phase 3 — Flight & ecosystem (charter §10):** **cFS** and **F´** adapters mature for real
   flight-software integration; **CFDP / DTN-BP** added as real delayed links demand; full
   **hardware-in-the-loop** validation; sensitive hardware/mission adapters delivered through
   **access-controlled repos** under the documented EAR/ITAR posture (§9). The certification-grade
-  flight-code/targeting generator remains **permanently out of scope** (charter §2.2, §10.5).
+  flight-code/targeting generator remains **permanently out of scope** (charter §9.5, §9.5).
   - **Multi-regime deep-space stacks (RFC-0001):** the **DSN telecommand/telemetry**, extended
     **CCSDS/CFDP**, and **DTN/BP** operational-phase adapters land in **Phase 3** (the
     `MissionSpec`/`regime`/`PhaseTransition` Core hooks and the `operational_targeting` capability
