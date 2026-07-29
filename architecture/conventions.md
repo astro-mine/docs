@@ -397,6 +397,31 @@ code version, the environment lockfile, and the random seed. Datasets and polici
   `@astro-mine/hub-ui` — which is also what the console's layering check keys on to tell a surface
   from a library. A repo's workspace root is private and unpublished; only the packages it ships
   carry the scope.
+- **Artifact names (normative).** A published artifact's registry name is **bare kebab-case** —
+  `^[a-z][a-z0-9]*(-[a-z0-9]+)*$`, lowercase ASCII, hyphen-separated, starting with a letter. No
+  dots, no underscores, no uppercase, and **no package or component prefix**: the name is
+  `prospecting-rover`, not `astro-mine.fleet.prospecting-rover` or `shackleton_water_ice`. A
+  registry name is **content identity, not an import path**. Which component produced an artifact
+  is a fact about its `kind` — which Hub already carries as a first-class annotation — not about
+  what to call it, and on a remote each name is one repository
+  (`ghcr.io/<prefix>/<name>:<version>`) — exactly what makes the dotted form read as the path
+  component it is not. **The version lives in the tag, never in the name**:
+  `shackleton-de-gerlache:0.4.0`, not
+  `shackleton-de-gerlache-v1:0.4.0`; `shackleton-water-ice:1.0.0`, not
+  `shackleton_water_ice_v1:1.0.0` — a name carrying its own `-v1` beside a SemVer tag states two
+  version numbers and says which one moves in neither. **Names are flat and unique across kinds**:
+  Hub keys artifacts on `name:version` alone (`kind` is *not* part of the key), so a name MUST be
+  descriptive enough to stand without it — `excavation-gns` over `gns`, `relay-orbiter` over
+  `orbiter`. New artifacts are born conformant, and a producer SHOULD reject a non-conforming name
+  at publish rather than admit it to the registry.
+- **Artifact-name migration (normative).** The published anchor set predates the rule above and does
+  not follow it. Registry names are immutable once published, so conforming is a **re-publish under
+  a new name, not a rename** — it mints new digests, re-pins the scenario zoo, and MUST leave every
+  previously published scorecard resolvable. The migration is therefore **gated on the public
+  flip**: it is far cheaper while no outside consumer holds the old names, and MUST be done as one
+  sweep rather than piecemeal, so the registry never carries a half-migrated set. Until that sweep,
+  the legacy names stand as published and MUST NOT be treated as errors; enforcement applies to new
+  names only.
 - **Shipped examples (normative).** A component that defines an authored format MUST ship at least
   one working example of it, and the example MUST be reachable **two ways**, because the two
   audiences are different: **package data** under `src/astro_mine/<comp>/reference/` for a reader
