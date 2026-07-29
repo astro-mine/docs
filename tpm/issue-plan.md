@@ -1,5 +1,11 @@
 # Phase-1 UX & User-Guide backlog — issue plan (Waves 21–26)
 
+> **Point-in-time, 2026-07.** Read as history. This predates the platform's consolidation into four
+> distributions ([conventions.md](../architecture/conventions.md) §7.1) and the retirement of the
+> formal design-proposal process; per-component install lines, per-repo issue counts and RFC numbers
+> in what follows describe the world as it then was. See [tpm/README.md](README.md).
+
+
 > **Status: complete (2026-07-24).** All six waves shipped; every `Wave 21`–`Wave 26` issue is
 > closed. This document is the plan **as drafted**, kept for the reasoning behind each issue — it is
 > not edited to match what was built. What execution found, including where the plan was wrong, is
@@ -131,17 +137,17 @@ Allocate and Guard both register into it), `astro_mine.learn.algorithms`,
 manifest-driven metric plugins. CONTRIBUTING mentions "plugins" once, as a principle. Write the
 recipe per plugin kind, with `[project.entry-points]` snippets. Best existing references to build
 from: `allocate/mind.py` and `guard/mind/plugin.py` (both exceptionally well-commented). Note the
-`plugin new` scaffold is **25.x**, gated on the umbrella-CLI RFC.
+`plugin new` scaffold is **25.x**, gated on the umbrella-CLI decision.
 
 ---
 
 ## Wave 23 — Console foundation (6 issues)
 
-*RFC-0010 gates the rest of this wave. Issues 23.3–23.5 carry: "may be revised by RFC-0010."*
+*The console contract gates the rest of this wave. Issues 23.3–23.5 carry: "may be revised by the console contract."*
 
 | # | Repo | Title | Gap | Pri | Size | Workstream |
 |---|---|---|---|---|---|---|
-| 23.1 | `docs` | **RFC-0010: the console shell and the Surface contract** | G1.5 | **High** | L | CX-GOV |
+| 23.1 | `docs` | **The console shell and the Surface contract** | G1.5 | **High** | L | CX-GOV |
 | 23.2 | `astro-mine-console` | `[setup]` Repo standup — pnpm workspace, CI, ARCHITECTURE.md | — | High | M | — |
 | 23.3 | `astro-mine-console` | Design pass — mockups and design tokens before implementation | G1.5 | High | L | — |
 | 23.4 | `astro-mine-console` | `@astro-mine/surface` — the contract (types only, zero deps) | G1.5 | High | M | — |
@@ -152,8 +158,8 @@ from: `allocate/mind.py` and `guard/mind/plugin.py` (both exceptionally well-com
 regardless of phase, Phase=Phase 1, Priority High. The repo is created from `.repo-template` and is
 bare (LICENSE + README).
 
-**23.1 — RFC-0010 scope.** Introduces new top-level packages **and** a cross-cutting convention —
-the same bar RFC-0002 (Spice) and RFC-0005 (Seal) cleared, so it goes through GOVERNANCE.md. Must
+**23.1 — Console-contract scope.** Introduces new top-level packages **and** a cross-cutting convention —
+the same bar the Spice and Seal companions cleared, so it was written up before implementation. Must
 record: the layering (`surface` ← `ui`/`view` ← surfaces ← `console`) and the no-cycles rule (a
 shell inside `view` would be circular: `studio-ui → view`, `view/app → studio-ui`); the `Surface`
 contract; **contributions keyed by Core's existing `PluginKind` vocabulary** rather than a
@@ -161,7 +167,7 @@ UI-side vocabulary (this is what makes "contribute once, use everywhere" hold in
 costs Core nothing — **no Core change**, `CORE_INTERFACE_VERSIONS` stays `0.1.0`); build-time
 composition with runtime federation **rejected for Phase 1** because it fetches over a network and
 breaks CX-LOCAL; **no new REST surface** (per-surface base URLs; the gateway stays Phase 2, as
-view.md already reserves); and the Phase-1 hooks-now argument (RFC-0001's precedent). Doc impact:
+view.md already reserves); and the Phase-1 hooks-now argument (the multi-regime schema hooks' precedent). Doc impact:
 new `architecture/console.md`, updates to `system.md`, `view.md`, `conventions.md §2`.
 
 **23.3 — Design pass.** Deliverable is mockups + a token set, reviewed before code. Bar: one visual
@@ -217,12 +223,12 @@ console and should not pretend to be.
 
 | # | Repo | Title | Gap | Pri | Size |
 |---|---|---|---|---|---|
-| 25.1 | `docs` | **RFC-0011: the `astro-mine` umbrella CLI and command naming** | G2.1 | Med | M |
+| 25.1 | `docs` | **The `astro-mine` umbrella CLI and command naming** | G2.1 | Med | M |
 | 25.2 | `astro-mine core` | `[G2.5]` `astro-mine core validate <file>` — 9 authored formats, 1 has a checker | G2.5 | Med | M |
 | 25.3 | `astro-mine guard` | `[G2.6/G2.7]` Guard CLI + ship the anchor SafetySpec as package data | G2.6 | Med | M |
 | 25.4 | `astro-mine mind` | `[G2.6]` Mind CLI + a README with a stack spec in it | G2.6 | Med | M |
 
-**25.1 — RFC-0011.** Decides the umbrella's **home and shape** (the open question): one package
+**25.1 — the umbrella CLI.** Decides the umbrella's **home and shape** (the open question): one package
 depending on all components, or a **thin dispatcher** shelling out to installed `astro-mine-*`
 binaries — the local-tier rule favors the dispatcher, since a dependency-heavy umbrella would drag
 the whole platform into every install. Also settles naming: 8 CLIs today, 2 schemes (bare `fleet`,
@@ -293,9 +299,9 @@ out if they grow.
 ## Totals
 
 **33 issues** across 8 repos + 1 new: bench 5 · sim 2 · learn 2 · allocate 1 · hub 2 · studio 3 ·
-view 1 · guard 1 · mind 1 · core 2 · console 5 · docs 8 (2 RFCs + 6 guide) · multi 2.
+view 1 · guard 1 · mind 1 · core 2 · console 5 · docs 8 (2 design write-ups + 6 guide) · multi 2.
 
-**Two RFCs gate real work:** RFC-0010 (console/Surface — gates wave 23–24) and RFC-0011 (umbrella
+**Two design decisions gate real work:** the console/`Surface` contract (gates wave 23–24) and the umbrella-CLI decision (umbrella
 CLI — gates 25.x's dispatch surface and 22.5's scaffold).
 
 **Critical path:** 21.2 (publish anchor content) → 21.3 (fetch) → 21.1/21.5 (honest Sim scoring) →
@@ -319,7 +325,7 @@ everything downstream unblocked in the predicted order. The **sequencing rule wa
 written first (01 and 04) needed no rework.
 
 The **one-console decision** and the **surface-lives-in-its-component-repo** decision both survived
-contact: registering a shipped surface in the shell is one line, exactly as RFC-0010's acceptance
+contact: registering a shipped surface in the shell is one line, exactly as the contract's acceptance
 test claimed.
 
 ### Where the plan was wrong
@@ -332,11 +338,11 @@ test claimed.
   `1 - Planning` drift was **15 of 18** repos, not Hub and Seal); `G3.4`'s list (Surrogate was
   already on the org package map — Spice and Seal were missing, and later Console and Cli too).
 - **Wave 26's gate assumptions went stale mid-flight.** The issues were re-verified 2026-07-23 and a
-  large RFC-0011 rollout landed 07-23/24, so four of the eight carried statements that were false by
+  large CLI rollout landed 07-23/24, so four of the eight carried statements that were false by
   the time the work started — most consequentially "`astro-mine-cli` is not built" (it was) and
   "tutorial 05 is still gated" (`astro-mine-worlds#57` had closed the gate hours earlier). The guide
   was written against the code, as each issue instructs, not against its own issue text.
-- **`astro-mine-cli` is a repo the plan did not anticipate.** RFC-0011 was drafted as a naming
+- **`astro-mine-cli` is a repo the plan did not anticipate.** The umbrella-CLI decision was drafted as a naming
   decision inside Wave 25 and produced a new package, a new entry-point group, and a rename of every
   component binary.
 

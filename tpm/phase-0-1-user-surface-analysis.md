@@ -1,5 +1,11 @@
 # AstroMine — Phase 0/1 User-Surface Analysis & Gap Report
 
+> **Point-in-time, 2026-07-16.** Read as history. This predates the platform's consolidation into four
+> distributions ([conventions.md](../architecture/conventions.md) §7.1) and the retirement of the
+> formal design-proposal process; per-component install lines, per-repo issue counts and RFC numbers
+> in what follows describe the world as it then was. See [tpm/README.md](README.md).
+
+
 > **Purpose:** design the complete user-oriented surface (CLI + GUI) needed to satisfy the Phase-0
 > and Phase-1 objectives, then gap-analyse it against what ships today — as the input to a wave of
 > UI and user-guide GitHub issues.
@@ -70,7 +76,7 @@ Five findings dominate, in priority order:
    produced from the CLI at all.
 
 5. **There is zero user documentation.** The `docs` repo contains architecture, scenarios,
-   roadmap, charter, and RFCs — all excellent, all written for builders. There is not one
+   roadmap and charter — all excellent, all written for builders. There is not one
    getting-started page, tutorial, or how-to for a user. This report is the prerequisite for
    fixing that; the user guide cannot be written against the current surface without documenting
    its dead ends.
@@ -453,7 +459,7 @@ have no CLI at all.**
 
 ### 6.5 Documentation
 
-- `docs` repo: **zero user-facing pages.** Architecture (26), RFCs (10), roadmap (4), scenarios
+- `docs` repo: **zero user-facing pages.** Architecture (26), roadmap (4), scenarios
   (2), charter (1) — all builder-facing.
 - `.github/CONTRIBUTING.md`: mentions "plugins" once, as a principle. No authoring recipe.
 - README quality is inverted against importance: `sim` (the Phase-0 heart) has **35 lines** and
@@ -607,7 +613,7 @@ export interface Surface {
 ```
 
 **`contributions` is what makes this extensible rather than merely modular.** A contribution
-registers against a **shared extension point keyed by an existing, closed, RFC-governed artifact
+registers against a **shared extension point keyed by an existing, closed, append-only artifact
 vocabulary** — not a new UI-side one. So:
 
 - Hub's surface lists a **`world_provider`** artifact → **Worlds' contribution renders it in a globe.**
@@ -657,11 +663,11 @@ has decayed into four different relationships:
 | Core schema bundle | `schema` | *(none)* | **no Core counterpart** |
 
 **How we got here.** Two docs wrote two vocabularies for two jobs and never reconciled them.
-**RFC-0008 is the archaeology**: it quoted *both* sets side by side in its own text, observed that
+**The `design`/`campaign` artifact-kind decision is the archaeology**: it quoted *both* sets side by side in its own text, observed that
 neither described a design study, appended `design`/`campaign` to both — and never asked why the
-sets differ. It fixed the instance, not the class; the same shape RFC-0009 later named. The residue
+sets differ. It fixed the instance, not the class; the same shape the schema-resolution contract later named. The residue
 is a docstring that convicts itself — `_oci.py` claims *"this tuple grows only when Core's does — a
-new kind is a Core RFC, not a Hub extension"*, which is **false for half its members and was false
+new kind is a Core change, not a Hub extension"*, which is **false for half its members and was false
 when written**, and which `hub.md` §2 principle 2 explicitly forbids.
 
 **What settles the console question:** the catalog is a projection of the *manifest*.
@@ -676,7 +682,7 @@ ingest(catalog, manifest, *, digest, publisher, namespace, provider)
 return it. **`ARTIFACT_KINDS` dies at the storage layer.** Anything reading Hub's catalogue — the
 API, the UI, the console — sees `world_provider`, `comms_model`, `resource_field_backend`.
 
-**So: the console keys on `PluginKind`, and RFC-0010's no-Core-change claim survives.** But that
+**So: the console keys on `PluginKind`, and the no-Core-change claim survives.** But that
 surfaces the real defect:
 
 > **`PluginKind` is the wrong key for an inspector, on its own.** It answers *what interface does
@@ -687,22 +693,22 @@ surfaces the real defect:
 > Ironically the catalog is *better* than the media type here: it distinguishes `comms_model` from
 > `resource_field_backend`, where Hub's storage layer flattens both to `plugin`.
 
-**Resolution (RFC-0010's actual decision):** key on **`PluginKind` + a declared predicate over
+**Resolution (the accepted decision):** key on **`PluginKind` + a declared predicate over
 `manifest.attributes`**, not kind alone. A contribution declares *"I render `field_model` where
 `attributes.physics_domain` is present."* Surrogate already carries its facets there — Core's
 `PluginManifest` is `extra="forbid"` and cannot be subclassed, so `attributes` is the sanctioned
 extension point (the `build_surrogate_manifest` precedent). This needs **no Core change** and
 resolves the collision.
 
-**The two-vocabulary mess therefore downgrades from RFC-0010 blocker to an adjacent Hub defect** —
+**The two-vocabulary mess therefore downgrades from console blocker to an adjacent Hub defect** —
 Hub dropping the artifact kind at ingest and asserting a false rule in its docstring. **Filed as
-`astro-mine-hub#33`**; it does **not** gate the console. RFC-0010 (`docs#31`) records this
+`astro-mine-hub#33`**; it does **not** gate the console. the console contract (`docs#31`) records this
 resolution as a decision rather than an open question.
 
 **One obligation survives from draft 2.** `@astro-mine/surface` is TypeScript and cannot import the
-Python enum, so `PluginKind` gets **mirrored** — exactly the drift RFC-0009 was written to end after
+Python enum, so `PluginKind` gets **mirrored** — exactly the drift the schema-resolution contract was written to end after
 View's vendored units schema went stale in silence. The mirror **MUST** carry a hard-failing CI
-drift guard (RFC-0009 §1's vendored-consumer rule), not a comment.
+drift guard (conventions.md §3.1's vendored-consumer rule), not a comment.
 
 #### 8.2.3 Composition: build-time, not runtime federation
 
@@ -739,7 +745,7 @@ never blank — View's principle 5.
 
 | Deliverable | Why now |
 |---|---|
-| `@astro-mine/surface` — the contract | **Reserve the hooks while the waist is soft.** This is the RFC-0001 argument exactly: retrofitting a shell around three grown-up apps later is the leaky-god-interface failure the charter warns about |
+| `@astro-mine/surface` — the contract | **Reserve the hooks while the waist is soft.** This is the 001 argument exactly: retrofitting a shell around three grown-up apps later is the leaky-god-interface failure the charter warns about |
 | `@astro-mine/ui` — design system | Three visual languages already exist. Every week without it adds drift |
 | `@astro-mine/console` — the shell | The front door that does not exist today (G1.5) |
 | **Leaderboard surface** | M1.2's public face; bench#27 |
@@ -840,9 +846,8 @@ Ordered by *unblocking power per unit effort*.
    registry to entry points.
 
 ### Wave 3 — Open the front door (the console)
-9. **RFC** — the console + Surface contract goes through the RFC process: it introduces new
-   top-level packages and a cross-cutting convention, exactly the bar RFC-0002 (Spice) and
-   RFC-0005 (Seal) cleared. **This is the gating deliverable — nothing else in this wave starts
+9. **Write it up first** — the console + Surface contract is settled before implementation: it introduces new
+   top-level packages and a cross-cutting convention, exactly the bar the Spice and Seal companions cleared. **This is the gating deliverable — nothing else in this wave starts
    until it is accepted.**
 10. **Design pass** — mockups + design tokens for the shell and the three Phase-1 surfaces, before
     implementation (§8.2.6).
@@ -872,7 +877,7 @@ Ordered by *unblocking power per unit effort*.
 - **Umbrella CLI** — one package (`astro-mine`) depending on all, or a thin dispatcher that shells
   out to whatever's installed? The local-tier rule favors the dispatcher.
 **Resolved 2026-07-16 (product):**
-- **Console work is Phase 1**, not Phase 2 — the RFC-0001 hooks-while-the-waist-is-soft argument.
+- **Console work is Phase 1**, not Phase 2 — the hooks-while-the-waist-is-soft argument.
   Waves 21–26 are all Phase 1; **Phase 2 now starts at Wave 27** (superseding the earlier
   "P2 starts at Wave 21" note).
 - **Console repo shape** — **one repo**, `astro-mine-console`, a pnpm workspace holding
@@ -882,7 +887,7 @@ Ordered by *unblocking power per unit effort*.
   (`astro-mine-hub/ui` → `@astro-mine/hub-ui`), matching today's layout and keeping UI ownership
   with the component team. Cost: a Node toolchain in ~4 repos; 3 already have one.
 - **Backlog scope** — all six waves are filed up front so the board reflects the whole plan; waves
-  23–24 carry an explicit "may be revised by RFC-0010" note.
+  23–24 carry an explicit "may be revised by the console contract" note.
 
 ---
 
@@ -938,7 +943,7 @@ Each was verified against code while drafting the backlog, and each is recorded 
 - **`learn.algorithms` / `learn.curricula` are consumer-side only** — nothing in the org registers
   into them, so they are untested third-party surfaces.
 - **Bench's `scripts/measure_*.py` import Sim's private internals**
-  (`astro_mine.sim.runtime._hub_adapter`) where a public re-export exists — the RFC-0009
+  (`astro_mine.sim.runtime._hub_adapter`) where a public re-export exists — the schema-resolution contract's
   private-import rule, violated in-house.
 - **G3.5 is false and struck** (see above). **G3.1/G3.2/G3.4 were wrong or understated** and are
   corrected in the table.
@@ -957,6 +962,6 @@ Each was verified against code while drafting the backlog, and each is recorded 
   named `astro-mine-**train**` (package ≠ command), and `fleet`/`link`/`prospect` are generic
   `PATH` land-grabs.
 - **`bench#27`'s premise is doubly stale** — it says View is "Phase 2 with no repo yet" (View exists,
-  thin slice shipped) and assigns the leaderboard UI *to View*, which RFC-0010's layering inverts.
+  thin slice shipped) and assigns the leaderboard UI *to View*, which the console's layering inverts.
   `bench#57` supersedes it. Note `Closes #27` in an **issue** body does not auto-close — the
   implementing **PR** must carry the keyword.

@@ -2,7 +2,8 @@
 
 > **Scenario id:** `lunar-polar-ice-prospecting` · **Anchor body:** the Moon, south-polar region
 > (Shackleton–de Gerlache ridge) · **Regime:** `surface` (single-phase Mission) · **Roadmap:**
-> Phase 0 anchor · **Status:** Draft.
+> Phase 0 anchor · **Status:** Built — the anchor benchmark ships, its content is published, and
+> its requirements are the ones the platform is measured against.
 >
 > The platform's anchor scenario — the runnable MVP the whole Phase-0 stack is built to execute.
 > Read with the [charter](../charter/Swarm_Exploration_ISRU_Orchestrator_OSS_Project.md),
@@ -527,7 +528,7 @@ is **not** exercised here. Still:
   survival check, and how it scores in Bench.
 - **Sim-to-real terramechanics** — honestly bounding low-gravity granular uncertainty without
   on-world data (charter §8).
-- **Objective contract** *(resolved — Phase-0 direct decision, no RFC)* — the `ObjectiveSpec` and
+- **Objective contract** *(resolved — a Phase-0 direct decision)* — the `ObjectiveSpec` and
   the objective→metric **binding** are a **first-class additive [Core](../architecture/core.md)
   schema**; [Studio](../architecture/studio.md) authors instances, and
   [Bench](../architecture/bench.md)/[Ledger](../architecture/ledger.md)/[Ops](../architecture/ops.md)/[View](../architecture/view.md)
@@ -548,5 +549,5 @@ is **not** exercised here. Still:
   [Hub](../architecture/hub.md), [Cloud](../architecture/cloud.md).
 - External: SPICE/NAIF; LOLA DEM; Diviner/LEND/M³ volatile priors; USGS Astrogeology / PDS;
   PettingZoo/Gymnasium, Ray RLlib, OR-Tools/CP-SAT.
-- Multi-regime continuity: [RFC-0001](../rfc/0001-multi-regime-missions.md),
+- Multi-regime continuity: [multi-regime missions](../architecture/mission-model.md),
   [mission-model.md](../architecture/mission-model.md) — this scenario is the one-phase case.

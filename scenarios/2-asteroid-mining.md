@@ -3,11 +3,10 @@
 > **Scenario id:** `asteroid-mining` · **Anchor body:** C-type near-Earth object (NEO),
 > Bennu/Ryugu-class rubble pile · **Regimes:** all six (`launch_ascent · interplanetary_transit ·
 > proximity_orbit · surface · ascent_return · earth_interface`) · **Roadmap:** Phase 3 capstone
-> (baseline = NEO rendezvous + sample-return, the [RFC-0001](../rfc/0001-multi-regime-missions.md)
-> R5 stepping-stone) · **Status:** Draft.
+> (baseline = NEO rendezvous + sample-return, the stepping stone) · **Status:** Designed, not built.
 >
 > The full multi-regime flagship. Read with the [charter](../charter/Swarm_Exploration_ISRU_Orchestrator_OSS_Project.md),
-> [RFC-0001](../rfc/0001-multi-regime-missions.md), the [Mission/Phase/Regime model](../architecture/mission-model.md),
+> the [Mission/Phase/Regime model](../architecture/mission-model.md),
 > and [system.md §13](../architecture/system.md). Cross-cutting standards:
 > [conventions.md](../architecture/conventions.md). Scenario conventions and the shared template:
 > [scenarios/README.md](README.md).
@@ -42,15 +41,15 @@ one-phase case of the same model.
   edges" scales from one world to a full interplanetary campaign (charter §3, §8).
 - **Activates a new audience without disrupting the old.** Mission & systems engineers,
   astrodynamicists, and resource economists join the robotics/RL/planetary-science base via the
-  [Mission Architect](../architecture/studio.md) surface (charter §2; RFC-0001 motivation), while
+  [Mission Architect](../architecture/studio.md) surface (charter §2), while
   every existing single-body scenario runs unchanged.
 - **Forces the dual-use line to be real, not rhetorical.** Trajectory work is the most
   export-sensitive capability the platform will ever host; making it a *flagship* is what compels
   the design-time-only boundary to be drawn in the schema and enforced at the
-  [Bridge](../architecture/bridge.md)/registry (§14; RFC-0001 §6).
+  [Bridge](../architecture/bridge.md)/registry (§14; mission-model.md §4).
 - **Sample-return is the credible stepping stone.** It is concrete, valued, and achievable, and
   it validates the prospect → approach → contact → return loop end-to-end before any commitment to
-  sustained production — exactly the sequencing RFC-0001 R5 prescribes (NEO sample-return →
+  sustained production — exactly the sequencing the mission model prescribes (NEO sample-return →
   asteroid-mining capstone).
 - **High novelty, hard science.** Microgravity contact/anchoring, relative navigation around an
   uncharacterized body, window-gated no-recovery decisions under light-time, and
@@ -121,7 +120,7 @@ The phase **schema** is owned by [Core](../architecture/core.md); the sequencing
 a phase, evaluate entry/exit, perform the state handoff) is a thin sequencer in the
 [Sim](../architecture/sim.md)/[Ops](../architecture/ops.md) runtime; the **policy** (ordering,
 contingencies, window-miss responses) lives in [Studio](../architecture/studio.md)/Ops
-(RFC-0001 R2; mission-model.md §3).
+(mission-model.md §3).
 
 ## 5. Environment & world
 
@@ -204,7 +203,7 @@ what makes the reusable-LEO, high-departure-energy architecture credible. **Reus
 
 A mission/systems engineer states the objective in [Studio](../architecture/studio.md); the
 Mission Architect wraps the swarm-design loop in an outer **trajectory ⇄ fleet ⇄ swarm ⇄
-economics** co-optimization (RFC-0001 §5; system.md §13.3), producing a declarative `MissionSpec`.
+economics** co-optimization (system.md §13.3), producing a declarative `MissionSpec`.
 
 ```mermaid
 sequenceDiagram
@@ -236,7 +235,7 @@ sequenceDiagram
 (Ledger) → window-gated assignment (Allocate) → validated per-phase campaigns (Sim, accelerated by
 [Surrogate](../architecture/surrogate.md) for microgravity contact) → Bench score → publish to
 [Hub](../architecture/hub.md). Sizing and Ledger share **one OpenMDAO graph** for the tight
-vehicle⇄economics inner loop (RFC-0001 R4). Thousands of variants (launch year × Isp mix × sample
+vehicle⇄economics inner loop (mission-model.md §5). Thousands of variants (launch year × Isp mix × sample
 target × reuse strategy) fan out on [Cloud](../architecture/cloud.md).
 
 ### 8.2 Operate-mode workflow (Ops, multi-phase)
@@ -275,14 +274,14 @@ pre-approved contingency branches for the high-light-time cruise/proximity phase
 
 **Where maximization lives.** Maximizing the §3 objectives is [Studio](../architecture/studio.md)'s
 **Mission Architect** trade-study engine, which wraps the design loop in the outer
-**trajectory ⇄ fleet ⇄ swarm ⇄ economics** co-optimization (RFC-0001 §5; system.md §13.3) with the
+**trajectory ⇄ fleet ⇄ swarm ⇄ economics** co-optimization (system.md §13.3) with the
 **value/score function in [Ledger](../architecture/ledger.md)**. Because a mission is inherently
 multi-objective (delivered sample mass vs. cost/ROI vs. Δv efficiency vs. schedule vs. risk), it
 returns a **Pareto front** of non-dominated mission architectures rather than a single optimum.
 Backends (studio.md §11): Bayesian multi-objective (Ax/BoTorch, recommended for expensive
 evaluations) and evolutionary (pymoo NSGA-II/III); **scalarization** (e.g. risk-adjusted ROI) where
 a single ranking is wanted. [Sizing](../architecture/sizing.md) and [Ledger](../architecture/ledger.md)
-share one OpenMDAO graph for the tight vehicle⇄economics inner loop (RFC-0001 R4); the discrete
+share one OpenMDAO graph for the tight vehicle⇄economics inner loop (mission-model.md §5); the discrete
 asset↔target↔window↔trajectory choice is [Allocate](../architecture/allocate.md)'s and policy reward
 is [Learn](../architecture/learn.md)'s.
 
@@ -377,7 +376,7 @@ path credible (Falcon Heavy / SLS / New Glenn as alternatives).
   Either way the proximity/surface campaign is **swarm-based** (multiple cooperating samplers).
 
 *Settled / platform-mandated (stated, not "optioned"):* trajectory is **design-time only**
-(§14; RFC-0001 §6); economics are **uncertainty-first** (conventions.md §1.6); autonomy is the
+(§14; mission-model.md §4); economics are **uncertainty-first** (conventions.md §1.6); autonomy is the
 **hybrid** plan→TAMP→control + learned-policy stack ([Mind](../architecture/mind.md)); every action
 crosses [Guard](../architecture/guard.md); reproducibility is content-addressed.
 
@@ -418,7 +417,7 @@ Authoritative, traceable requirements. IDs are stable and append-only:
   across all six regimes, with explicit entry/exit conditions and state handoff (mission-model §1).
 - **AST-FR-002** — [Trajectory](../architecture/trajectory.md) MUST scan launch/transfer/return
   windows and produce a Pareto frontier of **descriptive** `TrajectoryRef`/`ManeuverBudget`
-  artifacts; it MUST NOT emit executable guidance (RFC-0001 §6).
+  artifacts; it MUST NOT emit executable guidance (mission-model.md §4).
 - **AST-FR-003** — [Sizing](../architecture/sizing.md) MUST close coupled mass/power/propellant/
   staging budgets (incl. reusable-LEO accounting) and emit valid sized SADF configs.
 - **AST-FR-004** — [Ledger](../architecture/ledger.md) MUST compute mission value/cost/risk as a
@@ -539,7 +538,7 @@ This is the load-bearing section for the most export-sensitive scenario.
 - **Design-time only.** [Trajectory](../architecture/trajectory.md) produces *descriptive* reference
   arcs and Δv/ToF budgets for trade studies. `TrajectoryRef` **omits by schema** actuator/thruster
   command channels, control gains, closed-loop guidance laws, and any onboard-clock binding
-  (RFC-0001 R3).
+  (mission-model.md §4).
 - **Partitioned out.** Converting a reference trajectory into **executable maneuver guidance for
   real flight hardware** (operational targeting) and **guided atmospheric EDL** are excluded per
   [EXPORT_CONTROL.md](https://github.com/astro-mine/.github/blob/main/EXPORT_CONTROL.md) and charter
@@ -554,7 +553,7 @@ This is the load-bearing section for the most export-sensitive scenario.
 
 - **Phase 1 (now-adjacent obligation):** reserve the additive Core schema hooks
   (`MissionSpec`/`regime`/`PhaseTransition` + SADF propulsion/return) while Core is extended for
-  autonomy (RFC-0001 R5; mission-model §3). *No implementation.*
+  autonomy (mission-model §3). *No implementation.*
 - **Phase 3 (this scenario):** the mission-architecture track ([Transit](../architecture/transit.md),
   [Trajectory](../architecture/trajectory.md), [Sizing](../architecture/sizing.md),
   [Ledger](../architecture/ledger.md)) + small-body/microgravity extensions land; **NEO
@@ -573,14 +572,14 @@ The track is **opt-in and must not gate the lunar MVP** ([Scenario 1](1-lunar-po
   yield (sensor-only, fine) without crossing into *extraction* (capstone)? Recommended: assay yes,
   extraction no.
 - **`TrajectoryRef` expressiveness** — how much structure (waypoints + budgets vs. full state
-  history) without becoming a back-door command format (RFC-0001 R3).
+  history) without becoming a back-door command format (mission-model.md §4).
 - **Co-optimization coupling** — how tightly Studio's trade-study engine couples
-  trajectory⇄fleet⇄swarm⇄economics vs. keeping `MissionSpec` declarative (RFC-0001 R4).
+  trajectory⇄fleet⇄swarm⇄economics vs. keeping `MissionSpec` declarative (mission-model.md §5).
 - **Target selection** — pin a specific representative accessible C-type NEO for the Bench scenario,
   or keep it parametric over a target set.
 - **Sampler-swarm size & delivery** — how many samplers, and shared vs. separate carriers (§10
   Fork E)? Trade coverage/redundancy against cost via a Studio trade study, not a fixed choice.
-- **Objective contract** *(resolved — Phase-0 direct decision, no RFC)* — the `ObjectiveSpec` and
+- **Objective contract** *(resolved — a Phase-0 direct decision)* — the `ObjectiveSpec` and
   the objective→metric **binding** are a **first-class additive [Core](../architecture/core.md)
   schema**; [Studio](../architecture/studio.md) authors instances, and
   [Bench](../architecture/bench.md)/[Ledger](../architecture/ledger.md)/[Ops](../architecture/ops.md)/[View](../architecture/view.md)
@@ -589,7 +588,7 @@ The track is **opt-in and must not gate the lunar MVP** ([Scenario 1](1-lunar-po
 ## 17. References
 
 - [Project charter](../charter/Swarm_Exploration_ISRU_Orchestrator_OSS_Project.md) — §2, §3, §7, §8, §10.
-- [RFC-0001: Multi-regime missions](../rfc/0001-multi-regime-missions.md) — esp. §5, §6, R1–R6.
+- [Mission / Phase / Regime model](../architecture/mission-model.md) — the schema and the dual-use boundary.
 - [Mission/Phase/Regime model](../architecture/mission-model.md) — schema sketch & dual-use boundary.
 - [system.md §13](../architecture/system.md) — multi-regime integration view; [conventions.md](../architecture/conventions.md) — cross-cutting standards.
 - Component docs: [Transit](../architecture/transit.md), [Trajectory](../architecture/trajectory.md),
