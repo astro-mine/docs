@@ -36,7 +36,7 @@ no physics at all. See [scenarios](scenarios.md) and
 
 ## 3. Surrogates
 
-`astro-mine surrogate` provides learned fast-physics tiers with **tracked error bounds**. A
+`astro_mine.surrogate` provides learned fast-physics tiers with **tracked error bounds**. A
 surrogate is only usable if it can state how wrong it is; a fast model with unknown error is not a
 fidelity tier, it is a guess.
 

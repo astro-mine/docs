@@ -2,7 +2,7 @@
 
 **A thin, stable Core with thick, swappable edges.**
 
-`astro-mine core` owns a small, slow-changing set of contracts:
+`astro_mine.core` owns a small, slow-changing set of contracts:
 
 - **SADF** — the asset format
 - the **Environment** and **Policy** APIs
@@ -13,7 +13,7 @@
 Everything else — worlds, resource fields, comms, simulation, surrogates, autonomy, learning,
 allocation, safety, benchmarking, the registry, the console — is a component that integrates
 **only** through those contracts. Core is deliberately dependency-light: no crypto (that is
-`astro-mine seal`), no SPICE (that is `astro-mine spice`), no geospatial stack, no engine.
+`astro_mine.seal`), no SPICE (that is `astro_mine.spice`), no geospatial stack, no engine.
 
 ## Why it is worth the friction
 
@@ -41,7 +41,7 @@ the planning interface. So Mind composes; Bench and Sim execute. This looks like
 until you try to swap the engine, at which point it is the whole point.
 
 **Content and code ship separately.** A world bundle is data. Turning it back into terrain,
-illumination, and gravity needs `astro-mine worlds`, reached through the `astro_mine.providers`
+illumination, and gravity needs `astro_mine.worlds`, reached through the `astro_mine.providers`
 group. That is why fetching content is not enough to run a scenario, and why Sim refuses to score
 a run whose pinned providers did not rebuild.
 
@@ -69,7 +69,7 @@ Recipes: [how-to/write-a-plugin.md](../how-to/write-a-plugin.md). Narrative:
 side-channels**. In the console the same rule reads: a surface never imports another surface.
 
 Where a capability is heavy but genuinely shared, it becomes a **Core companion** rather than
-entering Core: `astro-mine spice` for frames, time, and geometry
-([Spice](../../architecture/spice.md)); `astro-mine seal` for signing and SBOM
+entering Core: `astro_mine.spice` for frames, time, and geometry
+([Spice](../../architecture/spice.md)); `astro_mine.seal` for signing and SBOM
 ([Seal](../../architecture/seal.md)). Thin waist, thick edges, and a named
 place for the things that are neither.

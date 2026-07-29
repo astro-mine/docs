@@ -183,7 +183,7 @@ explicitly. It is the difference between a number and a measurement.
 
 ## Formats owned outside Core
 
-### WorldSpec — `astro-mine worlds`
+### WorldSpec — owned by Worlds
 
 **What:** the declaration of a world: CRS, region, resolution, illumination and PSR parameters,
 regolith fields. `spec_hash` — and therefore `world_hash` — is computed over exactly these bytes,
@@ -206,7 +206,7 @@ The anchor world is *not* authorable as a static document: its region derives fr
 grid pinned by a digest the repo does not contain. See
 [tutorial 05](../tutorials/05-author-a-world.md).
 
-### SafetySpec — `astro-mine guard`
+### SafetySpec — owned by Guard
 
 **What:** the safety contract — keep-out volumes, scalar bounds, temporal-logic monitors, admissible
 modes and tasks, and a safe pose ([Guard](../../architecture/guard.md)).
@@ -224,7 +224,7 @@ astro-mine guard compile anchor      # prints spec_hash and compiled_hash
 astro-mine guard falsify anchor
 ```
 
-### Stack spec — `astro-mine mind`
+### Stack spec — owned by Mind
 
 **What:** an autonomy stack as a document — which plugin fills each tier (mission, TAMP, control,
 shield), at which version.
@@ -240,7 +240,7 @@ astro-mine mind validate lunar_prospecting.yaml     # schema + registry
 astro-mine mind compose lunar_prospecting.yaml
 ```
 
-### TrainConfig — `astro-mine learn`
+### TrainConfig — owned by Learn
 
 **What:** a training run's configuration, schema-validated, consumed by `--config-json`.
 
@@ -253,7 +253,7 @@ astro-mine-platform/src/astro_mine/learn/reference/train_config.json
 Two distinct things, both called "scenario" — see
 [concepts/scenarios.md](../concepts/scenarios.md). `ScenarioSpec` (Bench) pins content by digest;
 `Scenario` (Sim) is the materialized episode. The zoo's specs are package data in
-`astro-mine bench`; Sim's reference scenario is package data at
+`astro_mine.bench`; Sim's reference scenario is package data at
 `astro_mine/sim/reference/scenario.json`.
 
 ---

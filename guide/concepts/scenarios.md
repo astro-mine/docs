@@ -5,7 +5,7 @@ make, and it produces confusing errors rather than obvious ones.
 
 | | `ScenarioSpec` | `Scenario` |
 |---|---|---|
-| **Owned by** | `astro-mine bench` | `astro-mine sim` |
+| **Owned by** | `astro_mine.bench` | `astro_mine.sim` |
 | **Names content by** | **pinned digests** | materialized, resolved content |
 | **Answers** | "what is the benchmark?" | "what does the engine run?" |
 | **Carries** | scenario id, content pins, metrics, seeds, held-out commitment | assets, providers, episode length, engine configuration |

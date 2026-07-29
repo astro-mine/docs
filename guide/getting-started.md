@@ -119,7 +119,7 @@ for what that means.
 
 ## The benchmark, in three commands
 
-`astro-mine bench` ships the scenario zoo in-package, so listing and scoring work before you
+`astro_mine.bench` ships the scenario zoo in-package, so listing and scoring work before you
 download anything.
 
 ```bash

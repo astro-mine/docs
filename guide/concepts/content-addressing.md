@@ -40,7 +40,7 @@ a signature must be present, intact, and bound to the artifact.
 Fail-closed means an unverifiable artifact is an error, never a warning. `--trusted-key` narrows it
 further: pin *whose* signature you accept, not merely that one exists.
 
-Signing lives in `astro-mine seal`, the one home for the `cryptography` dependency
+Signing lives in `astro_mine.seal`, the one home for the `cryptography` dependency
 ([Seal](../../architecture/seal.md)), so Core stays crypto-free and every
 producer shares one signer.
 

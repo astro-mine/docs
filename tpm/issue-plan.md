@@ -63,11 +63,11 @@ outside this workspace can run.*
 
 | # | Repo | Title | Gap | Pri | Size | Milestone |
 |---|---|---|---|---|---|---|
-| 21.1 | `astro-mine bench` | `[G1.1]` Score against Sim, not the fixture — add `--runner`, and make the stand-in unmistakable | G1.1 | High | M | M1.1 |
-| 21.2 | `astro-mine hub` | `[G1.2]` Publish the anchor content set so it can be fetched by digest | G1.2 | **High** | L | M1.1 |
-| 21.3 | `astro-mine bench` | `[G1.2]` `astro-mine bench fetch` — populate a local registry from the published anchor content | G1.2 | High | M | M1.1 |
-| 21.4 | `astro-mine sim` | `[G2.2]` Give Sim a CLI and a README a user can start from | G2.2 | High | M | M1.1 |
-| 21.5 | `astro-mine sim` | `[G1.3]` An anchor baseline that scores non-empty against Sim | G1.3 | High | M | M1.1 |
+| 21.1 | `bench` | `[G1.1]` Score against Sim, not the fixture — add `--runner`, and make the stand-in unmistakable | G1.1 | High | M | M1.1 |
+| 21.2 | `hub` | `[G1.2]` Publish the anchor content set so it can be fetched by digest | G1.2 | **High** | L | M1.1 |
+| 21.3 | `bench` | `[G1.2]` `astro-mine bench fetch` — populate a local registry from the published anchor content | G1.2 | High | M | M1.1 |
+| 21.4 | `sim` | `[G2.2]` Give Sim a CLI and a README a user can start from | G2.2 | High | M | M1.1 |
+| 21.5 | `sim` | `[G1.3]` An anchor baseline that scores non-empty against Sim | G1.3 | High | M | M1.1 |
 
 **21.1 detail.** `astro-mine bench score --runner fixture|sim` (default `fixture`, honest).
 **Bench must not import Sim** — resolve runners through an entry-point group
@@ -108,10 +108,10 @@ report §9.**
 
 | # | Repo | Title | Gap | Pri | Size | Milestone |
 |---|---|---|---|---|---|---|
-| 22.1 | `astro-mine learn` | `[G1.4]` Export the trained policy — the CLI currently discards it | G1.4 | **High** | S | M1.2 |
-| 22.2 | `astro-mine learn` | `[G2.10]` Ship an anchor env factory so the quickstart is copy-pasteable | G2.10 | High | M | M1.2 |
-| 22.3 | `astro-mine bench` | `[G2.14]` `astro-mine bench submit` — a CLI path to the leaderboard | G2.14 | Med | M | M1.2 |
-| 22.4 | `astro-mine allocate` | `[G2.9]` Open the solver registry — it is advertised as pluggable and is a hardcoded dict | G2.9 | Med | M | M1.2 |
+| 22.1 | `learn` | `[G1.4]` Export the trained policy — the CLI currently discards it | G1.4 | **High** | S | M1.2 |
+| 22.2 | `learn` | `[G2.10]` Ship an anchor env factory so the quickstart is copy-pasteable | G2.10 | High | M | M1.2 |
+| 22.3 | `bench` | `[G2.14]` `astro-mine bench submit` — a CLI path to the leaderboard | G2.14 | Med | M | M1.2 |
+| 22.4 | `allocate` | `[G2.9]` Open the solver registry — it is advertised as pluggable and is a hardcoded dict | G2.9 | Med | M | M1.2 |
 | 22.5 | `docs` | `[G2.8]` Write the plugin-authoring guide — 5 live entry-point groups, zero recipes | G2.8 | High | M | M1.2 |
 
 **22.1 detail.** `train/run.py` `main()` does `report, _export = train(...)` and drops the export;
@@ -190,11 +190,11 @@ blank. Nothing depends on `console`.
 
 | # | Repo | Title | Gap | Pri | Size | Milestone |
 |---|---|---|---|---|---|---|
-| 24.1 | `astro-mine bench` | Leaderboard surface — `@astro-mine/bench-ui` (**closes bench#27**) | G1.6 | High | L | M1.2 |
-| 24.2 | `astro-mine studio` | `@astro-mine/studio-ui` — convert the SPA to a surface | G1.5 | High | M | M1.1 |
-| 24.3 | `astro-mine studio` | The authoring journey — wire `/intent`, `/studies`, `/campaigns/publish` into the UI | G1.5 | High | L | M1.1 |
-| 24.4 | `astro-mine studio` | `[G2.3/G2.4]` `studio serve` — one command to a working Studio | G2.3 | High | M | M1.1 |
-| 24.5 | `astro-mine hub` | `@astro-mine/hub-ui` — convert the SPA to a surface; add publish/resolve | G2.x | Med | M | M1.2 |
+| 24.1 | `bench` | Leaderboard surface — `@astro-mine/bench-ui` (**closes bench#27**) | G1.6 | High | L | M1.2 |
+| 24.2 | `studio` | `@astro-mine/studio-ui` — convert the SPA to a surface | G1.5 | High | M | M1.1 |
+| 24.3 | `studio` | The authoring journey — wire `/intent`, `/studies`, `/campaigns/publish` into the UI | G1.5 | High | L | M1.1 |
+| 24.4 | `studio` | `[G2.3/G2.4]` `studio serve` — one command to a working Studio | G2.3 | High | M | M1.1 |
+| 24.5 | `hub` | `@astro-mine/hub-ui` — convert the SPA to a surface; add publish/resolve | G2.x | Med | M | M1.2 |
 | 24.6 | `astro-mine-view` | Resolve `@astro-mine/view` distribution; document the harness as a dev gallery | G1.5 | **High** | M | — |
 
 **24.1** — the leaderboard is REST-only today; M1.2's public face does not exist. Rankings,
@@ -224,9 +224,9 @@ console and should not pretend to be.
 | # | Repo | Title | Gap | Pri | Size |
 |---|---|---|---|---|---|
 | 25.1 | `docs` | **The `astro-mine` umbrella CLI and command naming** | G2.1 | Med | M |
-| 25.2 | `astro-mine core` | `[G2.5]` `astro-mine core validate <file>` — 9 authored formats, 1 has a checker | G2.5 | Med | M |
-| 25.3 | `astro-mine guard` | `[G2.6/G2.7]` Guard CLI + ship the anchor SafetySpec as package data | G2.6 | Med | M |
-| 25.4 | `astro-mine mind` | `[G2.6]` Mind CLI + a README with a stack spec in it | G2.6 | Med | M |
+| 25.2 | `core` | `[G2.5]` `astro-mine core validate <file>` — 9 authored formats, 1 has a checker | G2.5 | Med | M |
+| 25.3 | `guard` | `[G2.6/G2.7]` Guard CLI + ship the anchor SafetySpec as package data | G2.6 | Med | M |
+| 25.4 | `mind` | `[G2.6]` Mind CLI + a README with a stack spec in it | G2.6 | Med | M |
 
 **25.1 — the umbrella CLI.** Decides the umbrella's **home and shape** (the open question): one package
 depending on all components, or a **thin dispatcher** shelling out to installed `astro-mine-*`
@@ -279,7 +279,7 @@ docs/guide/{getting-started.md, tutorials/, how-to/, reference/{cli,file-formats
 |---|---|---|---|---|---|
 | 26.7 | multi | `[G2.13]` Surface the shipped anchor content in the READMEs that hide it | G2.13 | Med | M |
 | 26.8 | multi | `[G3.x]` Fix doc drift — phantom commands, "Planning" classifiers, stale status lines | G3.1–3.4 | Low | S |
-| 26.9 | `astro-mine core` | `[G3.5]` Repo hygiene — committed `.venv` and build artifacts | G3.5 | Low | S |
+| 26.9 | `core` | `[G3.5]` Repo hygiene — committed `.venv` and build artifacts | G3.5 | Low | S |
 
 **26.7** — Fleet's 6-asset anchor roster, Prospect's Shackleton priors, and Mind's 6 reference
 stacks all ship, are one call away, and are mentioned in **none** of their READMEs. Also **G2.12**:

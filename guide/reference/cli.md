@@ -77,25 +77,27 @@ validate`.
 
 `astro-mine new <kind>` — authored documents:
 
-| Kind | Document | Provided by |
+| Kind | Document | Templated by |
 |---|---|---|
-| `asset` | a SADF asset | `astro-mine fleet` |
-| `safety` | a SafetySpec | `astro-mine guard` |
-| `stack` | an autonomy stack spec | `astro-mine mind` |
-| `world` | a WorldSpec | `astro-mine worlds` |
+| `asset` | a SADF asset | Fleet |
+| `safety` | a SafetySpec | Guard |
+| `stack` | an autonomy stack spec | Mind |
+| `world` | a WorldSpec | Worlds |
 
 `astro-mine plugin new <kind>` — plugin packages, one per live extension group:
 
-| Kind | Entry-point group | Provided by |
+| Kind | Entry-point group | Templated by |
 |---|---|---|
-| `algorithm` | `astro_mine.learn.algorithms` | `astro-mine learn` |
-| `curriculum` | `astro_mine.learn.curricula` | `astro-mine learn` |
-| `field-model` | `astro_mine.field_models` | `astro-mine worlds` |
-| `provider` | `astro_mine.providers` | `astro-mine sim` |
-| `runner` | `astro_mine.bench.runners` | `astro-mine bench` |
-| `solver` | `astro_mine.allocate.solvers` | `astro-mine allocate` |
-| `tier` | `astro_mine.mind.tier_plugins` | `astro-mine mind` |
-| `cli` | `astro_mine.cli` | `astro-mine-cli` |
+| `algorithm` | `astro_mine.learn.algorithms` | Learn |
+| `curriculum` | `astro_mine.learn.curricula` | Learn |
+| `field-model` | `astro_mine.field_models` | Worlds |
+| `provider` | `astro_mine.providers` | Sim |
+| `runner` | `astro_mine.bench.runners` | Bench |
+| `solver` | `astro_mine.allocate.solvers` | Allocate |
+| `tier` | `astro_mine.mind.tier_plugins` | Mind |
+
+The eighth live group, `astro_mine.cli` itself, has **no scaffold yet** — it was structurally
+impossible while the dispatcher could not depend on a component, and is merely unwritten now.
 
 What these scaffolds emit are the recipes in
 [how-to/write-a-plugin.md](../how-to/write-a-plugin.md).
@@ -150,11 +152,11 @@ One command, no subcommands.
 | `--algorithm` · `--seed` · `--iterations` · `--rollout-steps` · `--hidden-sizes` | Training knobs (comma-separated widths, e.g. `64,64`). |
 | `--fidelity {sim_high,surrogate,gpu_vectorized}` | Rollout fidelity tier. |
 | `--num-workers` · `--ray-address` · `--batched-world` | Scale-out. `1` = tier-1 in-process. |
-| `--export DIR` | Export the trained policy into a content-addressed store: `<dir>/<hex>/{model.onnx,policy_package.json}`, one entry per agent. Needs the `[export]` extra. **Must be an absolute path** — a relative one fails after writing the ONNX. |
+| `--export DIR` | Export the trained policy into a content-addressed store: `<dir>/<hex>/{model.onnx,policy_package.json}`, one entry per agent. Needs the `learn-export` extra. **Must be an absolute path** — a relative one fails after writing the ONNX. |
 | `--export-format onnx` · `--export-version` | ONNX is the only cross-component policy artifact; version defaults to `0.1.0`. |
 | `--output PATH` | Run report JSON (default stdout). |
 
-`astro-mine learn` is the deprecated alias.
+A bare `astro-mine-train` binary once existed as a deprecated alias; it is gone.
 
 Tutorial: [03](../tutorials/03-train-and-publish-a-policy.md).
 
