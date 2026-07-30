@@ -31,8 +31,9 @@ each kind"*; this one is *"here is you, writing one."* Read this first, then go 
 A **Bench metric** is the exception: it is a Hub artifact resolved by a scenario's manifest, not an
 entry point. Recipe in the how-to.
 
-If your change does not fit any of these, it may belong in Core — which means an
-change to a **Core contract**, not a plugin. The how-to's *"When it is a contract change instead"*
+If your change does not fit any of these, it may belong in Core — which means a
+change to a **Core contract**, not a plugin. The how-to's
+[*"When it is a Core change instead"*](../how-to/write-a-plugin.md#when-it-is-a-core-change-instead)
 section is the test.
 
 ## 2. Scaffold it (UC-H2)
@@ -191,7 +192,9 @@ it does not implement. Nothing resolves a solver *through the registry*; the ent
 registration.
 
 If the platform ever wants solvers distinguished in the catalog, that is a new `PluginKind` and
-therefore an **RFC against Core**, not a value to pick per plugin.
+therefore a **Core change**, not a value to pick per plugin — and Core's bar is a named consumer,
+an additive change, and green consumer tests
+([how changes are governed](https://github.com/astro-mine/.github/blob/main/GOVERNANCE.md#how-changes-are-governed)).
 
 The how-to's *"The manifest side"* section covers the fields.
 

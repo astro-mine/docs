@@ -11,12 +11,13 @@ a run). Personas: **P5** Mission Designer, **P6** Educator/Student, **P1** Bench
 
 Before the console, each component that had a web face had its own application, its own navigation,
 and its own visual language. The console replaces that with **one shell** into which components
-contribute **surfaces** ([console.md](../architecture/console.md)
-and 2).
+contribute **surfaces** ([console.md](../architecture/console.md)).
 
 A surface is a package — `@astro-mine/<component>-ui` — that declares what it contributes: nav
 entries, routes, and inspector contributions. Registering one in the shell is **one line**. That is
-the RFC's own acceptance test: *publish a surface package, add one line*, and nothing else changes.
+the design's own acceptance test: *publish a surface package, add one line*, and nothing else
+changes — if a surface needs more, the contract is wrong
+([console.md §2 principle 7](../architecture/console.md)).
 
 The rule underneath it: **a surface never imports another surface.** They compose only through the
 shell and the `Surface` contract, which is the console's expression of the platform's narrow waist
