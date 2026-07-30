@@ -35,9 +35,7 @@ astro-mine studio serve --registry /path/to/hub-registry
 >
 > Everything below describes the shipped application and is accurate about what it does; you cannot
 > currently start it from a released distribution. It comes back with `RM-DIST-03`
-> ([roadmap](../../roadmap/README.md#the-distribution-track)); the command's install hint is wrong
-> meanwhile, filed as
-> [astro-mine-cli#19](https://github.com/astro-mine/astro-mine-cli/issues/19).
+> ([roadmap](../../roadmap/README.md#the-distribution-track)), which the command now names itself.
 
 Then one command composes the whole thing: the FastAPI backend, the Hub seams wired to your local
 OCI-layout registry, the built UI mounted, and **an example study seeded** so you land on a populated
