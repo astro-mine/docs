@@ -23,7 +23,7 @@ code; the group names and constants are quoted from source, with the file that d
 | MARL algorithm | `astro_mine.learn.algorithms` | entry point |
 | training curriculum | `astro_mine.learn.curricula` | entry point |
 | benchmark metric | Core `metric` manifest published to Hub | manifest |
-| **kind of contract that none of the above expresses** | — | **[RFC](https://github.com/astro-mine/.github/blob/main/GOVERNANCE.md)** |
+| **kind of contract that none of the above expresses** | — | **[Core change](https://github.com/astro-mine/.github/blob/main/GOVERNANCE.md#how-changes-are-governed)** |
 
 That last row is the important one.
 
