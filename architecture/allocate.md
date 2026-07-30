@@ -30,8 +30,8 @@ It owns and only owns:
 **Mission-level joint assignment.** With the multi-regime extension, the same engine
 also decides the discrete backbone of an interplanetary resource mission: **which asset → which
 target** (e.g. which asteroid) **→ which launch/transfer window → which trajectory**. This is the
-discrete/continuous joint problem the RFC identified as having no owner — it sits between Allocate
-and [Sim](sim.md) ([mission-model.md](mission-model.md)) and is **assigned to Allocate** for the
+discrete/continuous joint problem that has no natural owner — it sits between Allocate and
+[Sim](sim.md) ([mission-model.md](mission-model.md)) and is **assigned to Allocate** for the
 discrete-assignment half, mixing combinatorial choice with continuous orbital-mechanics
 feasibility. Allocate still owns only the *assignment*; trajectory *optimization* is
 [Trajectory](trajectory.md)'s, and the trade-study loop that couples them is
