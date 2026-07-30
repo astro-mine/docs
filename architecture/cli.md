@@ -15,7 +15,7 @@ $ astro-mine <component> <verb> [options]
 ```
 
 Everything the platform can do from a terminal is reached by naming the component that owns it and
-then the action. Thirteen names are components; three are *routers*, which exist because they answer
+then the action. Fourteen names are components; three are *routers*, which exist because they answer
 a question no single component can — *who owns this?*
 
 ## 2. Why it is a separate distribution
@@ -59,7 +59,14 @@ astro-mine plugin new <kind> <out>           # scaffold a plugin package
 ```
 
 **Components:** `core` · `fleet` · `worlds` · `prospect` · `link` · `sim` · `bench` · `learn` ·
-`mind` · `guard` · `hub` · `cloud` · `studio`.
+`mind` · `guard` · `hub` · `seal` · `cloud` · `studio`.
+
+`seal` is the newest and the only one added after the move: the component whose entire purpose is
+to be run from a shell was the one that shipped no shell surface. It signs, verifies and describes
+**loose files** — anything addressed by a registry reference is `hub`'s. `seal verify` and `hub
+verify` therefore both stand and are not duplicates: Hub resolves a published artifact and runs the
+whole verify-twice policy against a registry, Seal checks one detached signature over one file.
+They share one implementation, because Hub's supply chain calls Seal's verifier.
 
 **The three routers.** `validate` dispatches a document to whichever component owns its schema
 `$id` — four components own an authored format (`core`, `guard`, `mind`, `worlds`), and a collision
@@ -80,7 +87,7 @@ and dispatch imports exactly one module: the one the user named.
 That is what the two-phase parse buys. Phase one parses only *which* component; everything after it
 is `argparse.REMAINDER`. Phase two imports that component's module and lets it parse its own tail. A
 single-phase parser would have to call every component's `add_arguments` to build the tree, importing
-all thirteen to render a help screen.
+all fourteen to render a help screen.
 
 The cost is that top-level `--help` cannot show a component's verbs; `astro-mine <component> --help`
 is where the real help lives. That is the trade, and it is the right way round: the top level is read
@@ -128,6 +135,11 @@ Regenerating that fixture to make the test pass is not a fix. The fixture *is* t
 the old behaviour is the requirement; a verb that genuinely must change is a separate change with its
 own justification, and the fixture moves in that commit.
 
+A component that was **never** a binary is excluded by name rather than back-filled — a fixture of
+what the binaries declared cannot describe a group that never was one, and back-filling would turn
+the contract into a mirror of the current code. `seal` is the first such exclusion. The exclusion set
+is asserted exactly, so a *ported* component silently dropping out of the fixture still fails.
+
 ## 9. Honest degradation
 
 A verb whose backing capability is absent MUST report what is missing and how to get it — never a
@@ -156,7 +168,8 @@ look for them (`platform.md` §4).
 ## 12. Roadmap alignment
 
 The CLI ships. Known gaps are tracked as issues rather than described here as design — notably that
-Seal has no verbs yet, and that the `astro_mine.cli` group has no `plugin new` scaffold of its own
-(structurally impossible under the old design, merely unwritten under this one). See the
+the `astro_mine.cli` group has no `plugin new` scaffold of its own (structurally impossible under the
+old design, merely unwritten under this one). Seal's missing verbs were the other one, closed by
+`astro-mine seal` (§4). See the
 [roadmap](../roadmap/README.md) and the [CLI reference](../guide/reference/cli.md) for the
 user-facing surface.

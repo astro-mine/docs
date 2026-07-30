@@ -271,7 +271,7 @@ Routers — these pick the owning component for you:
 ```
 
 Top-level help deliberately does **not** list a component's verbs: rendering that would mean importing
-all thirteen components to print a help screen, and `astro-mine` imports none. `astro-mine <component>
+all fourteen components to print a help screen, and `astro-mine` imports none. `astro-mine <component>
 --help` is where the real help lives. See [reference/cli.md](reference/cli.md) for the complete
 surface.
 

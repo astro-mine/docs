@@ -19,7 +19,7 @@ astro-mine <component> <verb> [options]
 comes from `astro-mine-cli`, which depends on `astro-mine-platform` — so `pip install astro-mine-cli`
 gets you the command and every component behind it.
 
-Thirteen names are components. Three are **routers**, which exist because they answer a question no
+Fourteen names are components. Three are **routers**, which exist because they answer a question no
 single component can: *who owns this?*
 
 ```bash
@@ -28,7 +28,7 @@ astro-mine <component> --help    # that component's verbs — where the real hel
 astro-mine --version
 ```
 
-**Top-level help does not list verbs, on purpose.** Rendering them would mean importing all thirteen
+**Top-level help does not list verbs, on purpose.** Rendering them would mean importing all fourteen
 components to print a help screen. `astro-mine` imports **none**; dispatch imports exactly the one
 module you named. You pay for the command you ran.
 
@@ -52,12 +52,17 @@ than failing obscurely:
 $ astro-mine studio serve
 astro-mine studio serve needs the Studio REST surface (astro_mine.studio.api), which is not
 included in astro-mine-platform.
+  The REST tier ships in astro-mine-api (docs: architecture/api.md), which is not stood up yet —
+  roadmap RM-DIST-03.
+  No released distribution provides it today, so there is nothing to install.
 ```
 
-That surface belongs to [`astro-mine-api`](../../architecture/api.md), which is not yet stood up.
-(The hint the command prints after that line still names a retired distribution —
-[astro-mine-cli#19](https://github.com/astro-mine/astro-mine-cli/issues/19).) An
-unknown name is a plain error with the valid ones listed — never a traceback:
+That surface belongs to [`astro-mine-api`](../../architecture/api.md), which is not yet stood up, so
+the message names the tracking item instead of an install command. It used to end with `pip install
+astro-mine-studio[serve]`, a distribution the consolidation retired — an install hint that resolves
+to nothing is worse than none, because pip's "no matching distribution" reads as a broken
+environment rather than a stale message. An unknown name is a plain error with the valid ones
+listed — never a traceback:
 
 ```console
 $ astro-mine nosuch
@@ -257,6 +262,44 @@ safe set, so it runs on a spec you wrote. Tutorial:
 > **Inconsistency:** `publish --kind` is validated against the closed set above; `search --kind`
 > accepts any string.
 
+## Sign and verify loose files — `astro-mine seal`
+
+| Command | Flags |
+|---|---|
+| `sign` | `[FILE]` or `--digest` · `--key` · `--out` — a detached cosign signature |
+| `verify` | `[FILE]` or `--digest` · `--signature` · `--key` — fail-closed |
+| `provenance` | `[FILE]` or `--digest` · `--name` · `--version` · `--builder-id` · `--input` (repeatable) · `--out` |
+| `sbom` | `--name` · `--version` · `--component NAME==VERSION` (repeatable) · `--out` |
+| `inspect` | Identify a signature, SLSA provenance or CycloneDX SBOM and check it is well-shaped. |
+
+Offline and accountless: keyed ECDSA P-256, no Fulcio, no Rekor, no registry.
+
+```console
+$ astro-mine hub keygen --out .
+$ astro-mine seal sign ice-map.tif --key cosign.key --out ice-map.sig
+$ astro-mine seal verify ice-map.tif --signature ice-map.sig --key cosign.pub
+ok sha256:aa6a76d3…
+```
+
+**`seal verify` and `hub verify` are different questions, not duplicates.** `astro-mine hub verify`
+resolves a *published artifact* in a registry and runs the whole verify-twice policy — integrity,
+every attached signature, SLSA provenance, an SBOM. `astro-mine seal verify` checks *one detached
+signature over one loose file*, with no registry involved. They share one implementation: Hub's
+supply chain calls Seal's verifier rather than carrying its own.
+
+**`--key` is required on `seal verify`**, unlike `hub verify --trusted-key`. A signature carries its
+signer's public key, so verifying against that alone proves only that *somebody* signed — which is
+not what a reader takes `ok` to mean. `hub verify` can omit it because it still re-establishes the
+registry's own integrity chain.
+
+**There is no `seal keygen`** — `astro-mine hub keygen` mints the platform's one keypair. **There is
+no `seal attest`** either: attaching attestations needs a registry, which is `astro-mine hub
+publish`. `seal` emits the three payloads that command attaches.
+
+Two different digests are in play. `seal sign FILE` signs the content hash of that file's bytes;
+`hub publish` signs an artifact's *manifest* digest. A signature made by one does not verify the
+other, by design.
+
 ## Publish content — `astro-mine link`, `astro-mine prospect`
 
 Both ship exactly one subcommand:
@@ -299,9 +342,9 @@ Named here so you do not go looking.
 
 | You might expect | Reality |
 |---|---|
-| `astro-mine seal ...` | **Seal has no CLI yet.** An archetypal sign/verify tool with no shell surface; signing is reached through Hub and Fleet, or the Python API. Tracked as [astro-mine-cli#17](https://github.com/astro-mine/astro-mine-cli/issues/17). |
 | `astro-mine allocate ...` | No CLI. Allocate is a library plus the `astro_mine.allocate.solvers` plugin group. |
 | `astro-mine spice ...`, `astro-mine surrogate ...` | No CLI. Libraries only. |
+| `astro-mine seal keygen`, `astro-mine seal attest` | Deliberately absent — see [above](#sign-and-verify-loose-files--astro-mine-seal). |
 | `astro-mine mind run` | Deliberately absent — see above. |
 | A world **build** verb | Building a world bundle from a WorldSpec is a script/Python path. `astro-mine worlds` covers validate, schema, publish. |
 | `astro-mine prospect` authoring verbs | Prospect priors are Python objects, not an authored file format. Only `publish` exists. |
