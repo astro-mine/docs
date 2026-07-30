@@ -143,10 +143,33 @@ is asserted exactly, so a *ported* component silently dropping out of the fixtur
 ## 9. Honest degradation
 
 A verb whose backing capability is absent MUST report what is missing and how to get it — never a
-traceback, never "unknown command". The case that survives consolidation is a surface in another
-distribution: `astro-mine studio serve` reaches the Studio REST application, which lives in
-[`astro-mine-api`](api.md), so the command names what to install rather than failing obscurely. That
-is also why `studio` keeps its group.
+traceback, never "unknown command" — and MUST exit **non-zero**. The case that survives
+consolidation is a surface in another distribution: `astro-mine studio serve` reaches the Studio
+REST application, which lives in [`astro-mine-api`](api.md), so the command names where the surface
+lives rather than failing obscurely. That is also why `studio` keeps its group.
+
+**A good message is not a success.** The status is a separate claim from the text, and it is the
+one every script reads. `serve` is imperative: explaining why it could not serve is the right
+behaviour, but exit 0 asserts that a server is running. `astro-mine studio serve && open
+http://localhost:8000` opened a dead port for as long as that was the status. A helpful message
+makes this *more* dangerous, not less — the command looks like it worked.
+
+Where the capability lives in another distribution, the status is **1**, not 2. Exit 2 is reserved
+for a usage error — *"I typed this wrong"* — and is kept distinct from the 1-and-up range a command
+uses for its own failures. Such a verb was invoked correctly; the installation is incomplete.
+Answering it with 2 points the reader at their command line instead of at their environment.
+
+> **Inconsistency.** `hub`, `seal` and `studio` follow that split; `sim` and `bench` return 2 from
+> every failure path, including missing optional extras that no invocation could have avoided. The
+> divergence predates this rule and is tracked as
+> [astro-mine-cli#24](https://github.com/astro-mine/astro-mine-cli/issues/24) — until it is closed,
+> **do not** read a 2 from those two components as "you typed this wrong".
+
+**When the hint cannot resolve, omit it.** "How to get it" assumes something to get. Where the
+capability ships in a distribution that does not yet exist, the honest message names that
+distribution and the roadmap item that stands it up, and says no released distribution provides it
+— an install hint that resolves to nothing is worse than none, because pip's "no matching
+distribution" reads as a broken environment rather than a stale message.
 
 ## 10. What is deliberately not a verb
 
