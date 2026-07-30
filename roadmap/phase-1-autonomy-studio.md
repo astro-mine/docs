@@ -1,8 +1,13 @@
 # Phase 1 — Autonomy & studio
 
 > **Window:** ~12–30 mo · **Theme:** Autonomy & studio · **Roadmap home:** [README](README.md)
+> **Status: built.** Every item below shipped, plus a UX and console backlog the plan did not
+> anticipate: the single-GUI [console](../architecture/console.md) and its `Surface` contract, the
+> `astro-mine` [CLI](../architecture/cli.md), and the [user guide](../guide/README.md). What followed
+> the phase was the packaging correction in [the distribution
+> track](README.md#the-distribution-track) — no new capability, and no change to the deliverables here.
 > **Goal:** become the **MARL and planning commons** for planetary swarms — first public
-> leaderboards and community plugins (charter §10; system.md §11).
+> leaderboards and community plugins (charter §9; system.md §11).
 
 **Entry dependencies:** Phase 0 complete — a runnable, reproducible anchor benchmark on
 `Core v0.1` + Sim + Worlds + Fleet + Bench (+ Prospect, Link MVP, local Cloud).
@@ -16,10 +21,11 @@
   and a result to a **public** [Bench](../architecture/bench.md) leaderboard, reproducibly.
 
 **Phase exit criteria:** M1.1 + M1.2 met; learned, safety-wrapped policies are publishable and
-beat-able on the leaderboard; full Cloud scale-out runs the loop; the **RFC-0001 Core schema hooks
-are reserved** (below). The narrow waist held — Core grew only additively, every change via RFC.
+beat-able on the leaderboard; full Cloud scale-out runs the loop; the **multi-regime Core schema hooks
+are reserved** (below). The narrow waist held — Core grew only additively, every change
+wire-compatible.
 
-**Phase-level cross-cutting obligation — [CX-RFC0001](README.md#cross-cutting-workstreams):**
+**Phase-level cross-cutting obligation — [CX-MISSION](README.md#cross-cutting-workstreams):**
 this is the *only* phase where the mission-architecture track touches the critical path, and only as
 **additive schema**, while Core is already being extended for autonomy. See **Core (this phase)** below.
 
@@ -33,29 +39,29 @@ this is the *only* phase where the mission-architecture track touches the critic
 
 - **RM-P1-CORE-01** — **Policy/Planner API hardening for composition**: the sub-interfaces
   ([Mind](../architecture/mind.md)/[Allocate](../architecture/allocate.md)/[Guard](../architecture/guard.md)/[Learn](../architecture/learn.md))
-  compose cleanly; ONNX policy artifacts satisfy the contract. *(trace: core.md §12; charter §5.4)*
+  compose cleanly; ONNX policy artifacts satisfy the contract. *(trace: core.md §12; charter §4.4)*
 - **RM-P1-CORE-02** — **Hub-indexing manifest fields** (capability negotiation, provenance,
   signatures) finalized so [Hub](../architecture/hub.md) indexes by the Core manifest, not a private
   schema. *(trace: core.md §3, §6; hub.md §2)*
 - **RM-P1-CORE-03** — **`ObjectiveSpec` + objective→metric binding** matured for Studio authoring /
   Bench measurement (the P0 schema, now exercised end-to-end). *(trace: core.md §3; `LUNAR-FR-008,009,010`)*
-- **RM-P1-CORE-04** — *(RFC-0001, reserved hooks — no implementation)* **`MissionSpec` / `regime`
+- **RM-P1-CORE-04** — *(reserved hooks — no implementation)* **`MissionSpec` / `regime`
   descriptor / `PhaseTransition`** schema, **propulsion/staging/return SADF capability declarations**,
   the **descriptive `TrajectoryRef`/`ManeuverBudget`** message schemas, and the reserved
   **`operational_targeting`** capability tag — all **append-only minors**, proto3 unknown-field
-  tolerant. *(trace: RFC-0001 R5, "Impact on Core"; mission-model §2, §3; [CX-RFC0001](README.md#cross-cutting-workstreams))*
-- **RM-P1-CORE-06** — *(RFC-0007)* **canonical `units.schema.json`**: the missing authority layer for
+  tolerant. *(trace: mission-model §2, §3; [CX-MISSION](README.md#cross-cutting-workstreams))*
+- **RM-P1-CORE-06** —  **canonical `units.schema.json`**: the missing authority layer for
   the `RM-P0-CORE-06` frames/CRS/time vocabulary — `ReferenceFrame`/`PlanetaryCRS`/`Epoch`/
   `EpochWindow`/`FrameClass`/`TimeScale` as a `$defs` catalog, pinned by `check_model_drift.py` and
-  published in the schema bundle. *(trace: RFC-0007 Design §1a; core.md §2 principle 5)*
-- **RM-P1-CORE-07** — *(RFC-0007)* **the vocabulary on the wire**: `units.proto` mirroring the schema
+  published in the schema bundle. *(trace: conventions.md §5; core.md §2 principle 5)*
+- **RM-P1-CORE-07** —  **the vocabulary on the wire**: `units.proto` mirroring the schema
   (closed vocabularies as `string`, the SADF pattern), additive typed `frame_ref`/`epoch`/`window`/
   `crs` fields on the message and mission catalogs, additive `PlanetaryCRS`/`EpochWindow` Cap'n Proto
   structs, and `units/wire.py`. **Append-only**; `CORE_INTERFACE_VERSIONS` unchanged, no new entry.
-  *(trace: RFC-0007 Design §1c–§2; conventions.md §3)*
-- **RM-P1-CORE-08** — *(RFC-0007)* **guards as contract**: `require_frame`/`require_crs` semantics
+  *(trace: conventions.md §5; conventions.md §3)*
+- **RM-P1-CORE-08** —  **guards as contract**: `require_frame`/`require_crs` semantics
   ratified as normative MUSTs, the Earth-CRS **body/datum consistency** rule implemented in
-  `validate.py`, and shared conformance vectors every binding runs. *(trace: RFC-0007 Design §3,
+  `validate.py`, and shared conformance vectors every binding runs. *(trace: conventions.md §5,
   "Resolved decisions"; conventions.md §5, §11; core.md §10)*
 
 **Dependencies:** `Core v0.1`. **Exit criteria:** autonomy + hub + studio run against the additions;
@@ -77,7 +83,7 @@ or epochs passes the shared `units` conformance vectors. **Deferred → P3:** al
   behind the Core physics-step contract; `predict(state, action=None) → Prediction` (channels +
   calibrated uncertainty + `in_domain`/`ood_margin`). *(trace: surrogate.md §3)*
 - **RM-P1-SURR-02** — **Granular/excavation GNN particle simulator** with **deep-ensemble + conformal**
-  calibrated error bounds and enforced trust regions. *(trace: surrogate.md §11, §12; charter §8, §9; `LUNAR-TR-002`)*
+  calibrated error bounds and enforced trust regions. *(trace: surrogate.md §11, §12; charter §7, §7; `LUNAR-TR-002`)*
 - **RM-P1-SURR-03** — **`datagen` from high-fidelity Sim** (Sobol/LHS + active learning) and the
   **offline-retrain + gated-promotion** loop. *(trace: surrogate.md §3, §11)*
 - **RM-P1-SURR-04** — **ONNX-served fidelity tier loaded by Sim**, whose **scheduler consumes the
@@ -100,8 +106,8 @@ scenario; Sim substitutes the tier only within budget. **Deferred → P2:** neur
 - **RM-P1-LEARN-01** — **`SwarmEnv` adapter**: Core Environment API → Gymnasium / PettingZoo
   `ParallelEnv`, with per-agent observation/action spaces keyed by SADF capabilities. *(trace: learn.md §3; `LUNAR-FR-005`)*
 - **RM-P1-LEARN-02** — **`CommsModel` wrapper**: declarative observation masks + drop/delay/budget
-  channel, driven by [Link](../architecture/link.md) when present — the knob that makes charter §8
-  measurable and comparable across algorithms. *(trace: learn.md §3, §11; charter §8)*
+  channel, driven by [Link](../architecture/link.md) when present — the knob that makes charter §7
+  measurable and comparable across algorithms. *(trace: learn.md §3, §11; charter §7)*
 - **RM-P1-LEARN-03** — **Baselines: IPPO + MAPPO + QMIX** as reproducible plugins (CTDE default;
   comms-learning as a first-class research track). *(trace: learn.md §11, §12)*
 - **RM-P1-LEARN-04** — **Single-GPU-workstation training that just works** (tier 1) + **KubeRay
@@ -110,7 +116,7 @@ scenario; Sim substitutes the tier only within budget. **Deferred → P2:** neur
   equivalence check and honest provenance (comms/observability assumptions, surrogate-fidelity
   caveats). *(trace: learn.md §3, §5, §10)*
 - **RM-P1-LEARN-06** — **Honest evaluation harness**: held-out eval envs, seed sweeps, variance and
-  comms-stress curves. *(trace: learn.md §10; charter §8)*
+  comms-stress curves. *(trace: learn.md §10; charter §7)*
 
 **Dependencies:** Core (`RM-P1-CORE-01`), Sim, Surrogate, Link (full), Cloud (full). **Exit criteria:**
 a comms-limited cooperative prospecting policy trains overnight on one GPU, exports to ONNX, and is
@@ -133,7 +139,7 @@ heuristics for Allocate, sim-to-real-aware training validated on analogs.
   consuming Link contact graph, Worlds traversability, Fleet budgets, Prospect value (with
   uncertainty). *(trace: allocate.md §3, §5; `LUNAR-FR-004`)*
 - **RM-P1-ALLOC-04** — **Info-gain-vs-ROI objective** (active perception traded against extraction).
-  *(trace: allocate.md §11; scenario §7; charter §8)*
+  *(trace: allocate.md §11; scenario §7; charter §7)*
 - **RM-P1-ALLOC-05** — **Anytime contract** (streaming incumbents + monotone bounds + optimality gap)
   for online re-solve. *(trace: allocate.md §2, §3)*
 - **RM-P1-ALLOC-06** — **Explainability**: objective decomposition, binding constraints, and an
@@ -145,7 +151,7 @@ heuristics for Allocate, sim-to-real-aware training validated on analogs.
   `ConstraintConfig.comms` becomes optional (`None` ⇒ no relay gating), and the exported
   `allocation_request.schema.json` `$ref`s Core's `Volume`/`ReferenceFrame` instead of inlining a
   private copy — removing two re-derivations of Core message types. The IR proto and CP-SAT goldens
-  are unchanged. *(trace: allocate.md §5; RFC-0007; conventions.md §1, §5)*
+  are unchanged. *(trace: allocate.md §5; conventions.md §5; conventions.md §1, §5)*
 
 **Dependencies:** Core (`RM-P1-CORE-01`), Link (full), Worlds, Fleet, Prospect. **Exit criteria:**
 tens-of-robots / hundreds-of-tasks solved to a few-% gap within a deadline on the anchor scenario,
@@ -178,7 +184,7 @@ joint asset↔target↔window↔trajectory assignment.
   *(trace: mind.md §2, §7)*
 - **RM-P1-MIND-06** — **Degrade-not-collapse**: validity-horizoned `ContingentPlan`s + decentralized
   `coord/` so agents act on cached intent through comms-denied PSR intervals, validated under
-  injected blackouts. *(trace: mind.md §2, §10; `LUNAR-FR-005`; charter §8, §9)*
+  injected blackouts. *(trace: mind.md §2, §10; `LUNAR-FR-005`; charter §7, §7)*
 - **RM-P1-MIND-07** — **Determinism + decision-trace (MCAP)** for reproducibility and plan
   explanation. *(trace: mind.md §5, §10; `LUNAR-UX-003`)*
 
@@ -197,7 +203,8 @@ Ops, the ground/edge split. **Deferred → P3:** window-gated cross-phase compos
 
 - **RM-P1-GUARD-01** — **`SafetySpec` schema** (declarative hard constraints: collision/keep-out,
   power floor, thermal/torque ceilings, kinematic limits, STL/MTL temporal clauses) + constraint
-  compiler. RFC-gated as a safety contract. *(trace: guard.md §3, §9.3; `LUNAR-FR-006`)*
+  compiler. Guard-owned, and a change to it is a change to a safety contract.
+  *(trace: guard.md §3, §9.3; `LUNAR-FR-006`)*
 - **RM-P1-GUARD-02** — **Rust safety core (the TCB)**: `arbiter` + **CBF-QP shield (OSQP/Clarabel)**
   + **STL/MTL runtime monitors** + **simplex backup controller**, deterministic, allocation-free on
   the hot path, fail-safe-never-open. *(trace: guard.md §2, §3, §9; conventions §2; `LUNAR-SR-004`)*
@@ -215,7 +222,7 @@ Ops, the ground/edge split. **Deferred → P3:** window-gated cross-phase compos
   sibling `frame_ref`, and add a fail-closed `require_frame` guard inside the Rust TCB that validates
   frame name / `frame_class` / center tokens against Core's shared conformance vectors — so a keep-out
   volume in an unknown frame is rejected at compile time before it reaches the trusted core. The TCB
-  dependency surface is not grown. *(trace: guard.md §3; RFC-0007; conventions.md §5; `LUNAR-TR-001`)*
+  dependency surface is not grown. *(trace: guard.md §3; conventions.md §5; conventions.md §5; `LUNAR-TR-001`)*
 
 **Dependencies:** Core (`RM-P1-CORE-01`), Worlds (keep-out/slope), Fleet (limits), Sim (dynamics).
 **Exit criteria:** a Learn policy runs **shielded** in Sim on the anchor scenario; zero hard-constraint
@@ -252,7 +259,7 @@ one-shot assurance.
   content-addresses (`GeoRegion.crs` on an `IntentDraft`, carried into a `Campaign`) to Core's
   canonical `units.schema.json` `PlanetaryCRS` at the point it enters the hashed artifact — resolving
   the cross-file `$ref` offline via Core's `schema_registry`, recording the units-schema digest as
-  sidecar provenance (never inside the hashed payload). *(trace: studio.md §5; RFC-0007; RFC-0009;
+  sidecar provenance (never inside the hashed payload). *(trace: studio.md §5; conventions.md §5, §3.1;
   conventions.md §5)*
 - **RM-P1-STUDIO-09** — **Selectable robot menu + asset geometry preview**: project the Hub catalog
   into `MenuEntry` rows (kind + display name from the Core manifest, capability-filtered) and a
@@ -284,7 +291,7 @@ Architect mode.
 - **RM-P1-HUB-04** — **SemVer + Core-interface-range dependency/compat resolution**. *(trace: hub.md §3, §11)*
 - **RM-P1-HUB-05** — **License + export-control download gating** (OPA against capability tags;
   tiered open vs. curated/verified namespaces). *(trace: hub.md §9; conventions §12; `LUNAR-SR-001`)*
-- **RM-P1-HUB-06** — **`astro-mine-hub` client/CLI** that resolves/verifies/pulls against *any* OCI
+- **RM-P1-HUB-06** — **`astro_mine.hub` client/CLI** that resolves/verifies/pulls against *any* OCI
   registry (so the local tier needs no hosted Hub). *(trace: hub.md §3, §7)*
 
 **Dependencies:** Core (`RM-P1-CORE-02`), Cloud (deploys on it). **Exit criteria:** a contributor
@@ -297,22 +304,22 @@ mission-architecture artifact types + `operational_targeting`-aware gating.
 ## Seal — the artifact-integrity companion
 
 > Architecture: [seal.md](../architecture/seal.md). A thin **Core companion** (the [Spice](../architecture/spice.md)
-> shape) added by [RFC-0005](../rfc/0005-seal-supply-chain-companion.md); the single home for
+> shape) added by [Seal](../architecture/seal.md); the single home for
 > `cryptography` (Core stays crypto-free). **Additive and non-urgent — must not gate the lunar MVP.**
 
 **Scope & deliverables**
 
 - **RM-P1-SEAL-01** — **Package scaffold**: the importable `astro_mine.seal` library, Core-pinned
   dependency wiring (and the one home for `cryptography`), and CI with a ≥95% coverage gate. The seed
-  for all `RM-P1-SEAL-*` feature work. *(trace: RFC-0005; conventions.md §2, §3)*
+  for all `RM-P1-SEAL-*` feature work. *(trace: seal.md; conventions.md §2, §3)*
 - **RM-P1-SEAL-02** — **Signer + cross-package conformance test**: `generate_keypair` / `sign_digest`
   / `verify_signature` / `make_verifier` (ECDSA **P-256**, `SIGSTORE_COSIGN` scheme) on Core's frozen
   `Signature`/`Verifier` surface, with a conformance test that **pins the signature bytes** for a known
-  digest+key so any drift turns CI red. *(trace: RFC-0005 §"The package"; seal.md §3, §9; `LUNAR-SR-002`)*
+  digest+key so any drift turns CI red. *(trace: seal.md §3, §9; `LUNAR-SR-002`)*
 - **RM-P1-SEAL-03** — **SLSA / SBOM / verify-twice relocation**: move Hub's `_attest.py` /
   `_supply_chain.py` (`build_slsa_provenance` / `build_cyclonedx_sbom` / `attest`; the verify-twice
   `verify` with `DEFAULT_REQUIRED = (signature, slsa, sbom)`) into Seal; Hub imports them from there,
-  behavior-preserving. *(trace: RFC-0005 §Sequencing; seal.md §3; hub.md §9)*
+  behavior-preserving. *(trace: seal.md §3; hub.md §9)*
 
 **Consumer migrations** — landing **signer-dedup first**, each adopts `astro_mine.seal` and **deletes
 its local signer copy**: [Guard](../architecture/guard.md) (`spec/signing.py`, from `RM-P1-GUARD-05`),
@@ -380,7 +387,7 @@ workload classes (no new primitive).
   store-and-forward `DeliveryModel`, the Earth-link Ops products, and the latency/bandwidth
   time-series carry typed `Epoch`/`EpochWindow` and record a `TimeScale` instead of scale-by-naming
   `*_tdb_s` floats; raw float columns stay only inside the numeric kernels. A representation change,
-  not a numerics change (the oracle path is untouched). *(trace: link.md §5; RFC-0007; conventions.md §5)*
+  not a numerics change (the oracle path is untouched). *(trace: link.md §5; conventions.md §5; conventions.md §5)*
 
 **Dependencies:** Link MVP (P0), Fleet relay assets. **Exit criteria:** a multi-relay constellation's
 time-varying coverage of the PSR work is modeled, masks/windows drive Allocate/Mind, and a Studio
@@ -398,7 +405,7 @@ live-mission link prediction (capability-gated). **Deferred → P3:** deep-space
   hash** (Hub-published) into a Sim `Scenario`, replacing the `RM-P0-SIM-11` inline reduced-order
   anchor. Sim resolves via Hub + Core manifests — no sibling-package import. *(trace: sim.md §3, §5; bench.md §5, §6)*
 - **RM-P1-SIM-02** — **ISRU extraction/storage support**: a reduced-order extraction/storage process
-  model + an ISRU-storage sensor (a new `RESOURCE_STORAGE` `SensorKind` via RFC — Core is frozen in
+  model + an ISRU-storage sensor (a new `RESOURCE_STORAGE` `SensorKind`, an additive Core change — Core is frozen in
   P0) reporting stored water (kg), unblocking Bench's `water_mass` / `energy_per_kg` metrics. *(trace: sim.md §1, §3; bench.md §3)*
 - **RM-P1-SIM-03** — **Error-budget-driven multi-fidelity scheduler**: upgrade the `RM-P0-SIM-05`
   rule-based scheduler to consume the [Surrogate](../architecture/surrogate.md) `ErrorReport` and
@@ -406,7 +413,7 @@ live-mission link prediction (capability-gated). **Deferred → P3:** deep-space
   surrogate.md §6; pairs with `RM-P1-SURR-04`)*
 - **RM-P1-SIM-04** — **Brax/MJX GPU-vectorized swarm-scale rollout**: a JAX (Brax/MJX) GPU-batched
   engine/rollout path behind the `RegimeEngine` framework for [Learn](../architecture/learn.md)
-  swarm-scale training, with Ray fan-out on Cloud. *(trace: sim.md §12; charter §8)*
+  swarm-scale training, with Ray fan-out on Cloud. *(trace: sim.md §12; charter §7)*
 - **RM-P1-SIM-05** — **Richer sensor models**: extend the `RM-P0-SIM-06` sensor suite with additional
   / higher-fidelity models, still rendering observations *of* Prospect fields (never a point guess).
   *(trace: sim.md §3; prospect.md §6)*
@@ -419,7 +426,7 @@ live-mission link prediction (capability-gated). **Deferred → P3:** deep-space
 
 **Dependencies:** `RM-P0-SIM-11`, Hub (publish/discover), the Hub-published Worlds/Fleet/Prospect
 bundles (`RM-P0-WORLDS-07` / `RM-P0-FLEET-06` / `RM-P0-PROSPECT-04`); `RM-P1-SIM-02` additionally a
-Core RFC for the `SensorKind`; `RM-P1-SIM-03`/`04` on [Surrogate](../architecture/surrogate.md)
+additive Core change for the `SensorKind`; `RM-P1-SIM-03`/`04` on [Surrogate](../architecture/surrogate.md)
 (`RM-P1-SURR-04`) + Cloud GPU (`RM-P1-CLOUD-01`). **Exit criteria:** the anchor's provisional content
 pins resolve to real Hub digests and a Sim run reproduces from them; a Sim run reports stored-water so
 Bench scores `water_mass`/`energy_per_kg`; the scheduler substitutes the Surrogate tier only within
@@ -434,7 +441,7 @@ its error budget. **Deferred → P3:** microgravity/small-body regimes; multi-sp
 - **RM-P1-WORLDS-10** — **GPU on-demand fine illumination + learned illumination surrogate**
   (co-designed with [Surrogate](../architecture/surrogate.md)) for swarm-scale queries. *(trace: worlds.md §11, §12)*
 - **RM-P1-WORLDS-11** — **Mars worlds (MOLA/HiRISE) + Martian frames + richer dust model** as the
-  first non-anchor body, validating "support a new world = a package, not a core change." *(trace: worlds.md §12; charter §10.2)*
+  first non-anchor body, validating "support a new world = a package, not a core change." *(trace: worlds.md §12; charter §9.2)*
 - **RM-P1-WORLDS-12** — **Full per-cell topocentric horizon maps**: replace the `RM-P0-WORLDS-03`
   grid-azimuth horizon approximation (and its grid-convergence correction) with a rigorous per-cell
   topocentric computation — a drop-in fidelity upgrade behind the same `IlluminationModel` API and
@@ -459,7 +466,7 @@ its error budget. **Deferred → P3:** microgravity/small-body regimes; multi-sp
 - **RM-P1-WORLDS-17** — **Pin `world.json` `crs` / `tiles_anchor.frame` to Core's units schema**:
   emit-time validation of the serialized CRS/frame objects against Core's canonical
   `units.schema.json`, typing the anchor frame as a Core `ReferenceFrame` and adopting `require_crs`
-  at the authoring boundary. *(trace: worlds.md §5; refines `RM-P1-CORE-08`; RFC-0007)*
+  at the authoring boundary. *(trace: worlds.md §5; refines `RM-P1-CORE-08`; conventions.md §5)*
 
 **Prospect**
 
@@ -480,7 +487,7 @@ its error budget. **Deferred → P3:** microgravity/small-body regimes; multi-sp
 - **RM-P1-PROSPECT-14** — **`PlanetaryCRS`/`ReferenceFrame` on the wire + schema-guarded ingest CRS**:
   add typed `ReferenceFrame`/`PlanetaryCRS` to `field_service.proto` (importing Core's `units.proto`)
   so a gRPC-served `ResourceField` carries its georeference, and replace the hand-rolled ingest
-  CRS-presence check with Core's `require_crs` guard. *(trace: prospect.md §6; RFC-0007; refines
+  CRS-presence check with Core's `require_crs` guard. *(trace: prospect.md §6; conventions.md §5; refines
   `RM-P1-CORE-08`)*
 
 **Dependencies:** P0 Worlds/Prospect, Surrogate, Cloud; `RM-P1-PROSPECT-12` on `RM-P1-WORLDS-14`
@@ -489,7 +496,8 @@ as plugins with no Core change; the EVPI objective is consumable by Allocate; th
 reproduces from cited public inputs and is Hub-published while the offline parametric default still
 runs with no network. **Deferred → P2:** operational belief from real *mission* sensors (Ops/Bridge).
 **Deferred → P3:** small/irregular-body Worlds; asteroid volatile fields + **multi-species /
-depth-resolved Prospect fields** (contract-widening, RFC-gated) — both as `RM-P3-PROSPECT-30`.
+depth-resolved Prospect fields** (contract-widening, and gated on a named consumer) — both as
+`RM-P3-PROSPECT-30`.
 
 ---
 
@@ -555,7 +563,7 @@ mapping. **Deferred → P3:** launch/return vehicle kinds + propulsion content.
   registry (never npmjs.com) + the Cesium asset-staging bin, tag-driven release. *(trace: view.md §3, §7, §12)*
 - **RM-P1-VIEW-06** — **Retire the `frames/` mirror**: alias Core's **generated** `TimeScale`/
   `FrameClass` types from `units.schema.json` (`satisfies`-tied, so a schema change breaks the build)
-  + run Core's units conformance vectors. *(trace: view.md §5, §3; refines `RM-P1-CORE-08`; RFC-0007)*
+  + run Core's units conformance vectors. *(trace: view.md §5, §3; refines `RM-P1-CORE-08`; conventions.md §5)*
 
 **Dependencies:** Worlds (tiles + `tiles_anchor`, `RM-P1-WORLDS-16`), Fleet (glTF geometry), Sim
 (MCAP), Core (generated units types, `RM-P1-CORE-08`). **Exit criteria:** Studio embeds the globe +

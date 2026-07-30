@@ -1,6 +1,7 @@
 # Astro-Mine-Ledger — Technology Architecture
 
-> Status: **Accepted** ([RFC-0001: Multi-regime missions](../rfc/0001-multi-regime-missions.md)) — implementation Phase 3.
+> Status: **Designed, not built** — the [multi-regime mission track](mission-model.md) lands in Phase 3.
+> Ships in: [`astro-mine-platform`](platform.md), as a new subpackage.
 > Layer: **Mission architecture & logistics** (NEW layer) · Phase: **3** (proposed)
 > Open techno-economic & logistics modeling — cost / value / risk under explicit uncertainty: the mission-level objective / value function for trade studies.
 > Cross-cutting standards: see [conventions.md](conventions.md).
@@ -45,7 +46,7 @@ trajectory designer ([Trajectory](trajectory.md)), and *not* the resource estima
 ([Prospect](prospect.md)); it *consumes* their outputs. It does not run the search loop (that is
 [Studio](studio.md)'s `designspace`) — it supplies the objective that loop optimizes. It is not an
 accounting/ERP system and holds no real financial ledgers; "Ledger" denotes the *value model*, not
-bookkeeping. It also advances the charter §8 research gap **"evaluation science for swarm
+bookkeeping. It also advances the charter §7 research gap **"evaluation science for swarm
 campaigns"** by extending "what does *good* mean" from per-episode swarm metrics up to **mission
 value** — co-owned with [Bench](bench.md).
 
@@ -85,7 +86,7 @@ proprietary layer that sustains the commons).
 6. **It is the objective, not the optimizer.** Ledger exposes a differentiable-where-possible
    `ValueModel`; [Studio](studio.md) and the OpenMDAO MDO graph *call* it as the objective.
    Search strategy, Pareto computation, and design-of-experiments live in [Studio](studio.md).
-7. **Library first.** An analyst can `pip install astro-mine-ledger`, load public CERs, feed a
+7. **Library first.** An analyst can `pip install astro-mine-cli`, load public CERs, feed a
    `MissionSpec` plus a Prospect field, and Monte-Carlo an ROI distribution on a laptop — before
    any service exists (conventions.md §1.4).
 8. **Composable accounting, traceable to source.** Mission value decomposes into per-phase,
@@ -172,7 +173,7 @@ against one consistent economic model; orchestrated over **NATS/JetStream** when
 
 - **Language:** **Python 3.12+** (conventions.md §2) — the techno-economic, MDO, and probabilistic-
   programming ecosystem is Python-native. Type-hinted, `mypy`/`pyright`-checked.
-- **Multidisciplinary optimization:** **OpenMDAO** (charter §7) — Ledger ships a `LedgerComponent`
+- **Multidisciplinary optimization:** **OpenMDAO** (charter §6) — Ledger ships a `LedgerComponent`
   that plugs in as the objective alongside [Sizing](sizing.md)'s sizing components, so fleet ⇄
   trajectory ⇄ economics co-optimize in one MDO graph with analytic/complex-step derivatives where
   available.
@@ -191,7 +192,7 @@ against one consistent economic model; orchestrated over **NATS/JetStream** when
   (conventions.md §3).
 - **Runtime model:** importable library; optional **FastAPI** (admin/REST) + **gRPC** objective
   service (conventions.md §3, §4).
-- **Build/packaging:** Python wheel `astro-mine-ledger`; OCI image for the objective service;
+- **Build/packaging:** ships in the [`astro-mine-platform`](platform.md) wheel; OCI image for the objective service;
   cost/value/price backends distributed as **OCI plugin artifacts**, **access-gated for proprietary
   models** (conventions.md §7, §12).
 
@@ -243,7 +244,7 @@ and is auditable for which cost assumptions produced a ranking.
 
 ## 6. Integration architecture
 
-Ledger sits in the **design/training loop** as the mission-level objective producer (charter §6),
+Ledger sits in the **design/training loop** as the mission-level objective producer (charter §5),
 plugging into siblings through [Core](core.md) contracts and the [mission-model](mission-model.md)
 `MissionSpec`:
 
@@ -266,7 +267,7 @@ plugging into siblings through [Core](core.md) contracts and the [mission-model]
   calls `ValueModel.evaluate` to score and **Pareto-rank** candidates against the mission value
   function; objectives/scalarizations Ledger publishes appear as Studio objectives.
 - **[Bench](bench.md) (provides mission-level metrics):** Ledger contributes **mission-level value
-  metrics** as Bench metric plugins — extending Bench's evaluation science (charter §8) from
+  metrics** as Bench metric plugins — extending Bench's evaluation science (charter §7) from
   per-episode swarm scores to whole-mission ROI/value-at-risk, with the same uncertainty-aware
   metric contract Bench already defines.
 - **[Hub](hub.md) (distributes):** public model bundles are published, discovered, and reused as
@@ -337,7 +338,7 @@ Performance claims ship with reproducible benchmarks (conventions.md §8).
 ## 9. Security, safety & compliance
 
 - **The commons / commercial boundary (the key property).** Ledger's open framework + public models
-  are squarely in the science/economics commons (Apache-2.0, charter §3, §10.4). **Proprietary cost
+  are squarely in the science/economics commons (Apache-2.0, charter §3, §9.4). **Proprietary cost
   databases, market/commodity price feeds, and ROI-tuning calibrations are partitioned into
   access-controlled plugins** in the commercial layer above the core — they are **never committed
   to the open repo and never hard-coded as constants**. This is enforced by [Core](core.md)
@@ -360,7 +361,7 @@ Performance claims ship with reproducible benchmarks (conventions.md §8).
   [EXPORT_CONTROL.md](https://github.com/astro-mine/.github/blob/main/EXPORT_CONTROL.md)). Economics
   is not itself export-sensitive; the sensitivity here is *commercial confidentiality*, handled by
   the same gating mechanism.
-- **Scientific & decision safety:** uncertainty must be **honest** (charter §9). An over-confident
+- **Scientific & decision safety:** uncertainty must be **honest** (charter §8). An over-confident
   ROI is a credibility hazard for an ISRU investment decision; calibration gates in CI guard against
   shipping mis-calibrated cost/value models, exactly as [Prospect](prospect.md) gates priors.
 
@@ -404,12 +405,12 @@ Performance claims ship with reproducible benchmarks (conventions.md §8).
 | Open-framework vs proprietary-data boundary | Bake economics into the commons; **open framework + generic public models, proprietary data as access-gated plugins**; close the whole component | **Open framework + public generic models; proprietary cost DBs / prices / ROI tuning as access-controlled [Hub](hub.md) plugins** above the core (charter §3). A public clone must run end-to-end. Never hard-code a private number. |
 | Resource-value coupling to [Prospect](prospect.md) | Use the resource **mean** only; **sample the resource posterior jointly** with cost/price; full EVPI on resource information | **Sample the [Prospect](prospect.md) belief posterior jointly** with cost/price so grade↔value correlation and ROI spread are correct; **EVPI** (value of better prospecting) as a research path tying Ledger value back to Prospect's info-gain objective (Prospect §11). |
 | Objective shape | **Single scalar** (e.g., weighted ROI); **multi-objective / Pareto** (cost, value, risk, schedule) | **Multi-objective by default**, feeding [Studio](studio.md)'s Pareto front; **scalarization is a caller-declared utility/weight recipe**, never baked in (principle §9). |
-| Optimization integration | Ledger drives its own optimizer; **expose an OpenMDAO component as the objective**; black-box callable only | **OpenMDAO `ExplicitComponent`** as the objective (charter §7), co-optimized in one MDO graph with [Sizing](sizing.md); also a plain `ValueModel.evaluate` callable for Studio's black-box `designspace` search. |
+| Optimization integration | Ledger drives its own optimizer; **expose an OpenMDAO component as the objective**; black-box callable only | **OpenMDAO `ExplicitComponent`** as the objective (charter §6), co-optimized in one MDO graph with [Sizing](sizing.md); also a plain `ValueModel.evaluate` callable for Studio's black-box `designspace` search. |
 | CER fitting method | Manual/literature coefficients; **classical regression fits**; hierarchical Bayesian fits | **Classical regression** for the dependency-light reference path; **hierarchical Bayesian (PyMC/NumPyro)** as a research plugin where residual structure and small-sample uncertainty warrant it; literature coefficients always cited. |
 
 **Open questions / research dependencies:**
 
-- *Evaluation science for mission value* (charter §8): what is the right mission-level objective —
+- *Evaluation science for mission value* (charter §7): what is the right mission-level objective —
   risk-adjusted NPV, expected delivered mass per dollar, value-at-risk — and how it composes with
   per-episode swarm metrics in [Bench](bench.md). Co-designed with [Bench](bench.md)/[Studio](studio.md).
 - *Coupling resource uncertainty to value of information*: formalizing **EVPI** so "is more
@@ -419,7 +420,7 @@ Performance claims ship with reproducible benchmarks (conventions.md §8).
   quantifying mis-specification risk for novel asteroid-mining architectures without proprietary
   data is itself a research problem (honest uncertainty over confident extrapolation).
 - *Where the commercial boundary sits exactly*: which calibrations are "generic enough" to be
-  commons vs. genuinely proprietary — a governance question resolved via the RFC process and
+  commons vs. genuinely proprietary — a governance question resolved in the open and
   EXPORT_CONTROL/commercial-layer policy, not unilaterally in code.
 - *Scalarization vs. true Pareto in co-optimization*: how tightly the MDO graph should encode a
   scalar objective vs. handing a multi-objective front to [Studio](studio.md) (mission-model §6).
@@ -428,7 +429,7 @@ Performance claims ship with reproducible benchmarks (conventions.md §8).
 
 ## 12. Roadmap alignment
 
-- **Phase 3 (proposed — gated on [RFC-0001](../rfc/0001-multi-regime-missions.md)).**
+- **Phase 3 (proposed — gated behind the lunar MVP; see [mission-model.md](mission-model.md)).**
   Ledger is part of the multi-regime/interplanetary extension and lands with its siblings
   ([Sizing](sizing.md), [Trajectory](trajectory.md)) once the [mission-model](mission-model.md)
   `MissionSpec`/`objective` schema hooks exist in Core. Initial deliverable:
@@ -450,4 +451,4 @@ Performance claims ship with reproducible benchmarks (conventions.md §8).
   richer reusable-asset/logistics modeling (depots, in-space refuelling cycles); the distributed
   objective service; and a maturing **commercial-plugin ecosystem** of proprietary cost/price models
   attaching above the open framework via [Hub](hub.md) — the charter's commercial layer sustaining
-  the commons (charter §3, §10.4).
+  the commons (charter §3, §9.4).

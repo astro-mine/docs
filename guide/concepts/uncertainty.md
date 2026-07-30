@@ -23,7 +23,7 @@ of the *prior* is not prospecting; it is guessing well.
 ### The sealed field is per scenario, not per seed
 
 **Sealing is per scenario.** Two runs of the same scenario at different seeds read against the *same*
-sealed field: the realization rides in the pinned bundle, and nothing on the `astro-mine-bench score
+sealed field: the realization rides in the pinned bundle, and nothing on the `astro-mine bench score
 --runner sim` path re-realizes it per episode. So a seed sweep over one scenario measures the
 policy's sensitivity to *its own* stochasticity, not to where the ice is — and the honest expectation
 for a scenario-independent metric like `information_gain` is **low or zero dispersion across seeds**,
@@ -48,7 +48,7 @@ world changes underneath it.
 A reading carries whether it is valid. Without a resource-field provider installed, prospecting
 sensors render `valid=False` — and the effect propagates honestly: `discovery_latency` never trips,
 and ISRU extraction sees no abundance. The run does not quietly score zeros as though the swarm
-looked and found nothing. That is why `astro-mine-bench score --runner sim` refuses rather than
+looked and found nothing. That is why `astro-mine bench score --runner sim` refuses rather than
 scoring blind ([tutorial 02 §2](../tutorials/02-run-it-in-the-simulator.md)).
 
 ## Not-applicable is a result

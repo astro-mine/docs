@@ -17,13 +17,27 @@ command appears below, and it is the one that starts the application.
 ## 1. Start Studio (UC-F7)
 
 ```bash
-uv pip install "./astro-mine-studio[serve]"
-
 # Build the UI. `serve` mounts a built directory; it does not build one.
 cd ui && pnpm install && pnpm run build:harness && cd ..
 
-astro-mine-studio serve --registry /path/to/hub-registry
+astro-mine studio serve --registry /path/to/hub-registry
 ```
+
+> **This tutorial is blocked today, and the command says so.** Studio's REST application was
+> deliberately not migrated into the platform wheel — it belongs to
+> [`astro-mine-api`](../../architecture/api.md), which is **not yet stood up**. `astro-mine studio
+> serve` therefore reports what is missing rather than failing obscurely:
+>
+> ```
+> astro-mine studio serve needs the Studio REST surface (astro_mine.studio.api), which is not
+> included in astro-mine-platform.
+> ```
+>
+> Everything below describes the shipped application and is accurate about what it does; you cannot
+> currently start it from a released distribution. It comes back with `RM-DIST-03`
+> ([roadmap](../../roadmap/README.md#the-distribution-track)); the command's install hint is wrong
+> meanwhile, filed as
+> [astro-mine-cli#19](https://github.com/astro-mine/astro-mine-cli/issues/19).
 
 Then one command composes the whole thing: the FastAPI backend, the Hub seams wired to your local
 OCI-layout registry, the built UI mounted, and **an example study seeded** so you land on a populated
@@ -79,7 +93,7 @@ setting inside a design tool; it is an object the rest of the platform can act o
 ## 4. Pick robots (UC-F2)
 
 The catalog is your Hub registry rendered as the robot menu — the same view
-`astro-mine-fleet catalog` prints, with capability tags. Capability tags are what make an asset
+`astro-mine fleet catalog` prints, with capability tags. Capability tags are what make an asset
 *usable*: they are Core's negotiation vocabulary, and an asset without them will never be assigned
 work ([tutorial 04](04-author-an-asset.md)).
 
@@ -226,7 +240,7 @@ orange-red glyphs and that status line.
 ## 8. Publish the campaign (UC-F6)
 
 Publishing writes a **Campaign** — a Core artifact kind
-([RFC-0008](../../rfc/0008-design-campaign-artifact-kinds.md)) — signed with `--signing-key` and
+([core.md](../../architecture/core.md)) — signed with `--signing-key` and
 content-addressed like everything else.
 
 That is the deliverable: not a screenshot in a slide deck, but an artifact carrying the objective,

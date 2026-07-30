@@ -1,6 +1,7 @@
 # Astro-Mine-Console — Technology Architecture
 
-> Layer: **Design & operations (the single GUI front door)** · Phase: **1** · Added by [RFC-0010](../rfc/0010-console-surface-contract.md) (+ Amendment 1)
+> Layer: **Design & operations (the single GUI front door)** · Phase: **1** · Ships in: [`astro-mine-ui`](ui.md)
+> This document is the console's design authority; [ui.md](ui.md) is the distribution it ships in.
 > One GUI, not an app per component — a thin, stable contract with thick, swappable edges.
 > Cross-cutting standards: see [conventions.md](conventions.md).
 
@@ -16,8 +17,10 @@ application that composes per-component **surfaces** into one navigable shell.
 It does, and only does:
 
 - **Compose surfaces.** Each component owns a surface package (`@astro-mine/bench-ui`,
-  `studio-ui`, `hub-ui`, …) published from its own repo; the console merges their navigation,
-  mounts their routes, and indexes their contributions.
+  `studio-ui`, `hub-ui`, …); the console merges their navigation, mounts their routes, and indexes
+  their contributions. Ownership is by *component*, not by repository — the surfaces live in the same
+  front-end workspace as the shell ([ui.md](ui.md) §4), and the layering check is what keeps
+  ownership honest, not a repository wall.
 - **Own the shell.** Navigation, routing, theming, the surface registry, the `InspectorSlot`
   resolver, and per-surface endpoint configuration.
 - **Ship the design system.** `@astro-mine/ui` — tokens, primitives, accessibility, light/dark —
@@ -52,7 +55,7 @@ narrow-waist discipline"*).
 
 ## 2. Architecture principles
 
-The first three are the normative layering rules of [RFC-0010](../rfc/0010-console-surface-contract.md),
+The first three are the normative layering rules of this document,
 each a transplant of an existing platform rule rather than a new invention.
 
 1. **`@astro-mine/surface` declares zero runtime dependencies.** Not "few" — zero. It is the GUI's
@@ -64,7 +67,7 @@ each a transplant of an existing platform rule rather than a new invention.
    contracts — and the direct analogue of *Bench must never import Sim*.
 3. **Nothing depends on `@astro-mine/console`.** The shell is the top of the graph: composed, never
    imported. This is what keeps the graph acyclic (§11).
-4. **The rules are enforced mechanically.** `scripts/check-layering.mjs` in `astro-mine-console`
+4. **The rules are enforced mechanically.** `scripts/check-layering.mjs` in `astro-mine-ui`
    fails the build on a manifest dependency on the console, a runtime dependency in `surface`, or a
    source import pointing sideways or up — type-only imports included, because a type dependency is
    still a direction in the layer graph. *A layering rule enforced only by review is a layering rule
@@ -77,8 +80,8 @@ each a transplant of an existing platform rule rather than a new invention.
    fixture-scored; uncertainty must render *as* uncertainty. These ship as shared components in
    `@astro-mine/ui` precisely so no surface has to re-invent honesty — or quietly skip it.
 7. **Adding a component to the GUI is publishing a package, not modifying the console.** If a new
-   surface needs a console change beyond its one registry line, the contract is wrong and RFC-0010
-   needs amending. Treat that as the design's acceptance test.
+   surface needs a console change beyond its one registry line, the contract is wrong and §3 needs
+   changing. Treat that as the design's acceptance test.
 8. **The architecture must not assume read-only.** Phase 1 is comparison and inspection, but the GUI
    grows to authoring, operations, and explanation. **Nothing may be GUI-unreachable by
    construction** — today's CLI-only personas are a prioritization, not a permanent split.
@@ -95,26 +98,31 @@ above it.
 @astro-mine/ui         design system — tokens, primitives, a11y, light/dark
 @astro-mine/view       domain viz primitives — globe, replay, timeline, frames   (exists)
         ↑
-@astro-mine/bench-ui · studio-ui · hub-ui        surfaces (owned by their component repos)
+@astro-mine/bench-ui · studio-ui · hub-ui        surfaces (one per component with a GUI face)
         ↑
 @astro-mine/console    the shell — nav, routing, surface registry, config
 ```
 
 ```
-astro-mine-console/                 (pnpm workspace; the repo root is private/unpublished)
+astro-mine-ui/                      (pnpm workspace; the root is private/unpublished)
 ├── packages/
-│   ├── surface/    @astro-mine/surface   the Surface + Contribution types, zero runtime deps
-│   ├── ui/         @astro-mine/ui        tokens, primitives, honesty components, chart layer
-│   └── console/    @astro-mine/console   shell, registry, InspectorSlot, runtime config
+│   ├── surface/       @astro-mine/surface   the Surface + Contribution types, zero runtime deps
+│   ├── ui/            @astro-mine/ui        tokens, primitives, honesty components, chart layer
+│   ├── view/          @astro-mine/view      globe, replay, timeline, frames
+│   └── <comp>-ui/     one per component with a GUI face
+├── apps/console/      @astro-mine/console   shell, registry, InspectorSlot, runtime config
 ├── design/                              the design system's source of truth
 │   ├── tokens/     tokens.json → generated tokens.css; three themes; PALETTE/CONTRAST records
 │   └── mockups/    static HTML mockups the tokens render (a design artifact, not the console)
 └── scripts/                             gates and generators (Node built-ins, zero deps, offline)
 ```
 
-**Surfaces do not live here.** Each component repo owns and publishes its own surface package, so
-**UI ownership follows component ownership** — `@astro-mine/hub-ui` ships from `astro-mine-hub`,
-`@astro-mine/bench-ui` from `astro-mine-bench`. The console takes them as dependencies.
+**UI ownership follows component ownership, and the check enforces it.** A surface is named for its
+component with a `-ui` suffix, and that suffix is what the layering check keys on to tell a surface
+from a library (`conventions.md` §13): a surface may depend on `surface`, `ui` and `view`, and never
+on another surface. Co-locating them was a deliberate correction — the check used to live beside the
+shell and could not see the packages it was actually about, and a contract change needed a publish
+before any surface could try it ([ui.md](ui.md) §4).
 
 ### Key abstractions
 
@@ -175,7 +183,7 @@ astro-mine-console/                 (pnpm workspace; the repo root is private/un
 
 ### Contributions are keyed by Core's vocabulary
 
-Reusing Core's existing closed, RFC-governed [`PluginKind`](core.md) rather than inventing a
+Reusing Core's existing closed, append-only [`PluginKind`](core.md) rather than inventing a
 UI-side vocabulary is the whole trick: it is what makes *contribute once, use everywhere*
 (`conventions.md` §1.2) hold in the GUI, and it costs Core nothing.
 
@@ -222,8 +230,9 @@ under-modelled.
 - **A new inspector for an existing artifact kind** — declare a `Contribution`; no console change,
   and no coordination with the surface that renders the slot.
 - **A new slot** — additive to `SlotId` in `@astro-mine/surface`.
-- **A new `PluginKind`** — **not** an extension point here. That is a Core RFC, and an amendment to
-  RFC-0010. The console must never become a back door for widening the waist.
+- **A new `PluginKind`** — **not** an extension point here. That is a Core change, argued from a
+  named consumer, and a change to the contract in §3. The console must never become a back door for
+  widening the waist.
 
 ---
 
@@ -238,7 +247,7 @@ The stack is **not this component's to choose** — it is the platform front-end
   without the surface knowing where.
 - **No data-fetching or client-cache library.** The platform ships none; each surface receives an
   injected client and uses `fetch` with the design system's `AsyncState` primitive. Adding a cache
-  layer is an RFC, not an import.
+  layer is a deliberate change to the front-end baseline, not an import in one surface.
 - **visx + `d3-scale`** for charts, owned by `@astro-mine/ui`. Chosen because it enforces the
   discipline *by the API rather than by care*: a second y-axis is unrepresentable, and a value with
   no uncertainty bound renders as an open mark by construction. Parallel coordinates is the one form
@@ -271,7 +280,7 @@ The console **owns almost no data** — it is a shell.
   `astro_mine.core.SCHEMA_DIGEST`; `ArtifactKind` carries the same obligation against Hub's source
   of truth. **Both guards MUST fail hard when their token or upstream is absent. A drift guard that
   skips is not a guard.**
-- **Units and frames** are rendered as declared, never inferred (`conventions.md` §5, RFC-0007).
+- **Units and frames** are rendered as declared, never inferred (`conventions.md` §5).
 
 ---
 
@@ -309,14 +318,17 @@ receives its own injected client and talks to its own component's existing FastA
 - **Endpoint configuration MUST be settable without a rebuild.** A static bundle with backend URLs
   baked in at build time is deployable only by its builder. Configuration is fetched at boot, not
   compiled in.
-- **Distribution.** `@astro-mine/surface` and `@astro-mine/ui` publish to npm under the
-  `@astro-mine` scope (`conventions.md` §7, §13); `@astro-mine/console` is an application build and
-  is not published as a library. Versioning follows `VERSIONING.md` §2.0 (npm packages).
+- **Distribution.** The libraries publish to npm under the `@astro-mine` scope
+  (`conventions.md` §7, §13); `@astro-mine/console` is an application build and is not published as a
+  library. Versioning is the front-end distribution's, not the shell's — see
+  [VERSIONING.md](../VERSIONING.md) and [ui.md](ui.md) §6.
 
-> **Open precondition for external adoption.** [`@astro-mine/view`](view.md) publishes to private
-> GitHub Packages behind a token, so any dependency on it makes the console uninstallable by an
-> outsider — the audience it exists for. The console deliberately takes **no `view` dependency
-> until it needs one**; resolving the distribution question is tracked in `astro-mine-view`.
+> **Open precondition for external adoption.** The front-end libraries currently publish to a
+> **private** registry behind a token, so a dependency on any of them makes the console
+> uninstallable by an outsider — the audience it exists for. Inside one workspace this no longer
+> blocks *development* (a surface consumes `view` by workspace link, not by published version), but
+> it still blocks an outside party from building a surface of their own, and that is exactly what the
+> `Surface` contract exists to enable. Resolving it is gated on the public flip.
 
 ---
 
@@ -381,11 +393,11 @@ have:
 
 | Decision | Options | Recommendation |
 |---|---|---|
-| **Where the shell lives** | Inside [View](view.md)'s reserved `app/`; a new leaf repo; a monolith owning all UI | **A new leaf repo.** View's `app/` closes a cycle: `view.md` §6 embeds View's library in Studio and §2.4 makes Studio and Ops peers, so `studio-ui → view` holds by View's own design, and a shell inside View that hosts Studio's surface closes `view → studio-ui → view`. **View's `app/` is descoped;** View stays a leaf. A monolith breaks component ownership and is the god-interface shape this design exists to prevent. |
+| **Where the shell lives** | Inside [View](view.md)'s reserved `app/`; a leaf package above every surface; a monolith owning all UI | **A leaf package above every surface** — originally a repo of its own, now an app in the front-end workspace, which changes where it sits on disk and nothing about the layering.** View's `app/` closes a cycle: `view.md` §6 embeds View's library in Studio and §2.4 makes Studio and Ops peers, so `studio-ui → view` holds by View's own design, and a shell inside View that hosts Studio's surface closes `view → studio-ui → view`. **View's `app/` is descoped;** View stays a leaf. A monolith breaks component ownership and is the god-interface shape this design exists to prevent. |
 | **Composition** | Build-time; runtime module federation | **Build-time** — federation fetches remotes over a network at load (breaks CX-LOCAL) and independently-built remotes fight CX-REPRO. Additive later behind the same contract. |
-| **Contribution key** | `PluginKind` alone; Hub's `ARTIFACT_KINDS` alone; a new UI-side vocabulary; **kind + discriminators** | **`PluginKind` required, `artifactKind` and an attribute predicate optional, resolved by specificity.** Kind alone mis-routes the `field_model` collision; the container vocabulary is coarse, Hub-owned, and null for anything not published through Hub — the right *discriminator*, the wrong *key*; a fourth vocabulary would repeat [RFC-0008](../rfc/0008-design-campaign-artifact-kinds.md)'s reconciliation debt. |
+| **Contribution key** | `PluginKind` alone; Hub's `ARTIFACT_KINDS` alone; a new UI-side vocabulary; **kind + discriminators** | **`PluginKind` required, `artifactKind` and an attribute predicate optional, resolved by specificity.** Kind alone mis-routes the `field_model` collision; the container vocabulary is coarse, Hub-owned, and null for anything not published through Hub — the right *discriminator*, the wrong *key*; a fourth vocabulary would repeat [core.md](core.md)'s reconciliation debt. |
 | **Backends** | Per-surface base URLs; a unified REST gateway | **Per-surface base URLs**, no new API surface. A gateway is Phase 2 at the earliest. |
-| **Package split** | `surface` + `ui` + `view`; one `@astro-mine/common` | **The split.** A grab-bag becomes a dependency magnet with no single reason to change — the reason [RFC-0005](../rfc/0005-seal-supply-chain-companion.md) rejected `astro-mine-common`. Each package here has exactly one reason to change, and none is so narrow it forces a rename within a phase. |
+| **Package split** | `surface` + `ui` + `view`; one `@astro-mine/common` | **The split.** A grab-bag becomes a dependency magnet with no single reason to change — the same reason the platform has a focused [Seal](seal.md) companion rather than a `common` package. Each package here has exactly one reason to change, and none is so narrow it forces a rename within a phase. |
 | **Charts** | **visx + d3-scale**; Plotly | **visx** (`conventions.md` §2.1). Plotly is Studio's incumbent and ~1 MB under CX-LOCAL, and its defaults coerce a null bound to `0` — drawing a zero-length error bar that asserts a precision never measured. |
 | **Adopt OpenMCT as the console** | Yes; no | **No, for Phase 1, without prejudice.** Charter §6/§9.5 name OpenMCT for mission control and mandate bridging rather than competing — and that remains the plan for the **operations** console in Phase 2. OpenMCT is a telemetry-dashboard framework; Phase 1's need is design-time comparison, artifact inspection, and a leaderboard. |
 
@@ -407,15 +419,20 @@ have:
 
 ## 12. Roadmap alignment
 
-- **Phase 1, Wave 23 — the foundation.** `@astro-mine/surface` (the contract), the design pass,
-  `@astro-mine/ui` (the design system), then `@astro-mine/console` (the shell). The contract lands
-  **before** the surfaces exist, on purpose: reserve the hooks while the waist is soft — the
-  [RFC-0001](../rfc/0001-multi-regime-missions.md) argument one layer up. Retrofitting a shell
+- **Phase 1 — the foundation, shipped.** `@astro-mine/surface` (the contract), the design pass,
+  `@astro-mine/ui` (the design system), then `@astro-mine/console` (the shell). The contract landed
+  **before** the surfaces existed, on purpose: reserve the hooks while the waist is soft — the same
+  argument as the [multi-regime](mission-model.md) schema hooks one layer up. Retrofitting a shell
   around three grown-up applications later is precisely the *"leaky, ever-growing god-interface"*
   failure charter §8 warns against.
-- **Phase 1, Wave 24 — the surfaces.** `@astro-mine/bench-ui` (the leaderboard — Bench owns the
+- **Phase 1 — the surfaces, shipped.** `@astro-mine/bench-ui` (the leaderboard — Bench owns the
   surface and *uses* View's replay primitives), `@astro-mine/studio-ui`, `@astro-mine/hub-ui`, and
-  the retirement of Hub's Pico CSS and Studio's ad-hoc CSS onto `@astro-mine/ui`.
+  the retirement of Hub's Pico CSS and Studio's ad-hoc CSS onto `@astro-mine/ui`. Building the first
+  real surface is what found three shell and design-system defects the rest would have hit in turn —
+  the argument for one workspace, made by experiment ([ui.md](ui.md) §4).
+- **Next — the distribution.** Move the five package trees into `astro-mine-ui`, extend the layering
+  check to the surfaces it was always about, and replace build-time composition from published
+  versions with workspace links ([ui.md](ui.md) §9).
 - **Phase 2 — operations.** The ops console, live telemetry, the plan-explanation UI, and OpenMCT
   dashboards land with [Ops](ops.md) and [View](view.md). View's `telemetry/` barrel is a deliberate
   `export {}` stub today, and it is correct that it is empty. A unified REST gateway, if it is ever
@@ -424,8 +441,7 @@ have:
 
 **The design must not preclude any of these. It must not attempt them.**
 
-> **Implementation status.** As of RFC-0010's acceptance the repo is stood up — pnpm workspace, CI,
-> the layering check, the design pass (tokens, three themes, mockups) and its gates — and the three
-> package slots hold honest placeholders. The contract, the design system, and the shell are Wave-23
-> work in progress. This document describes the **accepted design**, not shipped code; where the two
-> differ today, the code is behind.
+> **Implementation status.** The contract, the design system, the shell and three real surfaces
+> ship and run. What is not done is the *distribution*: the packages are still spread across the
+> repositories they were written in, and `astro-mine-ui` does not exist yet ([ui.md](ui.md)). Where
+> this document and the code differ, it is on where files live, not on what the design is.

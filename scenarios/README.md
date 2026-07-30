@@ -1,10 +1,10 @@
 # Astro-Mine — Flagship Scenarios
 
-> **Status:** Phase-0 draft. These are the **authoritative, high-level scenario documents
+> **Status:** Normative. These are the **authoritative, high-level scenario documents
 > that drive requirements** — the layer between the [project charter](../charter/Swarm_Exploration_ISRU_Orchestrator_OSS_Project.md)'s
 > vision and the per-component [technology architecture](../architecture/README.md). They are
-> derived from, and must stay aligned with, the charter, [RFC-0001](../rfc/0001-multi-regime-missions.md),
-> and `architecture/`.
+> derived from, and must stay aligned with, the charter and `architecture/`. Scenario 1 is built and
+> shipping; scenario 2 is a Phase-3 design.
 
 A **scenario** is a concrete, measurable mission the platform must be able to design, simulate,
 score, and (eventually) operate end to end. Scenarios turn the charter's ambition into testable
@@ -26,7 +26,7 @@ nearly every component and both the design and operations loops.
 
 Scenario 1 is the **Phase-0 anchor** the whole MVP is built to run; Scenario 2 is the **Phase-3
 capstone**, modeled at baseline as a **NEO rendezvous + sample-return** mission — the named
-stepping-stone toward full asteroid mining ([RFC-0001](../rfc/0001-multi-regime-missions.md) R5).
+stepping-stone toward full asteroid mining ([mission-model](../architecture/mission-model.md) §3).
 A single-`surface`-phase Mission (Scenario 1) is the degenerate one-phase case of the
 Mission/Phase/Regime model, so the two are points on one continuum, not different systems.
 
@@ -44,7 +44,7 @@ charter (vision)
 Both scenario documents follow one **shared section template**, mirroring the shared-template
 convention already used in [`architecture/`](../architecture/README.md). Each carries an H1
 title and a header blockquote (scenario id · anchor body · regime(s) · roadmap phase · status ·
-links to charter / RFC-0001 / architecture), then:
+links to charter / architecture), then:
 
 1. **Summary** — one-paragraph elevator description.
 2. **Strategic rationale** — why this is a flagship scenario, what capability it proves, who it serves.
@@ -54,7 +54,7 @@ links to charter / RFC-0001 / architecture), then:
 6. **Fleet & assets** — the heterogeneous robots/spacecraft, roles, key declared SADF capabilities, scale, reusable-LEO inventory.
 7. **Concept of operations (ConOps)** — narrative walkthrough of the *mission* unfolding.
 8. **Design & operation workflows** — complete, end-to-end description of how the *platform* is used to design and to run the scenario, in both modes.
-9. **Hard problems exercised** — which charter §7 (research) and §8 (engineering) problems the scenario stresses.
+9. **Hard problems exercised** — which charter §6 (research) and §8 (engineering) problems the scenario stresses.
 10. **Constraints & assumptions** — power, comms, thermal, Δv, schedule, microgravity, export-control + explicit modeling assumptions.
 11. **Components exercised** — per-package mapping: what the scenario demands of each `Astro-Mine-*` component.
 12. **Derived requirements** — the authoritative, traceable requirements, in four parts: **functional & technical**, **UX / high-level workflows**, **data**, and **security**.

@@ -30,8 +30,7 @@ planner means editing one line, not forking anything.
 ## 2. See what ships
 
 ```bash
-uv pip install ./astro-mine-mind ./astro-mine-guard
-astro-mine-mind stacks
+astro-mine mind stacks
 ```
 
 ```
@@ -64,7 +63,7 @@ Six stacks, and each demonstrates one thing — **choose between them rather tha
 ## 3. Validate and compose (UC-E1, UC-E2)
 
 ```bash
-astro-mine-mind validate lunar_prospecting.yaml
+astro-mine mind validate lunar_prospecting.yaml
 ```
 
 ```
@@ -72,7 +71,7 @@ OK  lunar_prospecting.yaml: valid stack 'reference-lunar-prospecting' (3 tiers)
 ```
 
 > A bare reference-stack name resolves against the shipped set — **including the `.yaml` suffix**,
-> exactly as `astro-mine-mind stacks` prints it. `lunar_prospecting` without the suffix is read as a
+> exactly as `astro-mine mind stacks` prints it. `lunar_prospecting` without the suffix is read as a
 > file path and fails with `cannot read file`.
 
 **`validate` is schema plus registry.** It checks the document *and* that every plugin it names is
@@ -80,7 +79,7 @@ actually registered. A stack referencing a tier nobody installed fails here, not
 at runtime.
 
 ```bash
-astro-mine-mind compose lunar_prospecting.yaml
+astro-mine mind compose lunar_prospecting.yaml
 ```
 
 ```
@@ -113,8 +112,8 @@ text = files("astro_mine.mind.reference").joinpath("stacks/lunar_prospecting.yam
 Path("my-stack.yaml").write_text(text)   # -> 1059 chars
 PY
 # edit my-stack.yaml: point `tamp` at your plugin id
-astro-mine-mind validate my-stack.yaml
-astro-mine-mind compose my-stack.yaml
+astro-mine mind validate my-stack.yaml
+astro-mine mind compose my-stack.yaml
 ```
 
 Reading the file rather than `load_stack_resource(...)` is deliberate: that function returns a
@@ -135,13 +134,13 @@ monitors, admissible modes and tasks, and a safe pose. Guard ships the anchor sp
 data**, so it is reachable from an installed wheel:
 
 ```
-astro-mine-guard/src/astro_mine/guard/reference/safety_specs/anchor.safety.yaml
+astro-mine-platform/src/astro_mine/guard/reference/safety_specs/anchor.safety.yaml
 ```
 
 Pass `anchor` to any of the four Guard subcommands to use it:
 
 ```bash
-astro-mine-guard validate anchor
+astro-mine guard validate anchor
 ```
 
 ```
@@ -149,7 +148,7 @@ OK  safety_specs/anchor.safety.yaml: valid SafetySpec anchor-lunar-polar-v0 (sha
 ```
 
 ```bash
-astro-mine-guard compile anchor
+astro-mine guard compile anchor
 ```
 
 ```
@@ -173,8 +172,8 @@ temporal monitors over a 1,209,600-sample window — a 14-day lunar night — fo
 thermal survival.
 
 ```bash
-astro-mine-guard falsify anchor      # seeded adversarial search for a counterexample
-astro-mine-guard sign anchor         # sign the spec's content hash (offline dev signer)
+astro-mine guard falsify anchor      # seeded adversarial search for a counterexample
+astro-mine guard sign anchor         # sign the spec's content hash (offline dev signer)
 ```
 
 ```
@@ -203,10 +202,10 @@ runs end to end on your own contract:
 
 ```bash
 astro-mine new safety my.safety.yaml
-astro-mine-guard validate my.safety.yaml
-astro-mine-guard compile  my.safety.yaml
-astro-mine-guard falsify  my.safety.yaml --trials 3
-astro-mine-guard sign     my.safety.yaml
+astro-mine guard validate my.safety.yaml
+astro-mine guard compile  my.safety.yaml
+astro-mine guard falsify  my.safety.yaml --trials 3
+astro-mine guard sign     my.safety.yaml
 ```
 
 ```
@@ -240,7 +239,7 @@ Sim's job; Mind importing Sim would put an engine dependency behind the planning
 Bench and Sim's:
 
 ```bash
-astro-mine-bench score lunar-polar-ice-prospecting-v1 --runner sim --seeds 1001 1002 1003 1004 1005
+astro-mine bench score lunar-polar-ice-prospecting-v1 --runner sim --seeds 1001 1002 1003 1004 1005
 ```
 
 (with `$ASTRO_MINE_SPICE_METAKERNEL` set — see [tutorial 02 §3](02-run-it-in-the-simulator.md)).
@@ -250,8 +249,8 @@ That is the whole point of the exercise: your stack and the reference baseline a
 hashes differ only because the runs differ. *"I can prove it's better"* is a comparison of two
 scorecards, and the pins are what make the comparison mean anything.
 
-> **UC-E3 has no single command today.** There is no `astro-mine-mind run` — a Sim-backed one is
-> tracked in [astro-mine-mind#25](https://github.com/astro-mine/astro-mine-mind/issues/25). Until it
+> **UC-E3 has no single command today.** There is no `astro-mine mind run` — a Sim-backed one is
+> tracked as an open Mind issue (the `mind run` verb's scope). Until it
 > lands, the hop through Bench/Sim above is the path.
 
 ---

@@ -16,8 +16,8 @@ A SADF asset declares multi-fidelity profiles, coarse to fine:
 | `articulated` | the full articulated body |
 
 ```bash
-astro-mine-fleet fidelity <asset.sadf.yaml>          # list an asset's profiles
-astro-mine-fleet render <asset> --fidelity kinematic # pick the LOD for a preview
+astro-mine fleet fidelity <asset.sadf.yaml>          # list an asset's profiles
+astro-mine fleet render <asset> --fidelity kinematic # pick the LOD for a preview
 ```
 
 A run selects the coarsest profile that answers the question. A survey mission over 43,200 ticks
@@ -36,14 +36,14 @@ no physics at all. See [scenarios](scenarios.md) and
 
 ## 3. Surrogates
 
-`astro-mine-surrogate` provides learned fast-physics tiers with **tracked error bounds**. A
+`astro_mine.surrogate` provides learned fast-physics tiers with **tracked error bounds**. A
 surrogate is only usable if it can state how wrong it is; a fast model with unknown error is not a
 fidelity tier, it is a guess.
 
 Training exposes this as an explicit choice:
 
 ```bash
-astro-mine-learn --fidelity {sim_high,surrogate,gpu_vectorized} ...
+astro-mine learn --fidelity {sim_high,surrogate,gpu_vectorized} ...
 ```
 
 - `sim_high` — the real engine. Slow, accurate.
@@ -61,9 +61,9 @@ Across the platform, a lower-fidelity or unavailable path **says so visibly** ra
 substituting:
 
 - A scorecard names its `runner`, and the CLI prints a banner when the fixture produced it.
-- `astro-mine-bench score --runner sim` **refuses** when a pinned provider did not rebuild, rather
+- `astro-mine bench score --runner sim` **refuses** when a pinned provider did not rebuild, rather
   than scoring blind.
-- `astro-mine-fleet render` labels an inertia-equivalent proxy box as a proxy, per link, and stamps
+- `astro-mine fleet render` labels an inertia-equivalent proxy box as a proxy, per link, and stamps
   the output `lossy`.
 - A console surface with unmet capabilities **degrades visibly**, never blank.
 

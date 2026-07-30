@@ -1,6 +1,7 @@
 # Astro-Mine-Sizing — Technology Architecture
 
-> Status: **Accepted** ([RFC-0001: Multi-regime missions](../rfc/0001-multi-regime-missions.md)) — implementation Phase 3.
+> Status: **Designed, not built** — the [multi-regime mission track](mission-model.md) lands in Phase 3.
+> Ships in: [`astro-mine-platform`](platform.md), as a new subpackage.
 > Layer: **Mission architecture & logistics (NEW layer)** · Phase: **3** (proposed)
 > Spacecraft & payload systems-engineering sizing: mass/power/propellant/staging budgets, payload packing, launch manifesting, reusable-LEO accounting.
 > Cross-cutting standards: see [conventions.md](conventions.md).
@@ -49,7 +50,7 @@ sized in isolation.
 publishing subsystem models; campaign designers who need a believable, closed vehicle set before
 committing simulation compute.
 
-**Charter alignment:** charter §7 (leverage mature foundations — OpenMDAO, parametric SE models),
+**Charter alignment:** charter §6 (leverage mature foundations — OpenMDAO, parametric SE models),
 §9 ("a durable abstraction across orbital, surface, manipulation, and ISRU"; "heterogeneity without
 abstraction collapse" — Sizing must close budgets for orbiters *and* excavators alike), and the
 multi-regime extension ([mission-model](mission-model.md)).
@@ -61,7 +62,7 @@ multi-regime extension ([mission-model](mission-model.md)).
 1. **Produce SADF, never widen it.** Sizing's output is a *valid, sized* SADF configuration against
    the current Core schema — including the propulsion/staging/return blocks from
    [mission-model §2.1](mission-model.md). If a sized result cannot be expressed in SADF, the
-   response is a Core RFC, never a private side-channel (conventions.md §1, §3; mirrors
+   response is an additive Core change, never a private side-channel (conventions.md §1, §3; mirrors
    [Fleet](fleet.md) principle 1).
 2. **Sizing closes budgets; it does not simulate them.** Every quantity Sizing reports is a
    *design-time estimate with explicit uncertainty*. The authoritative check is
@@ -168,7 +169,7 @@ never sits on a simulation or operations hot path.
   **Rust** path is *optional* only for a future fast packing/bin-fit kernel if it ever bottlenecks
   large sweeps.
 - **MDAO backbone.** **OpenMDAO** (NASA's open-source multidisciplinary design analysis &
-  optimization framework, charter §7) is the recommended backbone: it provides the component model,
+  optimization framework, charter §6) is the recommended backbone: it provides the component model,
   analytic/coupled derivatives, Newton/nonlinear-block-Gauss-Seidel solvers for converging coupled
   subsystems, and a driver interface to gradient (SLSQP/SciPy, pyOptSparse/SNOPT) and gradient-free
   (DOE, genetic) optimizers. Its derivative machinery is what makes coupled trajectory⇄vehicle
@@ -176,15 +177,15 @@ never sits on a simulation or operations hot path.
 - **Numerics & libraries.** **NumPy/SciPy** for the MERs and rocket-equation math;
   **Pydantic v2** typed models generated from the Core/mission `MissionSpec`/`ManeuverBudget` JSON
   Schema (`datamodel-code-generator`); `jsonschema` for boundary validation (conventions.md §3).
-  Bin-packing/stowage via a constraint solver (**OR-Tools CP-SAT**, charter §7) where geometric
+  Bin-packing/stowage via a constraint solver (**OR-Tools CP-SAT**, charter §6) where geometric
   packing is non-trivial.
 - **SADF emit.** Reuses [Fleet](fleet.md)'s authoring helpers and Core SADF Pydantic types so a
   `SizedConfiguration` produces a *valid* SADF document that [Fleet](fleet.md) lints and packages —
   Sizing does not re-implement SADF serialization.
-- **Build/packaging.** Python wheel `astro-mine-sizing` (import `astro_mine.sizing`,
-  conventions.md §13); **SemVer**. Subsystem-model and launch-curve *data* are versioned and
-  distributed independently as **OCI artifacts** via [Hub](hub.md) (conventions.md §7), so model
-  updates don't require a toolchain release.
+- **Build/packaging.** Ships in the [`astro-mine-platform`](platform.md) wheel as
+  `astro_mine.sizing` (conventions.md §13). Subsystem-model and launch-curve *data* are versioned and
+  distributed independently as **OCI artifacts** via [Hub](hub.md) (conventions.md §7), so a model
+  update is not a code release.
 
 ---
 
@@ -246,7 +247,7 @@ asset content. Every integration crosses a [Core](core.md) contract — no priva
 - **[Cloud](cloud.md):** heavy MDO sweeps (DOE, multi-objective fronts) fan out here
   (conventions.md §7).
 - **[Hub](hub.md):** subsystem models, MER sets, and launch curves are **published/discovered** as
-  signed OCI artifacts; sized reference designs are shared for reuse (charter §5.7).
+  signed OCI artifacts; sized reference designs are shared for reuse (charter §4.7).
 - **[Surrogate](surrogate.md):** optionally provides fast surrogates of expensive subsystem physics
   to keep large MDO sweeps interactive (conventions.md §8 multi-fidelity).
 
@@ -353,17 +354,17 @@ asset content. Every integration crosses a [Core](core.md) contract — no priva
 
 | Decision | Options | Recommendation |
 |---|---|---|
-| MDAO framework | **OpenMDAO**; Dakota (Sandia); custom MDO loop | **OpenMDAO** — NASA-native, charter §7; analytic/coupled derivatives, mature solver+driver ecosystem, Python-native (conventions.md §2). Dakota is a strong gradient-free sampler but is C++-centric and less natural for coupled-derivative SE; reach for it only as an external DOE/UQ driver. A custom loop reinvents the waist. |
+| MDAO framework | **OpenMDAO**; Dakota (Sandia); custom MDO loop | **OpenMDAO** — NASA-native, charter §6; analytic/coupled derivatives, mature solver+driver ecosystem, Python-native (conventions.md §2). Dakota is a strong gradient-free sampler but is C++-centric and less natural for coupled-derivative SE; reach for it only as an external DOE/UQ driver. A custom loop reinvents the waist. |
 | Subsystem-model fidelity | Parametric MERs only; physics-based models only; **tiered MERs + optional physics/[Surrogate](surrogate.md)** | **Tiered: parametric MERs as the default for breadth and speed, with physics-based subsystem models (or [Surrogate](surrogate.md)) selectable per trade where sensitivity demands** — matches multi-fidelity (conventions.md §8) and keeps sweeps interactive |
 | Trajectory↔sizing coupling | Sequential (Δv→sizing); **sequential default + fully-coupled MDO for final trades**; always fully coupled | **Sequential Δv→sizing as the default** (consume a fixed `ManeuverBudget`), with **fully-coupled trajectory⇄vehicle MDO available for final co-optimization** in [Studio](studio.md)'s Mission Architect — avoids re-running [Trajectory](trajectory.md) every iteration while still capturing the coupling where it pays off (a low-thrust trade where Δv and vehicle mass are inseparable) |
 | Writing sized configs as SADF | New Sizing-private format; annotate Fleet asset in place; **emit a SADF patch against a [Fleet](fleet.md) parametric template** | **Emit a validated SADF patch that parameterizes an existing [Fleet](fleet.md) template** (propulsion/staging/return per [mission-model §2.1](mission-model.md)) — Sizing produces, Fleet holds; no private format, waist stays neutral (conventions.md §1, §3) |
 | Reusable-LEO inventory | Fixed assets only; design variables only; **fixed-by-default, optionally promotable to design variables** | **Treat reusable-LEO assets as fixed inventory by default** (Fleet members with an initial in-orbit state, [mission-model §2.1](mission-model.md)), **promotable to MDO design variables** when the trade asks "what *should* we keep in LEO?" — covers both "use what we have" and "design the depot" without two code paths |
 | Launch manifesting | Single LV curve; **pluggable mass-to-orbit + fairing-volume curves with multi-launch split** | **Pluggable launch-vehicle data plugins (mass-to-orbit vs. orbit + fairing envelope), with packing/multi-launch split** — new launchers arrive as data, not code (conventions.md §1) |
-| Payload packing | Mass-only budgets; **mass + geometric volume packing (OR-Tools CP-SAT)** | **Mass budgets always; geometric fairing/stowage packing via OR-Tools CP-SAT** (charter §7) where volume, not mass, is the binding constraint |
+| Payload packing | Mass-only budgets; **mass + geometric volume packing (OR-Tools CP-SAT)** | **Mass budgets always; geometric fairing/stowage packing via OR-Tools CP-SAT** (charter §6) where volume, not mass, is the binding constraint |
 
 **Open questions / research dependencies:**
 
-- **Coupling depth (charter §9 "durable abstraction"):** exactly which trades justify fully-coupled
+- **Coupling depth (charter §8 "durable abstraction"):** exactly which trades justify fully-coupled
   trajectory⇄vehicle MDO over sequential, and how much of that coupling [mission-model](mission-model.md)
   should encode vs. leave to [Studio](studio.md)'s trade engine ([mission-model §6](mission-model.md)).
 - **MER calibration for novel regimes:** mass-estimating relationships for asteroid-mining and ISRU
@@ -371,11 +372,11 @@ asset content. Every integration crosses a [Core](core.md) contract — no priva
   [Sim](sim.md) and published references, flag extrapolation beyond the fitted envelope.
 - **ISRU throughput → plant sizing:** the map from mining/throughput requirement to plant mass/power
   is the least-settled subsystem model and couples to the charter's hardest physics
-  (granular/excavation, charter §9) — co-design with [Sim](sim.md)/[Surrogate](surrogate.md).
+  (granular/excavation, charter §8) — co-design with [Sim](sim.md)/[Surrogate](surrogate.md).
 - **Uncertainty propagation:** how to report a closure *probability* (margins-as-distributions)
   through coupled MDO without making every sweep a Monte-Carlo (conventions.md §6).
 - **SADF expressiveness for staging/return:** whether the [mission-model §2.1](mission-model.md)
-  propulsion/staging blocks fully capture drop-mass bookkeeping across phases, or need a Core RFC.
+  propulsion/staging blocks fully capture drop-mass bookkeeping across phases, or need a Core change.
 
 ---
 

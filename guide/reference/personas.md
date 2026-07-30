@@ -23,7 +23,7 @@ Friday."*
 | | |
 |---|---|
 | **Tutorials** | [01 — score the anchor](../tutorials/01-score-the-anchor.md) → [02 — run it in the simulator](../tutorials/02-run-it-in-the-simulator.md) → [03 — train and publish a policy](../tutorials/03-train-and-publish-a-policy.md) |
-| **Commands** | `astro-mine-bench list` · `fetch` · `score --runner sim` · `submit` · `astro-mine-learn --export` · `astro-mine-sim run` · `astro-mine-hub publish` |
+| **Commands** | `astro-mine bench list` · `fetch` · `score --runner sim` · `submit` · `astro-mine learn --export` · `astro-mine sim run` · `astro-mine hub publish` |
 | **Concepts** | [determinism & provenance](../concepts/determinism-and-provenance.md) · [content-addressing](../concepts/content-addressing.md) · [fidelity](../concepts/fidelity.md) |
 | **Watch out for** | The default runner is the **fixture**, not physics. Check the scorecard's `runner` field. |
 
@@ -39,7 +39,7 @@ better."*
 | | |
 |---|---|
 | **Tutorials** | [06 — compose a planner stack](../tutorials/06-compose-a-planner-stack.md) → [08 — write a plugin](../tutorials/08-write-a-plugin.md) |
-| **Commands** | `astro-mine-mind stacks` · `validate` · `compose` · `astro-mine-guard validate` · `compile` · `falsify` · `sign` · `astro-mine plugin new tier\|solver` |
+| **Commands** | `astro-mine mind stacks` · `validate` · `compose` · `astro-mine guard validate` · `compile` · `falsify` · `sign` · `astro-mine plugin new tier\|solver` |
 | **Concepts** | [the narrow waist](../concepts/narrow-waist.md) · [determinism & provenance](../concepts/determinism-and-provenance.md) |
 | **Watch out for** | **Mind has no `run`** — deliberately. Composing is Mind's job; executing needs a Core `Environment`, which is Sim's. Measure through Bench/Sim. |
 
@@ -53,7 +53,7 @@ Domain scientist with real PDS data. Python-capable, not a software engineer.
 | | |
 |---|---|
 | **Tutorials** | [05 — author a world](../tutorials/05-author-a-world.md) |
-| **Commands** | `astro-mine new world` · `astro-mine-worlds validate` · `schema` · `publish` · `astro-mine-prospect publish` |
+| **Commands** | `astro-mine new world` · `astro-mine worlds validate` · `schema` · `publish` · `astro-mine prospect publish` |
 | **Concepts** | [uncertainty](../concepts/uncertainty.md) · [content-addressing](../concepts/content-addressing.md) |
 | **Watch out for** | Building the *anchor* world needs the LOLA DEM and SPICE kernels, neither shipped, and hours of CPU. Start from the synthetic example, which needs neither. Prospect priors are Python, not an authored format (G2.15). |
 
@@ -70,7 +70,7 @@ platform's UX is working towards.
 | | |
 |---|---|
 | **Tutorials** | [04 — author an asset](../tutorials/04-author-an-asset.md) |
-| **Commands** | `astro-mine-fleet new` · `validate` · `lint` · `import` · `render` · `package` · `publish` · `catalog` (+ 6 more) |
+| **Commands** | `astro-mine fleet new` · `validate` · `lint` · `import` · `render` · `package` · `publish` · `catalog` (+ 6 more) |
 | **Concepts** | [content-addressing](../concepts/content-addressing.md) · [fidelity](../concepts/fidelity.md) |
 | **Watch out for** | `fleet import` brings across kinematics and mass, never capabilities, power, or sensors — URDF has no vocabulary for them. An asset with no capability tags will never be assigned work. |
 
@@ -88,7 +88,7 @@ CLI-tolerant persona.
 | | |
 |---|---|
 | **Tutorials** | [07 — design a swarm in Studio](../tutorials/07-design-a-swarm-in-studio.md) · [the console guide](../console.md) |
-| **Commands** | `astro-mine-studio serve` — and then nothing else; everything is in the GUI |
+| **Commands** | `astro-mine studio serve` — and then nothing else; everything is in the GUI |
 | **Concepts** | [uncertainty](../concepts/uncertainty.md) — reading a Pareto front honestly |
 | **Watch out for** | The console's packages are private until the public flip. See the console guide's install section for who can run it today. |
 
@@ -106,9 +106,9 @@ workstation, offline, with no account — the CX-LOCAL constraint this guide is 
 | | |
 |---|---|
 | **Tutorials** | [getting-started](../getting-started.md) → [01 — score the anchor](../tutorials/01-score-the-anchor.md) → [02](../tutorials/02-run-it-in-the-simulator.md) · [the console guide](../console.md) |
-| **Commands** | `astro-mine-bench list` · `score` · `astro-mine-sim record` (fully offline, no content) |
+| **Commands** | `astro-mine bench list` · `score` · `astro-mine sim record` (fully offline, no content) |
 | **Concepts** | [scenarios](../concepts/scenarios.md) · [the narrow waist](../concepts/narrow-waist.md) |
-| **Watch out for** | The private-repo reality is the first wall a class hits. Until the public flip, everyone needs org read access. Plan the session around `astro-mine-sim record` and the fixture runner, which need no token. |
+| **Watch out for** | The private-repo reality is the first wall a class hits. Until the public flip, everyone needs org read access. Plan the session around `astro-mine sim record` and the fixture runner, which need no token. |
 
 ## P7 — Commons Steward *(secondary)*
 
@@ -120,7 +120,7 @@ Core maintainer or leaderboard operator.
 | | |
 |---|---|
 | **Tutorials** | none yet — the operator surface lands in Phase 2 |
-| **Commands** | `astro-mine-bench zoo-sync` · `zoo-search` · `astro-mine-hub search` · `verify` |
+| **Commands** | `astro-mine bench zoo-sync` · `zoo-search` · `astro-mine hub search` · `verify` |
 | **Concepts** | [determinism & provenance](../concepts/determinism-and-provenance.md) · [content-addressing](../concepts/content-addressing.md) |
 | **Watch out for** | Leaderboard scoring uses **held-out seeds** whose commitment hash ships in the scenario. That is what makes a submitted result trustworthy without trusting the submitter. |
 

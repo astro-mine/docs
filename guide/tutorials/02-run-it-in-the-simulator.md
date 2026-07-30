@@ -14,59 +14,55 @@ command, one flag, an entirely different claim.
 
 ## 1. What a Sim-backed run needs that a fixture run does not
 
-Three things, and the platform will stop you on each.
+Two things now, where it used to be three.
 
 | | What | Why |
 |---|---|---|
-| **1. The runner** | `astro-mine-sim[bench]` | Registers `sim` into the `astro_mine.bench.runners` entry-point group. **Bench never imports Sim** — it discovers runners. |
-| **2. The producers** | `astro-mine-worlds`, `astro-mine-prospect`, `astro-mine-link` | Content and code ship separately. The fetched bundles are data; these packages rebuild them into live providers through `astro_mine.providers`. |
-| **3. SPICE kernels** | a metakernel, via `$ASTRO_MINE_SPICE_METAKERNEL` or `--metakernel` | The world resolves body-fixed frames through SPICE. Kernels are not shipped — see §3. |
+| **1. The content** | `astro-mine bench fetch` | The scenario pins world, resource-field and contact-plan bundles by digest. Code ships in the wheel; content does not. |
+| **2. SPICE kernels** | a metakernel, via `$ASTRO_MINE_SPICE_METAKERNEL` or `--metakernel` | The world resolves body-fixed frames through SPICE. Kernels are not shipped — see §3. |
 
-Plus the content itself, from [tutorial 01](01-score-the-anchor.md) §6:
+**The runner and the producers are already installed.** This step used to be *"install
+`astro-mine-sim[bench]` plus three producer packages from three more repositories"*, and it was the
+step that stopped most people. One wheel ships every component, so it is gone.
+
+The architecture underneath it is unchanged, and still the interesting part: **Bench never imports
+Sim.** It discovers the `sim` runner through the `astro_mine.bench.runners` entry-point group, and Sim
+rebuilds fetched bundles into live providers through `astro_mine.providers`. Sharing a wheel did not
+merge them — a layering test asserts that Bench's import graph still does not reach Sim.
 
 ```bash
-astro-mine-bench fetch                 # ~461 MB, needs $GITHUB_TOKEN with read:packages
-```
-
-```bash
-uv pip install "./astro-mine-sim[bench]" ./astro-mine-worlds ./astro-mine-prospect ./astro-mine-link
+astro-mine bench fetch                 # ~461 MB, needs $GITHUB_TOKEN with read:packages
 ```
 
 ## 2. The refusal, and why it is the good outcome
 
-Try scoring before the producers are installed:
-
-```bash
-astro-mine-bench score --runner sim --registry ~/.cache/astro-mine/hub-registry
-```
+Sim **refuses to score** a scenario whose pinned content rebuilt no provider:
 
 ```
-refusing to score this scenario: 3 pinned input(s) resolved by digest but rebuilt no provider,
+refusing to score this scenario: 1 pinned input(s) resolved by digest but rebuilt no provider,
 so this run is blind to them:
-  - 'shackleton-de-gerlache-v1' (world_provider): install astro-mine-worlds — without it, no
-    terrain, gravity or illumination — night windows cannot be measured, so `nights_survived`
-    scores not-applicable
-  - 'shackleton_water_ice_v1' (resource_field_backend): install astro-mine-prospect — without it,
+  - 'some-third-party-field' (resource_field_backend): no provider registered — without it,
     no sealed resource field — prospecting sensors render `valid=False`, so `discovery_latency`
     never trips and ISRU extraction sees no abundance
-  - 'astro-mine.link.lunar-polar-relay-dsn' (comms_model): install astro-mine-link — without it,
-    no contact plan — every observation is unmasked, so `comms_robustness` scores not-applicable
-Content and code ship separately: `astro-mine-bench fetch` obtains the bundles; the producer
-packages above rebuild them into live providers.
 A scorecard is a claim about a run, and this run would not have modelled the content it pins.
-Install the producers above, or pass `SimEpisodeRunner(allow_unresolved_content=True)` to score
-anyway.
+Pass `SimEpisodeRunner(allow_unresolved_content=True)` to score anyway.
 ```
 
+For the anchor scenario you will **not** see this any more: all three of its producers are
+first-party and always present. You will see it for **third-party** content whose provider package you
+have not installed — which is exactly when it earns its keep, and is the case the mechanism was
+designed for. A scorecard is a claim. Refusing to make a claim about content that was never loaded is
+integrity, not breakage.
+
 Three bullets, one per producer in §1's table — the anchor pins content from all of
-`astro-mine-worlds`, `astro-mine-prospect` and `astro-mine-link`, so all three are missing here.
+`astro-mine worlds`, `astro-mine prospect` and `astro-mine link`, so all three are missing here.
 
 **Read this as integrity, not breakage.** The scenario pins a world by digest. Without
-`astro-mine-worlds` the digest resolves — the bytes are right there — but nothing turns them into
+`astro-mine worlds` the digest resolves — the bytes are right there — but nothing turns them into
 terrain. A run like that would produce numbers, and those numbers would be a claim about content
 that was never loaded. Bench refuses to make it.
 
-`astro-mine-sim run` takes the other choice deliberately: it **warns and proceeds**, because
+`astro-mine sim run` takes the other choice deliberately: it **warns and proceeds**, because
 recording a partial run is a legitimate ask at the library tier, and a run that *was* blind records
 that fact in its own provenance.
 
@@ -88,16 +84,16 @@ export ASTRO_MINE_SPICE_METAKERNEL=/kernels/lunar.tm
 ```
 
 **The environment variable is what the scoring path uses**, and the reason is the narrow waist:
-`astro-mine-bench score` hands the Sim runner a content store and nothing else. Bench has no
+`astro-mine bench score` hands the Sim runner a content store and nothing else. Bench has no
 vocabulary for SPICE and does not grow one — so the runner reads the variable itself, exactly as it
 already resolves its content store from `$ASTRO_MINE_HUB_REGISTRY`
 ([concepts/narrow-waist.md](../concepts/narrow-waist.md)).
 
-`astro-mine-sim run` and `astro-mine-sim record` also take an explicit flag, which wins over the
+`astro-mine sim run` and `astro-mine sim record` also take an explicit flag, which wins over the
 variable:
 
 ```bash
-astro-mine-sim run lunar-polar-ice-prospecting-v1 --metakernel /kernels/lunar.tm
+astro-mine sim run lunar-polar-ice-prospecting-v1 --metakernel /kernels/lunar.tm
 ```
 
 **The pool is checked against the episode, not just loaded.** Kernels are furnished once the
@@ -106,7 +102,7 @@ set that stops short of the anchor's 30-day month fails in the first second rath
 ticks in. And if you forget entirely, the error names the flag, the variable, and NAIF — rather than
 a `SPICE(UNKNOWNFRAME)` traceback from inside the illumination model.
 
-A run that needs no geometry needs no kernels: `astro-mine-sim record` on a self-contained scenario
+A run that needs no geometry needs no kernels: `astro-mine sim record` on a self-contained scenario
 works with none configured.
 
 ## 4. Score it
@@ -114,7 +110,7 @@ works with none configured.
 Start on the sprint scenario — same machinery, minutes instead of tens of minutes:
 
 ```bash
-astro-mine-bench score lunar-polar-ice-prospecting-sprint-v1 --runner sim --seeds 1001
+astro-mine bench score lunar-polar-ice-prospecting-sprint-v1 --runner sim --seeds 1001
 ```
 
 ```
@@ -131,7 +127,7 @@ scorecard: sha256:2445f40a72ed2bea469519156ac8fb6593e5f5c6321f70238d3267bc875e47
 Then the anchor itself — 43,200 ticks of 60 s, a 30-day lunar month:
 
 ```bash
-astro-mine-bench score lunar-polar-ice-prospecting-v1 --runner sim --seeds 1001
+astro-mine bench score lunar-polar-ice-prospecting-v1 --runner sim --seeds 1001
 ```
 
 ```
@@ -181,7 +177,7 @@ example — the conformance floor**, deliberately something a leaderboard can be
 it through the optional `DefaultPolicyProvider` seam, so the baseline is chosen by the runner that
 resolved the content, not guessed by a CLI that cannot read a SADF document.
 
-> **Do not trust `astro-mine-sim`'s README on this.** Its "The anchor baseline" section still
+> **Do not trust `astro-mine sim`'s README on this.** Its "The anchor baseline" section still
 > explains why `water_mass` scores `0.0` and cites two issues that have since closed. Run the
 > scorecard and read what it prints. Tracked in [docs#40](https://github.com/astro-mine/docs/issues/40).
 
@@ -191,13 +187,13 @@ You will meet two things called a scenario, and confusing them is the single mos
 
 | | `ScenarioSpec` (Bench) | `Scenario` (Sim) |
 |---|---|---|
-| Owned by | `astro-mine-bench` | `astro-mine-sim` |
+| Owned by | `astro-mine bench` | `astro-mine sim` |
 | Names content by | **pinned digests** | materialized, resolved content |
 | Answers | "what is the benchmark?" | "what does the engine run?" |
-| You use it with | `astro-mine-bench score/fetch/list` | `astro-mine-sim record` |
+| You use it with | `astro-mine bench score/fetch/list` | `astro-mine sim record` |
 
-`astro-mine-sim run` takes a **Bench `ScenarioSpec` id** and resolves it into a Sim `Scenario`
-through `sim_scenario_from_spec`. `astro-mine-sim record` takes a **Sim `Scenario` JSON file** and
+`astro-mine sim run` takes a **Bench `ScenarioSpec` id** and resolves it into a Sim `Scenario`
+through `sim_scenario_from_spec`. `astro-mine sim record` takes a **Sim `Scenario` JSON file** and
 needs no registry, no content, and no network. Sim's README carries the full comparison table —
 read it there rather than from a copy that can drift.
 
@@ -206,7 +202,7 @@ read it there rather than from a copy that can drift.
 Scoring gives you numbers. To see what happened, record the episode:
 
 ```bash
-astro-mine-sim run lunar-polar-ice-prospecting-sprint-v1 --seed 1001 --out anchor.mcap
+astro-mine sim run lunar-polar-ice-prospecting-sprint-v1 --seed 1001 --out anchor.mcap
 ```
 
 ```
@@ -220,7 +216,7 @@ replay view is in the console ([console guide](../console.md), UC-B6).
 The completely offline alternative, needing no content at all:
 
 ```bash
-astro-mine-sim record --scenario-file <astro_mine/sim/reference/scenario.json> --out run.mcap
+astro-mine sim record --scenario-file <astro_mine/sim/reference/scenario.json> --out run.mcap
 ```
 
 ## 8. Prove it, and score your own policy

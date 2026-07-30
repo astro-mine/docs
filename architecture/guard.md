@@ -1,6 +1,7 @@
 # Astro-Mine-Guard — Technology Architecture
 
-> Layer: **Autonomy & coordination** · Phase: **1** · **safety-critical** · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
+> Layer: **Autonomy & coordination** · Phase: **1** · **safety-critical** · Ships in: [`astro-mine-platform`](platform.md)
+> (its Rust trusted core is compiled into that wheel) · Extended for multi-regime missions (Phase 3)
 > Runtime assurance: the verifiable shield that wraps any policy so hard constraints cannot be violated.
 > Cross-cutting standards: see [conventions.md](conventions.md).
 
@@ -32,7 +33,7 @@ those are [Mind](mind.md), [Learn](learn.md), and [Allocate](allocate.md). It do
 physics or terramechanics (it *consumes* reachability/dynamics models, it does not build them — see
 [Sim](sim.md) / [Surrogate](surrogate.md)). It is **not** a general controller and is **not** a
 certification authority for flight hardware (certification-grade flight assurance is partitioned out
-per charter §2.2 / §10.5). Crucially, Guard **does not depend on the learned components it protects**:
+per charter §9.5 / §10.5). Crucially, Guard **does not depend on the learned components it protects**:
 its trusted core must be analyzable independently of any network it shields.
 
 **Primary users:** autonomy and safety engineers, who declare constraints and wrap policies; and,
@@ -45,7 +46,7 @@ multi-agent policies"); §9 ("verifiable safety of learned policies under latenc
 controllers cannot violate hard constraints in a domain with no recovery and seconds-to-minutes of
 delay, *without neutering performance*). Roadmap Phase 1 (§11).
 
-**Deep-space, one-shot assurance (RFC-0001).** Under multi-regime missions, Guard's remit extends to
+**Deep-space, one-shot assurance.** Under multi-regime missions, Guard's remit extends to
 **deep-space, one-shot, window-gated** events — proximity ops, landing/anchoring, and maneuvers that
 are *no-recovery* under tens-of-minutes light-time latency (from [Link](link.md)). Guard's existing
 discipline carries directly: it remains independent of the policies it protects and fail-safe, and its
@@ -90,7 +91,7 @@ extension; the only Phase-1 obligation is that nothing in the core design preclu
 8. **Latency- and comms-aware by construction.** Multi-agent guarantees are computed against
    *worst-case* information staleness, not the optimistic case. When neighbor state is delayed or
    absent, the safe set shrinks conservatively rather than the guarantee being silently dropped
-   (charter §9; conventions.md §8 graceful degradation).
+   (charter §8; conventions.md §8 graceful degradation).
 9. **Honest, auditable verdicts.** Every intervention (modify, override, fall back, veto) is logged
    with the spec clause invoked, the inputs, and the certificate, so operators and post-hoc analysis
    can trust *why* Guard acted (conventions.md §10).
@@ -148,7 +149,7 @@ stable FFI / in-process binding (PyO3); on the edge the Rust core can run with n
 ### Extension points
 
 New `Shield`s, `Monitor`s, and `BackupController`s are Core plugins discovered via the registry. New
-constraint *kinds* extend the `SafetySpec` schema (an additive, RFC-gated change because the spec is
+constraint *kinds* extend the `SafetySpec` schema (an additive, deliberately gated change because the spec is
 a safety contract). Reachability/barrier *models* are pluggable adapters so a body, robot, or process
 can ship its own verified safe-set representation.
 
@@ -161,7 +162,7 @@ verdicts, manages multi-agent responsibility partitioning in `coord`, and surfac
 state — but the per-agent local shield can enforce its agent's hard constraints autonomously even if
 the supervisor is unreachable.
 
-**Deep-space, one-shot assurance (RFC-0001).** In deep-space phases this hybrid tilts further toward
+**Deep-space, one-shot assurance.** In deep-space phases this hybrid tilts further toward
 the edge: at tens-of-minutes light-time ([Link](link.md)) any ground-side or central supervisor is
 **far off the critical path**, so the autonomous per-agent edge shield carries even more of the safety
 story for no-recovery events. The active `SafetySpec`/shield profile is selected per phase from the
@@ -202,9 +203,13 @@ run their own assurance posture.
   Rust core runs with pre-allocated buffers (no allocation on the hot path), a fixed worst-case
   execution budget, and a watchdog that triggers the fallback on deadline miss. On the edge it runs as
   a small native binary; in cloud/sim it runs in-process under Python.
-- **Build & packaging.** Python wheel `astro-mine-guard` (PyO3-built, bundling the Rust core); a
-  standalone OCI image for the edge sidecar; the Rust core also published as a crate for embedding in
-  constrained / flight-adjacent contexts (conventions.md §7, §2). SemVer; reproducible, pinned builds.
+- **Build & packaging.** Guard's Rust trusted core is the reason the platform wheel is built with
+  **maturin**: `astro_mine.guard._core` is a PyO3 extension compiled into that one wheel, and bundling
+  it is a safety requirement rather than packaging trivia (platform.md §4). A standalone OCI image
+  serves the edge sidecar, and the Rust core is also published as a crate for embedding in
+  constrained / flight-adjacent contexts (conventions.md §7, §2) — the assurance path deliberately
+  does not require the rest of the wheel to be reachable, only installed. Reproducible, pinned builds;
+  the crate's `panic = "abort"` release profile is part of the safety argument, not a tuning knob.
 
 ---
 
@@ -216,7 +221,7 @@ models, not from accumulated history. It owns, produces, and consumes:
 - **Owns:** the **`SafetySpec` schema** (versioned JSON Schema + Protobuf), the **`SafetyVerdict`**
   message schema, and the **safe-set / barrier model** interchange formats. These are registered in
   the [Core](core.md) message catalog (conventions.md §3); the `SafetySpec` schema is a *safety
-  contract* and evolves only additively, RFC-gated.
+  contract* and evolves only additively, and a change to it is argued as a change to a safety contract.
 - **Produces:** per-tick `SafetyVerdict` records and **intervention/certificate logs**. Verdict and
   telemetry streams are written to **MCAP** (timestamped, schema-tagged) per conventions.md §4/§5, so
   a shielded run's safety behavior is replayable channel-by-channel alongside [Sim](sim.md)/[Ops](ops.md)
@@ -241,6 +246,13 @@ models, not from accumulated history. It owns, produces, and consumes:
 Guard integrates **entirely through [Core](core.md)** contracts — it adds no private side-channels
 (conventions.md §1).
 
+- **Lateral dependency — `guard → mind` (runtime, declared per `conventions.md` §3.2).** Confined to
+  one adapter module, `astro_mine.guard.mind.plugin`, which imports Mind's `TierPlugin` protocol and
+  its `ShieldReport`/`InterventionKind` vocabulary so Guard can register as a Mind tier. Correct
+  dependency inversion with the abstraction in the wrong place: `TierPlugin` has two implementors
+  (Guard and [Allocate](allocate.md)), so by `conventions.md` §3.3 it is Core's to own, and moving it
+  deletes this edge. Guard's **independence from the components it protects** is unaffected — this is
+  Guard being *hosted by* Mind, not Guard depending on what it shields (§9).
 - **Wrapping policies (the primary integration).** `PolicyShield` implements the [Core](core.md)
   Policy/Planner API and wraps the outputs of [Mind](mind.md), [Allocate](allocate.md), and learned
   policies from [Learn](learn.md). Because the wrapper *is* a Policy/Planner, it composes anywhere a
@@ -251,7 +263,7 @@ Guard integrates **entirely through [Core](core.md)** contracts — it adds no p
     candidate design as safe); and
   - the **operations loop** — between [Ops](ops.md)'s plan execution and [Bridge](bridge.md)'s
     hardware/flight-software adapters, so the same shield that validated a policy in sim is the one
-    that protects it in the field (charter §6, "same components used in design… closing the loop in
+    that protects it in the field (charter §5, "same components used in design… closing the loop in
     operations").
 - **Constraint inputs.** Consumes keep-out volumes / terrain & slope limits from [Worlds](worlds.md);
   power-floor, thermal, torque, and kinematic limits from [Fleet](fleet.md) SADF; comms-window and
@@ -313,14 +325,14 @@ Guard integrates **entirely through [Core](core.md)** contracts — it adds no p
     per-agent local solves (decentralized CBFs / reciprocal collision avoidance).
   - *Latency:* compute safe sets against **worst-case staleness** — pad margins by the maximum possible
     state drift over the comms delay window from [Link](link.md). The guarantee holds against the
-    delayed-information adversary rather than assuming fresh state (charter §9).
+    delayed-information adversary rather than assuming fresh state (charter §8).
 - **Graceful degradation (conventions.md §8).** As comms degrade, margins grow and the reachable
   free-action set shrinks **conservatively**; in the limit Guard falls back to a verified safe state
   (hold/brake/retreat) rather than collapsing. Back-pressure on verdict/telemetry streams never blocks
   the safety path — telemetry is best-effort, the shield is not.
 - **Measure before optimizing (conventions.md §8).** Guard ships representative benchmarks: shield
   latency distributions, intervention rates, and the *performance cost of shielding* (return with vs.
-  without the shield) so the "without neutering performance" claim (charter §9) is reproducible.
+  without the shield) so the "without neutering performance" claim (charter §8) is reproducible.
 
 ---
 
@@ -336,18 +348,18 @@ correctness of its guarantee is the whole point of the package.
   the wrapped policy. A learned policy is treated as an **untrusted, adversarial input** that proposes
   an action; Guard's job is to certify or correct it. Therefore a buggy, mistrained, or maliciously
   crafted policy can degrade mission performance but **cannot cause a hard-constraint violation**.
-  This is what lets a learned controller be deployable in a no-recovery domain (charter §8, §9).
+  This is what lets a learned controller be deployable in a no-recovery domain (charter §7, §7).
 - **Minimal trusted computing base.** Only the Rust safety core (`arbiter`, `shields`, `monitors`,
   `backup`, `spec` evaluator) is trusted. It is small, deterministic, allocation-free on the hot path,
   and isolated from the Python orchestration and from the policy. The TCB's smallness is what makes
-  the guarantee *analyzable* — the explicit answer to charter §8's "verifiable runtime assurance."
+  the guarantee *analyzable* — the explicit answer to charter §7's "verifiable runtime assurance."
 - **Fail-safe default.** No positive safety certificate ⇒ unsafe ⇒ fallback. Infeasible QP, stale
   model, missed deadline, monitor fault, lost neighbor state, or watchdog timeout all resolve to a
   verified safe action. Guard never fails open.
 
 ### 9.2 Layered assurance (defense in depth)
 
-Guard composes complementary techniques because none alone is sufficient (charter §9):
+Guard composes complementary techniques because none alone is sufficient (charter §8):
 
 1. **Runtime monitors (detect).** STL/MTL monitors evaluate temporal-logic properties online with
    robust semantics — including *predictive* monitoring that flags a property *about to* be violated
@@ -378,9 +390,9 @@ monitor or an infeasible/uncertifiable filter forces the backup.
 - Multi-agent guarantees are computed against **worst-case information staleness** from
   [Link](link.md), with **responsibility partitioning** so each agent enforces its share of a coupled
   constraint locally (§8). Under comms loss, agents fall back to conservative margins and, if needed,
-  safe states — degrade, never collapse (charter §9; conventions.md §8). This is the explicit answer
-  to charter §9's "verifiable safety… under latency."
-- **Deep-space, one-shot assurance (RFC-0001).** Multi-regime missions push this regime to its
+  safe states — degrade, never collapse (charter §8; conventions.md §8). This is the explicit answer
+  to charter §8's "verifiable safety… under latency."
+- **Deep-space, one-shot assurance.** Multi-regime missions push this regime to its
   extreme: at tens-of-minutes light-time ([Link](link.md)), worst-case-staleness margins grow
   accordingly and the **autonomous per-agent edge shield carries even more of the safety story**,
   because the central supervisor is off the critical path by light-time. Proximity ops,
@@ -402,7 +414,7 @@ monitor or an infeasible/uncertifiable filter forces the backup.
   plugins run **out-of-process / sandboxed** (gVisor/WASM, conventions.md §9) and are **never** placed
   inside the TCB. A plugin can *propose* but only the trusted arbiter *certifies*.
 
-### 9.6 Export control & dual use (conventions.md §12, charter §10.5)
+### 9.6 Export control & dual use (conventions.md §12, charter §9.5)
 
 - Generic safety-shielding mechanisms (CBF/HJ/monitoring against declared abstract constraints) are
   **default-open** science. Genuinely sensitive material — e.g., specific operational keep-out
@@ -439,26 +451,26 @@ monitor or an infeasible/uncertifiable filter forces the backup.
 
 | Decision | Options | Recommendation |
 |---|---|---|
-| Shielding/assurance method | CBF-QP filter; HJ-reachability filter; model-predictive shielding; simplex + verified backup; STL/MTL runtime monitors | **Layered combination**: STL/MTL monitors (detect) + CBF-QP / HJ-reachability filter (correct) + simplex backup (recover). No single method covers all constraints; charter §9 calls for verifiable, performant assurance, which only defense-in-depth delivers. |
+| Shielding/assurance method | CBF-QP filter; HJ-reachability filter; model-predictive shielding; simplex + verified backup; STL/MTL runtime monitors | **Layered combination**: STL/MTL monitors (detect) + CBF-QP / HJ-reachability filter (correct) + simplex backup (recover). No single method covers all constraints; charter §8 calls for verifiable, performant assurance, which only defense-in-depth delivers. |
 | Where Guard runs | Edge, co-located per controller; centralized; hybrid | **Hybrid**: an autonomous **per-agent edge shield** owns hard-constraint enforcement (never network-dependent); a **central supervisor** (off the critical path) handles coordination and aggregation. |
 | Implementation language / assurance level | Pure Python; pure Rust; Rust core + Python orchestration | **Rust verified core + Python orchestration** (conventions.md §2): tiny deterministic TCB for the guarantee, ergonomic Python wrapper for integration. |
 | Constraint specification | Constraints in code; declarative safety-spec DSL/schema | **Declarative `SafetySpec`** (JSON Schema + Pydantic + Protobuf wire, conventions.md §3) compiled to monitors/shields — review the property once, enforce it everywhere; code is too easy to get subtly wrong for a safety contract. |
-| Multi-agent latency handling | Assume fresh state; worst-case staleness margins + responsibility partitioning; central arbitration | **Worst-case staleness margins + decentralized responsibility partitioning** — guarantees hold against the delayed-information adversary and degrade gracefully (charter §9). |
+| Multi-agent latency handling | Assume fresh state; worst-case staleness margins + responsibility partitioning; central arbitration | **Worst-case staleness margins + decentralized responsibility partitioning** — guarantees hold against the delayed-information adversary and degrade gracefully (charter §8). |
 | QP / reachability runtime | Online PDE/optimization; offline precompute + online lookup/solve | **Offline precompute (HJ value functions) + a small online projection.** The CBF-QP is solved in the TCB by a bespoke allocation-free Dykstra alternating projection (Guard ADR-0001) rather than by linking OSQP/Clarabel: the program is tiny and fixed-shape, the shield hard-certifies its own output (so solver error can only cause a *fallback*, never an unsafe action), and keeping the kernel dependency-free is what preserves the small, allocation-free, **Kani-verifiable** TCB §9.1/§9.3 call for. **Clarabel** remains the reference optimizer the in-TCB solver is cross-validated against in CI. |
 | Hot-path message encoding | Protobuf; FlatBuffers/Cap'n Proto | **FlatBuffers/Cap'n Proto** for per-tick state/action/verdict (conventions.md §3); Protobuf for everything else. |
 | STL/MTL monitor engine | RTAMT; MoonLight; Reelay; custom Rust | **Rust monitor in the TCB** (RTAMT/MoonLight/Reelay-inspired), online robust semantics, bounded memory. |
 
 **Open questions / research dependencies:**
 
-- How to bound performance loss from shielding so it stays "without neutering performance" (charter §9)
+- How to bound performance loss from shielding so it stays "without neutering performance" (charter §8)
   across diverse policies — co-designed with [Learn](learn.md) and scored by [Bench](bench.md).
 - Compositional multi-agent guarantees: do per-agent responsibility-partitioned guarantees compose into
-  a fleet-level guarantee under realistic [Link](link.md) latency models? (charter §8 open problem.)
+  a fleet-level guarantee under realistic [Link](link.md) latency models? (charter §7 open problem.)
 - Where reachability sets / barriers come from for the hardest dynamics (granular excavation contact) —
   depends on [Sim](sim.md)/[Surrogate](surrogate.md) producing trustworthy, error-bounded models.
 - How much of the TCB can be brought under machine-checked formal verification (Kani/model checking)
   while keeping it practical to evolve.
-- **Deep-space, one-shot assurance (RFC-0001).** How to size worst-case-staleness margins and
+- **Deep-space, one-shot assurance.** How to size worst-case-staleness margins and
   certify *single-shot, no-recovery* events (proximity ops, landing/anchoring, maneuvers) at
   tens-of-minutes light-time ([Link](link.md)), and how to author and validate **per-phase**
   `SafetySpec` profiles for the [mission model](mission-model.md)'s regimes — co-designed with
@@ -469,7 +481,7 @@ monitor or an infeasible/uncertifiable filter forces the backup.
 ## 12. Roadmap alignment
 
 - **Phase 1 (this component).** Ship Guard alongside [Mind](mind.md), [Learn](learn.md),
-  [Allocate](allocate.md), and [Studio](studio.md) (charter §11). **MVP:** the `SafetySpec` schema, the
+  [Allocate](allocate.md), and [Studio](studio.md) (charter §10). **MVP:** the `SafetySpec` schema, the
   Rust safety core (CBF-QP shield + STL/MTL monitors + a simplex backup + arbiter), and the
   `PolicyShield` wrapper over the [Core](core.md) Policy/Planner API — enough to wrap a
   [Learn](learn.md) policy and run it shielded in [Sim](sim.md), with violations and shielding cost
@@ -478,11 +490,11 @@ monitor or an infeasible/uncertifiable filter forces the backup.
 - **Later in Phase 1 / Phase 2.** Multi-agent latency-aware shielding (`coord`); HJ-reachability
   filters for harder dynamics; the edge-sidecar deployment and central supervisor for [Ops](ops.md);
   verdict overlays in [View](view.md). The same shield that validated a policy in sim becomes the one
-  that protects it in operations (charter §6) as Astro-Mine crosses the sim-to-operations threshold.
+  that protects it in operations (charter §5) as Astro-Mine crosses the sim-to-operations threshold.
 - **Phase 3 (mostly out of open scope).** The embeddable Rust core behind [Bridge](bridge.md)
   flight-software adapters; certification-grade flight assurance remains **partitioned and
-  access-controlled**, not part of the open core (charter §2.2, §10.5).
-- **Phase 3 — multi-regime assurance ([RFC-0001](../rfc/0001-multi-regime-missions.md)).** Per-phase
+  access-controlled**, not part of the open core (charter §9.5, §9.5).
+- **Phase 3 — multi-regime assurance ([multi-regime missions](mission-model.md)).** Per-phase
   assurance posture and deep-space, one-shot, window-gated shielding land in Phase 3; no Core schema
   hooks are reserved in Phase 1, since Guard consumes the [mission model](mission-model.md)'s `regime`
   / `PhaseTransition` contract rather than defining it.

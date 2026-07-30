@@ -1,6 +1,6 @@
 # Astro-Mine-Prospect — Technology Architecture
 
-> Layer: **World & environment models** · Phase: **0**
+> Layer: **World & environment models** · Phase: **0** · Ships in: [`astro-mine-platform`](platform.md)
 > Probabilistic resource-field models with explicit uncertainty — what is in the ground, and how unsure we are.
 > Cross-cutting standards: see [conventions.md](conventions.md).
 
@@ -71,7 +71,7 @@ polar water-ice prospecting as the anchor scenario).
 8. **Calibration is a hard requirement.** Reported uncertainty must be *calibrated* against
    ground truth (coverage of credible intervals); calibration diagnostics are part of every
    field's validation, not optional (conventions.md §11).
-9. **Library first.** A scientist can `pip install astro-mine-prospect`, load a prior, sample a
+9. **Library first.** A scientist can `pip install astro-mine-cli`, load a prior, sample a
    ground-truth ice field for a crater, and update a belief from a CSV of fake sensor hits on a
    laptop — before any service exists (conventions.md §1.4).
 
@@ -159,8 +159,10 @@ distributed swarm sim shares one consistent posterior. A **Gymnasium/PettingZoo 
 - **Config & schemas:** **JSON Schema + Pydantic v2** for field/prior specs (conventions.md §3).
 - **Runtime model:** importable library; optional **FastAPI** (admin/REST) + **gRPC** field
   service (conventions.md §3, §4).
-- **Build/packaging:** Python wheel `astro-mine-prospect`; OCI image for the field service;
-  field/prior backends distributed as **OCI plugin artifacts** (conventions.md §7).
+- **Build/packaging:** ships in the [`astro-mine-platform`](platform.md) wheel; OCI image for the
+  gRPC field service; field/prior backends distributed as **OCI plugin artifacts** (conventions.md §7).
+  The optional REST admin surface is a route module in [`astro-mine-api`](api.md); the gRPC field
+  service stays here, because it serves Prospect's own contract rather than a web edge.
 
 ---
 
@@ -204,7 +206,7 @@ scenario pins exact prior + ground-truth-field hashes so prospecting results rep
 
 ## 6. Integration architecture
 
-Prospect sits in the **design/training loop** as a world-layer producer (charter §6) and plugs
+Prospect sits in the **design/training loop** as a world-layer producer (charter §5) and plugs
 into siblings through [Core](core.md) contracts:
 
 - **[Worlds](worlds.md) (consumes):** a Prospect field binds to a Worlds spatial domain, CRS,
@@ -308,7 +310,7 @@ costly. Performance claims ship with reproducible benchmarks (conventions.md §8
   high-resolution ground-truth resource map of an actual prospect — is **partitioned** into
   access-controlled storage and tagged with export-control capability flags, not committed to
   the open commons. Public ⇒ open; operational ⇒ gated.
-- **Scientific safety:** uncertainty must be **honest** (charter §9, §12). Over-confident
+- **Scientific safety:** uncertainty must be **honest** (charter §8, §10). Over-confident
   fields are a credibility hazard for downstream ISRU decisions; calibration gates in CI guard
   against shipping mis-calibrated priors.
 
@@ -346,14 +348,14 @@ costly. Performance claims ship with reproducible benchmarks (conventions.md §8
 | Ground-truth vs belief | Single field with a "revealed" mask; **two distinct typed fields** sharing one interface | **Two distinct typed fields** (`GroundTruthField` sealed/gated, `BeliefField` updatable) implementing one `ResourceField` contract — clean isolation (§9) and clean replay (§5). |
 | Field storage | **Zarr**; HDF5; NetCDF; in-Postgres rasters | **Zarr** (chunked, cloud-native, distribution axis) per conventions.md §5; COG for raster-aligned priors; HDF5 for interop. |
 | Active-perception objective | Max-variance; **mutual information / BALD**; expected value of information (EVPI/EIG on ISRU yield) | **Mutual-information / EIG** default for prospecting; **EVPI** when tied to a concrete ISRU production objective. Pluggable. |
-| Prior fitting | Manual kernels; **dataset-derived fitted priors (recipe plugins)**; learned generative priors | **Dataset-derived fitted priors** with cited provenance (charter §7); learned priors as a research plugin. |
+| Prior fitting | Manual kernels; **dataset-derived fitted priors (recipe plugins)**; learned generative priors | **Dataset-derived fitted priors** with cited provenance (charter §6); learned priors as a research plugin. |
 
 **Open questions / research dependencies:**
 
-- *Decision-making under deep uncertainty* (charter §8, §9): the right active-perception
+- *Decision-making under deep uncertainty* (charter §7, §7): the right active-perception
   objective coupling prospecting to ISRU yield (information vs production) — co-designed with
   [Allocate](allocate.md) and [Mind](mind.md) and benchmarked in [Bench](bench.md).
-- *Prior fidelity & sim-to-real* (charter §9): how faithfully public datasets (LOLA/Diviner/
+- *Prior fidelity & sim-to-real* (charter §8): how faithfully public datasets (LOLA/Diviner/
   LEND/M³/LCROSS) can seed credible priors, and how to quantify prior-misspecification risk —
   a planetary-science + UQ research thread; uncertainty must remain honest.
 - *Scaling exact-uncertainty inference* to global, multi-species, depth-resolved fields without
@@ -365,7 +367,7 @@ costly. Performance claims ship with reproducible benchmarks (conventions.md §8
 
 ## 12. Roadmap alignment
 
-- **Phase 0 (MVP, ships now).** Prospect is a **Phase-0 deliverable** (charter §11) supporting
+- **Phase 0 (MVP, ships now).** Prospect is a **Phase-0 deliverable** (charter §10) supporting
   the anchor **lunar polar water-prospecting** scenario:
   - the `ResourceField` contract + **GP (GPyTorch, sparse/variational)** and **grid** backends;
   - **water-ice / hydrogen priors** derived from public lunar datasets, with provenance;
@@ -374,7 +376,7 @@ costly. Performance claims ship with reproducible benchmarks (conventions.md §8
   - **Zarr** field IO, Core message schemas, calibration + golden-field validation;
   - one [Bench](bench.md) prospecting scenario with scored belief-quality metrics.
   This is enough for `Sim + Worlds + Fleet + Bench` to run the reference loop end-to-end
-  (charter §11, §13) — a researcher can prospect a synthetic crater on a workstation.
+  (charter §10, §11) — a researcher can prospect a synthetic crater on a workstation.
 - **Phase 1+ (later).** GMRF and deep-generative backends; richer active-perception objectives
   (EVPI tied to ISRU yield) for [Learn](learn.md)/[Allocate](allocate.md); Martian fields; the
   distributed field service; [Hub](hub.md)-published community priors and prior-recipes.
@@ -384,6 +386,6 @@ costly. Performance claims ship with reproducible benchmarks (conventions.md §8
 - **Deferred → Phase 3 (contract-widening).** **Multi-species and depth-resolved (3-D) resource
   fields.** The shipped `ResourceField` is single-species and 2-D surface-only
   (`FieldMetadata.species` is scalar; `FieldGrid` carries no depth axis), so adding a species/depth
-  axis changes the Core `ResourceField`/`FieldMetadata` **contract shape** — it is RFC-gated and
+  axis changes the Core `ResourceField`/`FieldMetadata` **contract shape** — it needs a named consumer and
   scheduled with the other contract-widening Prospect work as `RM-P3-PROSPECT-30`. Deferred from P0 as
   "P1+"; Phase 1 shipped without it.

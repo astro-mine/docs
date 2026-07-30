@@ -1,6 +1,7 @@
 # Astro-Mine-View — Technology Architecture
 
-> Layer: **Design & operations (operations runtime, online mode)** · Phase: **2** · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
+> Layer: **Design & operations (operations runtime, online mode)** · Phase: **2** · Ships in: [`astro-mine-ui`](ui.md)
+> (the Phase-2 gateway ships in [`astro-mine-api`](api.md)) · Extended for multi-regime missions (Phase 3)
 > (reused for design, demos, and teaching across all phases)
 > The eyes of the swarm: see *what* it is doing — and a first-class account of *why*.
 > Cross-cutting standards: see [conventions.md](conventions.md).
@@ -13,7 +14,7 @@
 streams and artifacts produced everywhere else in the platform into something a human can watch,
 inspect, and trust: a 3D geospatial picture of the swarm on the body, time-aligned dashboards of
 fleet state, and — as a first-class feature, not a tooltip — **plan explanations** that answer
-"why is the swarm doing this?" (charter §5.6, §8 "delay-tolerant supervisory autonomy").
+"why is the swarm doing this?" (charter §4.6, §6 "delay-tolerant supervisory autonomy").
 
 It does, and only does:
 
@@ -30,18 +31,18 @@ It does, and only does:
   of decisions, alternatives, and the constraints that bound them.
 - **An embeddable component library** — the same widgets host standalone, embed in
   [Studio](studio.md) for design-time visualization, and are reused by [Ops](ops.md).
-- **Trajectory & mission-timeline views (RFC-0001).** For multi-regime missions, View also renders
+- **Trajectory & mission-timeline views.** For multi-regime missions, View also renders
   **multi-body / heliocentric trajectories** (transfer arcs, rendezvous geometry, porkchop /
   launch-window plots), a **mission timeline across regimes and phases**, and **cross-phase plan
   explanation**. It renders [Trajectory](trajectory.md)'s descriptive `TrajectoryRef` reference arcs
   and the multi-body geometry from [Transit](transit.md); it stays read-mostly and synthesizes no
-  guidance, consistent with the dual-use boundary (RFC-0001 §6, [mission-model](mission-model.md) §4).
+  guidance, consistent with the dual-use boundary ([mission-model.md](mission-model.md) §4).
 
 **Explicitly out of scope.** View is **read-mostly**: it computes no plans, runs no physics, owns
 no fleet state, and commands no hardware. It does not *generate* explanations — it *renders* the
 decision traces produced by the autonomy stack (View is a faithful viewer, not a second opinion).
 This holds for trajectories too: View renders descriptive `TrajectoryRef` reference arcs but never
-synthesizes guidance or operational maneuver targeting (RFC-0001 §6).
+synthesizes guidance or operational maneuver targeting ([mission-model.md](mission-model.md) §4).
 Command authority, supervisory override, and the human-in-the-loop control surface live in
 [Ops](ops.md); View provides the picture Ops acts on. It is not a GIS/terrain authoring tool
 (that is [Worlds](worlds.md)) nor a benchmark report generator (that is [Bench](bench.md)).
@@ -69,7 +70,7 @@ supervisory autonomy; trust models), §11 (Phase 2, with [Ops](ops.md)/[Bridge](
 3. **Render the explanation, don't invent it.** Explanations are decision traces authored upstream
    ([Mind](mind.md)/[Allocate](allocate.md)/[Guard](guard.md)). View is a faithful renderer; it
    must never synthesize a plausible-but-wrong rationale. Honesty about provenance over polish.
-4. **Embeddable first, app second — and, since [RFC-0010](../rfc/0010-console-surface-contract.md),
+4. **Embeddable first, app second — and, since this document,
    embeddable only.** Every capability ships as a framed, dependency-light React component;
    [Studio](studio.md) and [Ops](ops.md) are peer consumers (library-first, conventions.md §1.4).
    View hosts no application of its own: the platform's standalone GUI is
@@ -98,12 +99,12 @@ gateway holds no authoritative state — it is a translation and aggregation lay
 > **"Gateway" names two different things — this is View's.** The **View Gateway** below is View's
 > *own* telemetry/tile fan-out backend. A **platform API gateway** — one unified REST edge in front
 > of every component — is a separate idea, deferred to Phase 2 at the earliest and deliberately not
-> built by the [console](console.md) ([RFC-0010](../rfc/0010-console-surface-contract.md)). Neither
+> built by the [console](console.md) (this document). Neither
 > exists in Phase 1, and they are not the same future thing.
 
 ```
-astro_mine.view
-├── lib/                # embeddable component library (published npm package)
+@astro-mine/view        # the embeddable component library (one package of astro-mine-ui)
+├── lib/
 │   ├── globe/          # CesiumJS scene: terrain (3D Tiles), assets, trajectories, overlays
 │   ├── dashboards/     # OpenMCT plugin + telemetry widgets, plots, alarm/event tables
 │   ├── timeline/       # shared clock: live-follow / scrub, comms windows, eclipse/night bands
@@ -111,22 +112,28 @@ astro_mine.view
 │   ├── telemetry/      # channel model, streaming client (WS/SSE/Foxglove), decimation
 │   ├── replay/         # MCAP reader (wasm), index/seek, channel mapping
 │   └── frames/         # CRS/SPICE-time helpers, unit formatting, coordinate display
-└── gateway/            # stateless backend (FastAPI):
-    ├── tiles/          #   3D-Tiles / COG proxy + cache toward Worlds/Prospect
-    ├── stream/         #   live telemetry fan-out (gRPC/ROS2 → WS/SSE/Foxglove), back-pressure
-    ├── traces/         #   decision-trace ingest (MCAP) → explanation channels
-    └── bff/            #   REST/GraphQL backend-for-frontend (session, layout, catalog)
+
+View Gateway            # Phase 2, a stateless FastAPI service in astro-mine-api
+├── tiles/              #   3D-Tiles / COG proxy + cache toward Worlds/Prospect
+├── stream/             #   live telemetry fan-out (gRPC/ROS2 → WS/SSE/Foxglove), back-pressure
+├── traces/             #   decision-trace ingest (MCAP) → explanation channels
+└── bff/                #   REST/GraphQL backend-for-frontend (session, layout, catalog)
 ```
 
+The split across two distributions is not incidental: the library is TypeScript a surface imports,
+the gateway is a Python service a deployment runs, and nothing in Phase 1 needs the second. View's
+`telemetry/` barrel is a deliberate `export {}` stub today, and it is correct that it is empty.
+
 > **There is no `app/`, by decision.** Earlier drafts reserved `app/` for a *"standalone hosted
-> application (routing, layout, session shell)"*. [RFC-0010](../rfc/0010-console-surface-contract.md)
+> application (routing, layout, session shell)"*. this document
 > **descopes it.** §6 below establishes that View's component library is embedded in
 > [Studio](studio.md), and principle 4 makes Studio and [Ops](ops.md) peers consuming it — so
 > `studio-ui → view` holds by View's own design, and a shell inside View that hosts Studio's surface
 > closes the cycle `view → studio-ui → view`. The shell must sit **above** every surface, and every
-> surface may use `view`, so it is a separate leaf package in a separate repo:
+> surface may use `view`, so the shell is a separate leaf package above them all:
 > [`@astro-mine/console`](console.md). **View stays a leaf that surfaces depend on — never the
-> reverse.**
+> reverse** — and the layering check in the front-end workspace asserts it ([ui.md](ui.md) §3).
+> Sharing a workspace with the shell does not weaken that; it is what finally lets the check see it.
 >
 > The `lib/` demo harness is therefore a **developer component gallery** and a WebGL test surface:
 > every scene is a committed fixture, and nothing loads user data. It is *not* the console, not an
@@ -140,7 +147,7 @@ astro_mine.view
   [Worlds](worlds.md)), an **imagery/overlay stack** (COG resource fields and uncertainty from
   [Prospect](prospect.md); illumination/PSR masks), and an **entity layer** (assets, trajectories,
   comms links, keep-out volumes) driven by the telemetry channel model.
-- **Scene view modes (RFC-0001).** The Cesium globe handles **body-proximity / surface** rendering
+- **Scene view modes.** The Cesium globe handles **body-proximity / surface** rendering
   (terrain, assets, overlays); a complementary **heliocentric / multi-body view mode** handles the
   `interplanetary_transit` and `proximity_orbit` regimes — heliocentric transfer arcs, rendezvous
   geometry, and porkchop / launch-window plots from [Trajectory](trajectory.md) / [Transit](transit.md).
@@ -150,7 +157,7 @@ astro_mine.view
   the [Core](core.md) message types (Protobuf / FlatBuffers, conventions.md §3).
 - **Clock** — the single timeline. Modes: *live-follow* (track wall/mission time), *fixed-rate
   replay*, and *scrub*. All globe, dashboard, and explanation views subscribe to it, so the whole
-  UI is time-coherent. For multi-regime missions (RFC-0001) the timeline also carries the
+  UI is time-coherent. For multi-regime missions the timeline also carries the
   **phase/regime banding** of the [MissionSpec](mission-model.md) — phases, `PhaseTransition`
   handoffs, and per-leg trajectory windows — so one scrub spans launch → transit → proximity →
   surface → return.
@@ -193,10 +200,10 @@ shape genuinely demands it (conventions.md §3).
   **Deviation: no Storybook.** Storybook caps at Vite <= 6 and Vite-version parity across the
   front ends was prioritized, so component docs and visual checks are served by the Playwright lane
   over the `lib/` demo harness until Storybook supports Vite 8.
-- **3D geospatial:** **CesiumJS** + **3D Tiles** (charter §7) for planetary terrain and entities.
+- **3D geospatial:** **CesiumJS** + **3D Tiles** (charter §6) for planetary terrain and entities.
   **three.js / raw WebGL/WebGPU** is used *inside* Cesium (custom primitives / instanced draw) only
   where Cesium's entity API is too slow for very large swarms — not as a parallel renderer.
-- **Mission control:** **OpenMCT** (charter §7) embedded as the dashboards/telemetry surface, wired
+- **Mission control:** **OpenMCT** (charter §6) embedded as the dashboards/telemetry surface, wired
   to platform data through custom OpenMCT telemetry/time plugins.
 - **Replay:** the **MCAP** TypeScript/wasm reader; **Foxglove**-compatible message schemas and
   panels reused where it saves work (conventions.md §4).
@@ -207,10 +214,12 @@ shape genuinely demands it (conventions.md §3).
 - **Runtime model:** static front-end assets served from a CDN/object store; the gateway is a
   stateless, horizontally scalable service. No server-side application state — all session state is
   serialized client-side and (optionally) persisted via the BFF to Postgres.
-- **Build/packaging:** the **`@astro-mine/view`** npm component library (SemVer, conventions.md §7,
-  §13) and an OCI image for the gateway. There is no View-owned application artifact — the hosted
-  GUI is [`@astro-mine/console`](console.md), which consumes this library (§3). Generated
-  [Core](core.md) TS client libraries are a pinned dependency.
+- **Build/packaging:** the **`@astro-mine/view`** npm component library, one package of
+  [`astro-mine-ui`](ui.md) (conventions.md §2.1, §13), and — from Phase 2 — the gateway as a route
+  set in [`astro-mine-api`](api.md)'s image. There is no View-owned application artifact: the hosted
+  GUI is [`@astro-mine/console`](console.md), which consumes this library (§3). Cesium's binary
+  assets are copied by the consuming build rather than fetched, so a deployed console has no
+  external CDN dependency at runtime.
 
 ---
 
@@ -399,19 +408,19 @@ option for cinematic demos — explicitly not the default (see §11). Measure be
 
 | Decision | Options | Recommendation |
 |---|---|---|
-| **Geospatial render engine** | **CesiumJS + 3D Tiles**; custom **three.js/WebGL(GPU)**; **Unreal/Omniverse pixel-streaming** | **CesiumJS + 3D Tiles** (charter §7; native planetary CRS, LOD terrain, aligns with [Worlds](worlds.md)). three.js/WebGPU only as in-Cesium primitives for very large swarms; Omniverse/Unreal streaming reserved for Phase-3 cinematic demos. |
-| **Mission-control layer** | **OpenMCT embed**; fully custom React dashboards; **both** | **OpenMCT embed for telemetry dashboards** (charter §7, mature, plugin model) **+ custom React for globe, timeline, and explanation** views OpenMCT doesn't cover. |
+| **Geospatial render engine** | **CesiumJS + 3D Tiles**; custom **three.js/WebGL(GPU)**; **Unreal/Omniverse pixel-streaming** | **CesiumJS + 3D Tiles** (charter §6; native planetary CRS, LOD terrain, aligns with [Worlds](worlds.md)). three.js/WebGPU only as in-Cesium primitives for very large swarms; Omniverse/Unreal streaming reserved for Phase-3 cinematic demos. |
+| **Mission-control layer** | **OpenMCT embed**; fully custom React dashboards; **both** | **OpenMCT embed for telemetry dashboards** (charter §6, mature, plugin model) **+ custom React for globe, timeline, and explanation** views OpenMCT doesn't cover. |
 | **Browser transport (high-rate)** | **WebSocket**; **SSE**; **WebRTC**; **Foxglove WS / rosbridge** | **WebSocket (+ Foxglove schemas)** for high-rate, **SSE** for low-rate/one-way updates; **rosbridge/Foxglove** when telemetry is on ROS 2/DDS; **WebRTC** only for server-side pixel streaming. |
 | **Replay** | Custom log reader; **MCAP**; Foxglove Studio embed | **MCAP** (platform standard, conventions.md §4) via its TS/wasm reader, with Foxglove-compatible schemas/panels reused; not a separate format. |
 | **Rendering site for huge swarms** | All client-side; **server-side aggregation**; server pixel-streaming | **Client-side by default**; **server-side entity aggregation** at the gateway above a swarm-size threshold; pixel-streaming only for thin clients / cinematic demos (Phase 3). |
-| **Explanation representation** | Free-text from an LLM; **structured decision-trace rendering**; hybrid | **Render structured upstream decision traces** (MCAP from [Mind](mind.md)/[Allocate](allocate.md)/[Guard](guard.md)) as a timeline + "why this, not that" panel. **Optional LLM layer only to *narrate* the structured trace** ([Studio](studio.md)'s intent-LLM, charter §5.5) — never to invent rationale (principle §3). |
+| **Explanation representation** | Free-text from an LLM; **structured decision-trace rendering**; hybrid | **Render structured upstream decision traces** (MCAP from [Mind](mind.md)/[Allocate](allocate.md)/[Guard](guard.md)) as a timeline + "why this, not that" panel. **Optional LLM layer only to *narrate* the structured trace** ([Studio](studio.md)'s intent-LLM, charter §4.5) — never to invent rationale (principle §3). |
 | **State transport: tiles** | Direct from [Worlds](worlds.md); gateway proxy/cache | **Gateway caching proxy** (CDN-backed) so the browser hits one origin and caches are shared. |
 | **Front-end framework** | React + TS; Vue; Svelte | **React + TypeScript** (conventions.md §2 — non-negotiable platform standard). |
-| **Multi-body / heliocentric view (RFC-0001)** | Extend the Cesium scene with a heliocentric mode; a separate astrodynamics plot widget; both | **Cesium for body-proximity / surface + a complementary heliocentric / multi-body mode** for transit and rendezvous, with a 2D **porkchop / launch-window** plot widget alongside; render [Trajectory](trajectory.md) `TrajectoryRef` arcs and [Transit](transit.md) geometry only — no guidance synthesis (dual-use boundary, RFC-0001 §6). |
+| **Multi-body / heliocentric view** | Extend the Cesium scene with a heliocentric mode; a separate astrodynamics plot widget; both | **Cesium for body-proximity / surface + a complementary heliocentric / multi-body mode** for transit and rendezvous, with a 2D **porkchop / launch-window** plot widget alongside; render [Trajectory](trajectory.md) `TrajectoryRef` arcs and [Transit](transit.md) geometry only — no guidance synthesis (the dual-use boundary; [mission-model.md](mission-model.md) §4). |
 
 **Open questions / research dependencies:**
 
-- **Explanation UX for delay-tolerant supervision (charter §8).** What representation actually lets
+- **Explanation UX for delay-tolerant supervision (charter §7).** What representation actually lets
   one operator trust and supervise hundreds of robots across minutes of latency? A View + human-
   factors research question, co-designed with [Ops](ops.md)/[Mind](mind.md) and validated in the
   Phase-2 terrestrial-analog field tests.
@@ -435,12 +444,12 @@ option for cinematic demos — explicitly not the default (see §11). Measure be
   fleet telemetry from [Ops](ops.md), OpenMCT dashboards, the 3D geospatial scene with
   [Prospect](prospect.md) overlays, the shared live/replay timeline, and the **plan-explanation**
   views rendering [Mind](mind.md)/[Allocate](allocate.md)/[Guard](guard.md) traces — validated
-  against the terrestrial-analog rover-swarm field tests (charter §11). The embeddable library is
+  against the terrestrial-analog rover-swarm field tests (charter §10). The embeddable library is
   consumed by [Studio](studio.md).
 - **Phase 3+ (later).** Cinematic server-side pixel-streaming (Omniverse/Unreal) for stakeholder
   demos; richer LLM-narrated explanations; thin/mobile and AR/VR clients; flight-adjacent operations
   views as missions mature. All additive — the read-mostly, command-free core stays stable.
-- **Multi-regime mission visualization (RFC-0001, Phase 3).** The heliocentric / multi-body view
+- **Multi-regime mission visualization (Phase 3).** The heliocentric / multi-body view
   mode, mission timeline across regimes, and cross-phase plan explanation land in Phase 3 with
   [Trajectory](trajectory.md) / [Transit](transit.md); they consume the additive
   [MissionSpec](mission-model.md) / `TrajectoryRef` schemas whose Core hooks are reserved in Phase 1.

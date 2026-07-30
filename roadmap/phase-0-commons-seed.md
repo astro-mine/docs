@@ -1,11 +1,19 @@
 # Phase 0 — Commons seed
 
 > **Window:** ~0–12 mo · **Theme:** Commons seed · **Roadmap home:** [README](README.md)
+> **Status: built.** Every item below shipped; this is the plan and the record.
 > **Goal:** a runnable, reproducible benchmark on the lunar-polar anchor scenario — a researcher can
-> *clone, run, and score a baseline in an afternoon* (charter §10, §13; system.md §11).
+> *clone, run, and score a baseline in an afternoon* (charter §9, §11; system.md §11).
+>
+> Two things about the delivered phase that the plan could not name. The anchor content set is
+> published as content-addressed artifacts and resolvable by digest, which is what made *clone, run,
+> score* real rather than aspirational. And every component named below now ships as a subpackage of
+> [`astro-mine-platform`](../architecture/platform.md) with its commands in
+> [`astro-mine-cli`](../architecture/cli.md) — a packaging change made after the phase closed, which
+> left the deliverables here untouched (see [the distribution track](README.md#the-distribution-track)).
 
 **Entry dependencies:** none (this is the seed). **Governance, license, and export-control posture
-must be stood up alongside the first code, not after** (charter §12 → [CX-GOV](README.md#cross-cutting-workstreams)).
+must be stood up alongside the first code, not after** (charter §11 → [CX-GOV](README.md#cross-cutting-workstreams)).
 
 **Integration milestones (the phase's definition of "done"):**
 
@@ -18,7 +26,8 @@ must be stood up alongside the first code, not after** (charter §12 → [CX-GOV
   reduced form (scenario §15).
 
 **Phase exit criteria:** M0.2 met; the anchor `ScenarioSpec` is content-pinned and byte-for-byte
-reproducible across two clean checkouts; `Core v0.1` is frozen for the phase (changes only via RFC);
+reproducible across two clean checkouts; `Core v0.1` is frozen for the phase (additive changes only,
+machine-checked for wire compatibility);
 the local tier runs with no cloud and no account ([CX-LOCAL](README.md#cross-cutting-workstreams)).
 
 **Phase scope note (the anchor):** Phase 0 builds **only** what the
@@ -41,10 +50,10 @@ Breadth (Mars, more engines, autonomy, studio) is deliberately out of scope.
 - **RM-P0-CORE-02** — **Environment API v0.1**: `reset()/step(action) → observation, reward?, info`
   generalized for multi-agent, partial observability, variable timestep, and **explicit
   comms/observation masks**; maps cleanly onto Gymnasium/PettingZoo without being limited to them.
-  *(trace: core.md §3; `LUNAR-TR-003`; charter §8)*
+  *(trace: core.md §3; `LUNAR-TR-003`; charter §7)*
 - **RM-P0-CORE-03** — **Policy/Planner API v0.1**: one uniform "observations + context →
   actions/assignments" contract with composable sub-interfaces (mission planner · TAMP · allocator ·
-  controller). *(trace: core.md §3; charter §5.4)*
+  controller). *(trace: core.md §3; charter §4.4)*
 - **RM-P0-CORE-04** — **Message-schema catalog v0.1**: the typed cross-component vocabulary
   (state, action, sensor, comms-mask, contact-plan, observation), **including the `ObjectiveSpec`
   schema and the objective→metric binding** as a first-class contract. Per-tick hot-path payloads
@@ -70,43 +79,45 @@ Breadth (Mars, more engines, autonomy, studio) is deliberately out of scope.
 **Dependencies:** none upstream. **Exit criteria:** Sim/Worlds/Fleet/Bench compile and run the M0.1
 slice against frozen `Core v0.1` (pinned via a tag + `uv.lock`); contract tests green; schema bundle
 published to private GHCR and content-addressed.
-**Deferred → P1:** Mission/Phase/Regime + propulsion-SADF schema hooks (RFC-0001, *reserved* P1,
-[CX-RFC0001](README.md#cross-cutting-workstreams)); autonomy-composition / hub-indexing / studio-intent
+**Deferred → P1:** Mission/Phase/Regime + propulsion-SADF schema hooks (*reserved* P1,
+[CX-MISSION](README.md#cross-cutting-workstreams)); autonomy-composition / hub-indexing / studio-intent
 additions; Rust validator hardening.
 
 ---
 
-## Spice — the shared SPICE foundation (RFC-0002)
+## Spice — the shared SPICE foundation
 
 > Architecture: [spice.md](../architecture/spice.md). The SPICE-backed realization of
 > [Core](../architecture/core.md)'s frame/time vocabulary, factored into a *Core companion*
-> ([RFC-0002](../rfc/0002-shared-spice-foundation.md)). Lands right after Core and **before the Link
+> ([Spice](../architecture/spice.md)). Lands right after Core and **before the Link
 > MVP** — every SPICE consumer depends on it.
 
 **Scope & deliverables**
 
-- **RM-P0-SPICE-01** — **Extract `astro-mine-spice`** (import `astro_mine.spice`): a thin
-  commons-backbone package depending only on `astro-mine-core` + `spiceypy` + `numpy`. Lifts the SPICE
+- **RM-P0-SPICE-01** — **Extract `astro_mine.spice`** (import `astro_mine.spice`): a thin
+  commons-backbone package depending only on `astro_mine.core` + `spiceypy` + `numpy`. Lifts the SPICE
   kernel pool (`load_metakernel`/`kernel_pool`/`clear_kernels`, fail-loud), time
   (`et`/`epoch_from_utc`/`epoch_range`), geometry primitives (`body_position`/`frame_transform`,
   `DEFAULT_ABCORR`), and topocentric site geometry (`Site`, `body_geometry`/`sun_geometry`/`earth_geometry`)
   **near-verbatim** out of the shipped `astro_mine.worlds.spice` (RM-P0-WORLDS-02); the body reference
-  radius (`MOON_RADIUS_M`) moves here too. *(trace: spice.md; conventions §5; [RFC-0002](../rfc/0002-shared-spice-foundation.md))*
+  radius (`MOON_RADIUS_M`) moves here too. *(trace: spice.md; conventions §5; [Spice](../architecture/spice.md))*
 - **RM-P0-SPICE-02** — **Cut Worlds over** to the shared package: add the dependency, re-point imports,
   **delete** `astro_mine.worlds.spice` (hard cut — Worlds is pre-1.0, all consumers in-tree, no shim);
   `worlds.crs` re-imports `MOON_RADIUS_M`. SPICE oracle tests move with the code.
-  *(trace: [RFC-0002](../rfc/0002-shared-spice-foundation.md) "Migration")*
-- **RM-P0-SPICE-03** — **Distribution**: version-from-Git-tag, pinned downstream via a `uv` Git source +
-  CI token during private incubation (identical to the Core pattern); carries **no operational-targeting
-  capability** — generic geometry over public ephemerides is open-commons science (conventions §12).
-  *(trace: VERSIONING.md §5–7; conventions §12)*
+  *(trace: [Spice](../architecture/spice.md) "Migration")*
+- **RM-P0-SPICE-03** — **Distribution**: delivered as version-from-Git-tag, pinned downstream via a `uv`
+  Git source + CI token, identical to the Core pattern of the time. *(Superseded by the distribution
+  track: Spice is a subpackage of the platform wheel and has no distribution of its own —
+  [README](README.md#the-distribution-track).)* Carries **no operational-targeting capability** —
+  generic geometry over public ephemerides is open-commons science, then and now.
+  *(trace: VERSIONING.md; conventions §12)*
 
-**Dependencies:** Core (`RM-P0-CORE-06`). **Exit criteria:** Worlds builds against `astro-mine-spice` with
+**Dependencies:** Core (`RM-P0-CORE-06`). **Exit criteria:** Worlds builds against `astro_mine.spice` with
 `astro_mine.worlds.spice` gone; illumination/PSR (WORLDS-03) and Link (LINK-01) resolve geometry through the
 shared package; one set of frame/aberration conventions and oracle cross-checks holds platform-wide.
 **Sequencing:** lands before LINK-01 and the WORLDS-02 refactor. **Deferred:** Sim's orbital engine
 (SIM-03) and Transit (Phase 3) adopt the foundation when they next touch SPICE — additive, no rework
-([RFC-0002](../rfc/0002-shared-spice-foundation.md) resolved decisions).
+([Spice](../architecture/spice.md) resolved decisions).
 
 ---
 
@@ -121,8 +132,8 @@ shared package; one set of frame/aberration conventions and oracle cross-checks 
   CRS (PROJ planetary `+R`); derived slope/aspect/roughness layers; carried vertical/void-fill
   uncertainty. *(trace: worlds.md §5, §12; `LUNAR-FR-001`, `LUNAR-TR-001`, `LUNAR-DR-001`)*
 - **RM-P0-WORLDS-02** — **SPICE frames, epochs, Sun/Earth geometry** via SpiceyPy (meta-kernel
-  management; TDB/ET). **Extracted into the shared [`astro-mine-spice`](../architecture/spice.md)
-  foundation** (RM-P0-SPICE; [RFC-0002](../rfc/0002-shared-spice-foundation.md)) — Worlds consumes it as a
+  management; TDB/ET). **Extracted into the shared [`astro_mine.spice`](../architecture/spice.md)
+  foundation** (RM-P0-SPICE; [Spice](../architecture/spice.md)) — Worlds consumes it as a
   dependency rather than hosting `astro_mine.worlds.spice`. *(trace: worlds.md §3, §6; conventions §5)*
 - **RM-P0-WORLDS-03** — **Illumination + PSR detection**: precomputed per-azimuth **horizon maps**
   (O(1) per-epoch sun visibility) and **permanently-shadowed-region masks** over a defined epoch
@@ -164,7 +175,7 @@ illumination surrogate. **Deferred → P3:** small/irregular bodies, microgravit
   unreachable through the agent-facing Environment API; enforced by capability tags + contract tests.
   A leak is a security-class defect. *(trace: prospect.md §9; `LUNAR-FR-002`, `LUNAR-SR-005`, `LUNAR-DR-005`)*
 - **RM-P0-PROSPECT-06** — **Information-gain maps (variance / mutual information)** for active
-  perception. *(trace: prospect.md §3, §12; `LUNAR-FR-002`; charter §8)*
+  perception. *(trace: prospect.md §3, §12; `LUNAR-FR-002`; charter §7)*
 - **RM-P0-PROSPECT-07** — **Calibration gate**: credible-interval coverage checked against held-out
   ground truth; CI fails on miscalibration. *(trace: prospect.md §10, §12; `LUNAR-DR-005`)*
 
@@ -294,9 +305,9 @@ UI, Studio scoring integration. **Deferred → P3:** NEO/asteroid mission scenar
 **Scope & deliverables**
 
 - **RM-P0-LINK-01** — **Geometric LOS + terrain occlusion**: SPICE ephemeris geometry via the shared
-  [`astro-mine-spice`](../architecture/spice.md) foundation, composed with terrain occlusion through the
+  [`astro_mine.spice`](../architecture/spice.md) foundation, composed with terrain occlusion through the
   Core `WorldProvider` contract; degrade-loudly on missing kernels/providers/frames (never default
-  "connected"). *(trace: link.md §2, §11, §12; [RFC-0002](../rfc/0002-shared-spice-foundation.md))*
+  "connected"). *(trace: link.md §2, §11, §12; [Spice](../architecture/spice.md))*
 - **RM-P0-LINK-02** — **Relay-orbiter contact windows + DSN ground-station windows** over an epoch
   window (single relay orbiter baseline). *(trace: link.md §3, §12; scenario §5)*
 - **RM-P0-LINK-03** — **Parametric link budget** (gain/path-loss/SNR→rate; CCSDS-aligned mod/cod
@@ -309,7 +320,7 @@ UI, Studio scoring integration. **Deferred → P3:** NEO/asteroid mission scenar
 
 **Dependencies:** Core (`RM-P0-CORE-02,06`), Spice (`RM-P0-SPICE`; ephemeris geometry), Fleet (SADF
 radios); terrain occlusion via the Core `WorldProvider` contract (an injected Worlds provider — **no
-`astro-mine-worlds` package dependency**, [RFC-0002](../rfc/0002-shared-spice-foundation.md)).
+`astro_mine.worlds` package dependency**, [Spice](../architecture/spice.md)).
 **Exit criteria:** surface agents in/near PSRs lose LOS and Earth contact for real in the anchor
 scenario; masks flow into Sim; plans reproduce from pinned inputs. **Deferred → P1:** constellation
 geometry, multi-hop/CGR, store-and-forward `DeliveryModel`, full latency/bandwidth time-series to

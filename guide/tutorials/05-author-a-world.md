@@ -18,7 +18,7 @@ synthetic build quickly, and states plainly what the real one costs.
 Worlds ships a copyable WorldSpec as package data:
 
 ```
-astro-mine-worlds/src/astro_mine/worlds/spec/examples/synthetic_polar.world.yaml
+astro-mine-platform/src/astro_mine/worlds/spec/examples/synthetic_polar.world.yaml
 ```
 
 It is deliberately **small and synthetic** — a 10 km × 10 km lunar south-polar basin at 20 m
@@ -84,7 +84,7 @@ reference_datetime: '2025-01-01T00:00:00Z'
 
 **`crs` has no defaults, deliberately.** You state the body, the body-fixed frame, and the
 reference radius explicitly. An implicit Earth datum on a lunar body is a defaulting bug, and the
-loader rejects one outright rather than guessing ([RFC-0007](../../rfc/0007-units-frames-wire-schema.md),
+loader rejects one outright rather than guessing ([conventions.md §5](../../architecture/conventions.md),
 LUNAR-TR-001). See [concepts/uncertainty.md](../concepts/uncertainty.md) for the same principle
 applied to fields.
 
@@ -100,7 +100,7 @@ steps on a 500 × 500 grid. The anchor world uses far more, over a far larger re
 ## 3. Validate before you build (UC-C7)
 
 ```bash
-astro-mine-worlds validate my.world.yaml
+astro-mine worlds validate my.world.yaml
 ```
 
 ```
@@ -120,12 +120,12 @@ real one; discovering a malformed CRS at the end of that is a bad day. The valid
 To see the schema itself:
 
 ```bash
-astro-mine-worlds schema        # prints the published WorldSpec JSON Schema by its $id
+astro-mine worlds schema        # prints the published WorldSpec JSON Schema by its $id
 ```
 
 ## 4. Build it
 
-Building is a **Python/script path**, not a CLI verb — `astro-mine-worlds` ships `validate`,
+Building is a **Python/script path**, not a CLI verb — `astro-mine worlds` ships `validate`,
 `schema`, and `publish`, and there is no `build` subcommand. `build_world_bundle` **composes
 already-built layer products**, so the spec is the first of six steps, not the whole of it:
 
@@ -191,7 +191,7 @@ fine; a spec that declares a layer it never carries is what is not.
 So §1's *"needs neither the LOLA DEM nor SPICE kernels"* is now true of the DEM in every step, and
 true of kernels for everything except the PSR layer.
 
-The component [README](https://github.com/astro-mine/astro-mine-worlds#readme) documents steps 3–5
+Worlds' [source-tree notes](https://github.com/astro-mine/astro-mine-platform/blob/main/docs/components/worlds/) document steps 3–5
 in detail; this is the shape they compose in.
 
 ## 5. The real-data path (UC-C6), honestly
@@ -206,7 +206,7 @@ Building the **anchor** world — Shackleton–de Gerlache — is a different un
 
 The anchor's own recipe is recorded in the scenario zoo's `pins.json` — the worked example of a
 reproducible build, with the exact parameters (`--resolution-m 120`, `--n-azimuth 120`,
-`--psr-days 365`, …) followed by `astro-mine-worlds publish`.
+`--psr-days 365`, …) followed by `astro-mine worlds publish`.
 
 **The anchor world is not authorable as a static document**, and the shipped example says so in its
 own comments: its region derives from the ingested DEM's grid, and its source is pinned by the
@@ -224,8 +224,8 @@ mask validated against the LOLA reference (PSR area fraction 0.1464 vs 0.1864 re
 `<built-bundle>` is the `out_dir` from §4 — the directory holding `world.json`.
 
 ```bash
-astro-mine-hub keygen --out ./keys
-astro-mine-worlds publish out/mine-bundle --registry ./myreg --key ./keys/cosign.key
+astro-mine hub keygen --out ./keys
+astro-mine worlds publish out/mine-bundle --registry ./myreg --key ./keys/cosign.key
 ```
 
 `--key` is **required**: publishing is always signed, so generating a keypair and then not passing it
@@ -247,6 +247,6 @@ sentence.
 - **The format:** [reference/file-formats.md](../reference/file-formats.md).
 
 **A related gap worth knowing:** resource priors — the other half of P3's world — are **Python
-objects, not an authored file format**. `astro-mine-prospect publish` ships a prior bundle, but
+objects, not an authored file format**. `astro-mine prospect publish` ships a prior bundle, but
 there is no `prior.yaml` to write. Whether there should be is an open design question (G2.15), and
 this guide will not invent a schema for it.

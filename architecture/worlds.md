@@ -1,6 +1,6 @@
 # Astro-Mine-Worlds — Technology Architecture
 
-> Layer: **World & environment models** · Phase: **0** · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
+> Layer: **World & environment models** · Phase: **0** · Ships in: [`astro-mine-platform`](platform.md) · Extended for multi-regime missions (Phase 3)
 > Turns real mission data into simulatable celestial-body worlds — the physical
 > substrate (terrain, gravity, illumination, thermal, regolith, dust) on which every
 > scenario runs.
@@ -41,7 +41,7 @@ physics engine and not a resource model:
 - **No new transport, schema, or auth machinery** — those are owned by [Core](core.md) and
   fixed by [conventions.md](conventions.md).
 
-**Small & irregular bodies (RFC-0001).** [RFC-0001](../rfc/0001-multi-regime-missions.md)
+**Small & irregular bodies.** [multi-regime missions](mission-model.md)
 generalizes a single-world campaign into a [Mission](mission-model.md) of phases across regimes;
 Worlds is extended to model the *body* end of that — small / irregular bodies (asteroids, NEOs,
 small moons) for the `surface` and `proximity_orbit` regimes. Worlds remains strictly "on/at a
@@ -91,7 +91,7 @@ lunar polar water-ice prospecting in comms-denied PSRs).
    (conventions.md §8).
 8. **Uncertainty is carried, not erased.** DEM vertical error, interpolation/void-fill flags,
    and regolith-parameter priors travel with the data as companion layers, so downstream
-   sim-to-real claims can be honest (charter §8, §12).
+   sim-to-real claims can be honest (charter §7, §10).
 9. **Library first, service second.** Worlds is importable on a workstation (open a world, query
    a tile, evaluate illumination) before it is a tile/field service (conventions.md §1.4).
 
@@ -145,8 +145,8 @@ Worlds is itself a host of plugins discovered through the [Core](core.md) regist
 
 - **Body packs** — a new celestial body (Mars, Enceladus, an asteroid) is a plugin contributing
   its frames, gravity model, reference radius/geoid, and default thermophysics. "Support a new
-  world" means writing a package, never patching Worlds (charter §10.2). Under
-  [RFC-0001](../rfc/0001-multi-regime-missions.md), **small-body gravity packs** (polyhedral /
+  world" means writing a package, never patching Worlds (charter §9.2). Under
+  [multi-regime missions](mission-model.md), **small-body gravity packs** (polyhedral /
   mascon, with a harmonic far-field) are additional registry content that pairs with the surface
   body-pack — the same plugin mechanism, now carrying a 3-D shape model, a non-central gravity
   representation, and a body rotation/tumbling state alongside the surface fields.
@@ -182,14 +182,15 @@ Aligned with conventions.md §2:
 - **Numerics:** NumPy/SciPy; **Numba**/CuPy where a Python kernel must be fast but not C++.
   Spherical-harmonic gravity via an established library (e.g. `pyshtools`-style evaluation).
 - **Geometry/tiles:** USD and glTF for mesh interchange (conventions.md §3); **3D Tiles** output
-  for [View](view.md)'s Cesium renderer (charter §7).
+  for [View](view.md)'s Cesium renderer (charter §6).
 - **Service layer:** **FastAPI** (REST/OpenAPI 3.1, STAC API) + **gRPC** for service-to-service
   (conventions.md §3, §4). Recorded provenance via standard tooling.
 - **Runtime model:** importable library first; the service is a stateless deployment of the same
   library reading immutable bundles from object storage (conventions.md §1.4, §8).
-- **Build/packaging:** Python wheel `astro-mine-worlds` (Pybind11 native extension, manylinux);
-  OCI image for the service; **world bundles are OCI artifacts** in the registry, discovered via
-  [Hub](hub.md) (conventions.md §7). SemVer for the package; content hashes for bundles.
+- **Build/packaging:** ships in the [`astro-mine-platform`](platform.md) wheel; OCI image for the
+  service; **world bundles are OCI artifacts** in the registry, discovered via [Hub](hub.md)
+  (conventions.md §7). Content is versioned independently of code, and always was: a bundle carries a
+  content hash, and that — not the code version — is what a scenario pins.
 
 ---
 
@@ -209,8 +210,8 @@ Worlds is one of the platform's principal **data producers** (conventions.md §5
 
 - **Owned:** `WorldSpec` schema; the world-bundle manifest; derived terrain/illumination/thermal/
   regolith/dust layers; horizon maps and PSR masks; 3D-Tiles tilesets.
-- **Consumed:** PDS4/PDS3 + USGS Astrogeology datasets (charter §7); SPICE kernels (SPK/PCK/FK/
-  LSK) from NAIF; gravity-field coefficient sets. For small bodies (RFC-0001): published 3-D
+- **Consumed:** PDS4/PDS3 + USGS Astrogeology datasets (charter §6); SPICE kernels (SPK/PCK/FK/
+  LSK) from NAIF; gravity-field coefficient sets. For small bodies: published 3-D
   **shape models** and small-body **gravity packs** (polyhedral/mascon + harmonic far-field) plus
   rotation/tumbling state, carried as body-pack registry content (§3).
 - **Schemas:** `WorldSpec` and the world manifest are **JSON Schema + Pydantic v2**
@@ -247,20 +248,20 @@ Worlds plugs into the platform exclusively through [Core](core.md) contracts
   (`ray_intersect`, horizon maps) that Link uses to compute inter-agent and Earth-link
   visibility — the same horizon machinery that drives PSR detection. Link consumes this through the
   Core **`WorldProvider`** contract (`core.world`), not a direct dependency on Worlds; the SPICE
-  ephemeris half of Link's geometry comes from [Spice](spice.md), not from here ([RFC-0002](../rfc/0002-shared-spice-foundation.md)).
+  ephemeris half of Link's geometry comes from [Spice](spice.md), not from here ([Spice](spice.md)).
 - **→ [View](view.md).** Worlds streams **3D Tiles** (LOD terrain) and raster overlays to View's
   Cesium/3D-Tiles renderer over HTTP.
-- **↔ [Core](core.md).** Worlds depends on `astro-mine-core` for the Environment-API contract,
+- **↔ [Core](core.md).** Worlds depends on `astro_mine.core` for the Environment-API contract,
   the plugin manifest/registry, units/frames/time conventions, and message schemas; body/world
   packs register via the Core manifest.
 - **← [Spice](spice.md).** Worlds resolves SPICE-backed frames, epochs, and Sun/Earth geometry
-  through the shared **`astro-mine-spice`** foundation (`astro_mine.spice`,
-  [RFC-0002](../rfc/0002-shared-spice-foundation.md)) instead of embedding its own SPICE adapter — the
+  through the shared **`astro_mine.spice`** foundation (`astro_mine.spice`,
+  [Spice](spice.md)) instead of embedding its own SPICE adapter — the
   illumination/PSR machinery (RM-P0-WORLDS-03) drives `sun_geometry`/`body_geometry` from it, and
   `worlds.crs` re-imports the body reference radius (`MOON_RADIUS_M`) from there. This replaces the
-  former in-package `astro_mine.worlds.spice` module (extracted on acceptance of RFC-0002).
+  former in-package `astro_mine.worlds.spice` module, extracted when the foundation was factored out.
 - **→ [Hub](hub.md).** World bundles are published, versioned, and discovered as content-addressed
-  OCI artifacts via Hub (charter §6, §10.3).
+  OCI artifacts via Hub (charter §5, §9.3).
 - **→ [Bench](bench.md).** Bench pins a specific world version (and Core interface version) per
   scenario so leaderboard results are exactly reproducible (conventions.md §1.5).
 
@@ -274,8 +275,8 @@ message passing — workers stream the slices they need (conventions.md §8).
 ## 7. Infrastructure & deployment
 
 - **Deployment tiers** (conventions.md §7):
-  1. **Local/dev** — `pip install astro-mine-worlds`; open a small world bundle and query it on a
-     workstation. *This tier MUST work* (clone-and-run-in-an-afternoon, charter §13).
+  1. **Local/dev** — `pip install astro-mine-cli`; open a small world bundle and query it on a
+     workstation. *This tier MUST work* (clone-and-run-in-an-afternoon, charter §12).
   2. **Cloud** — the stateless field/tile + STAC service on **Kubernetes**, reading immutable
      bundles from S3-compatible storage; **Argo Workflows**/**Ray** for batch precompute
      (LOD pyramids, horizon maps, PSR masks, thermal time-series).
@@ -333,7 +334,7 @@ message passing — workers stream the slices they need (conventions.md §8).
   **SBOM** (Syft/CycloneDX). The pinned **GDAL/PROJ/SPICE** native toolchain is a deliberate,
   scanned dependency surface (conventions.md §9).
 - **Export control / dual-use:** publicly released PDS/USGS planetary terrain and standard SPICE
-  kernels are **open science** — squarely in the open commons (charter §12, conventions.md §12).
+  kernels are **open science** — squarely in the open commons (charter §11, conventions.md §12).
   Worlds carries **no operational targeting capability**, so its EAR/ITAR posture is low-risk;
   the dual-use partition lives downstream in [Bridge](bridge.md)/[Ops](ops.md). Worlds still
   honors capability tags so an unusually sensitive dataset can be partitioned via the standard
@@ -372,21 +373,21 @@ message passing — workers stream the slices they need (conventions.md §8).
 
 | Decision | Options | Recommendation |
 |---|---|---|
-| **Terrain representation** | Heightfield/raster grid (DEM); triangle mesh; implicit/SDF | **Heightfield grid as the canonical form** (matches DEM source, COG/Zarr-native, cheap LOD); generate **triangle/3D-Tiles meshes** for View and **local mesh patches** for contact-rich Sim regions on demand. SDF only as an optional accelerator for ray queries. **Small / irregular bodies (RFC-0001) break the heightfield assumption** — they require a full 3-D closed-surface shape model (mesh/SDF), not a 2.5-D DEM, carried by the small-body pack. |
+| **Terrain representation** | Heightfield/raster grid (DEM); triangle mesh; implicit/SDF | **Heightfield grid as the canonical form** (matches DEM source, COG/Zarr-native, cheap LOD); generate **triangle/3D-Tiles meshes** for View and **local mesh patches** for contact-rich Sim regions on demand. SDF only as an optional accelerator for ray queries. **Small / irregular bodies break the heightfield assumption** — they require a full 3-D closed-surface shape model (mesh/SDF), not a 2.5-D DEM, carried by the small-body pack. |
 | **Illumination / shadowing** | Precomputed per-azimuth horizon maps; on-demand CPU ray casting; GPU shadow rendering/ray casting | **Precomputed horizon maps as the default** (O(1) per-epoch sun visibility, drives PSR masks) **+ GPU ray casting for the fine on-demand path**; CPU ray casting as the portable fallback. |
 | **Regolith / terramechanics split** | All terramechanics in Worlds; all in Sim; **parameter fields here, constitutive models in Sim** | **Parameter fields in Worlds, constitutive models in [Sim](sim.md)** — Worlds owns the spatial *what-it-is-like* data; Sim owns the *how-it-behaves* physics, joined at the Core Environment API. |
 | **CRS / frame handling** | Roll-our-own planetary CRS; **PROJ planetary CRS + SPICE frames**; GDAL defaults | **PROJ (planetary `+R`/geoid) for projections + SPICE for body-fixed/inertial frames, epochs, and Sun/Earth geometry**; explicit CRS on every layer (conventions.md §5). |
 | **Field-layer store** | Zarr; HDF5; NetCDF; GeoTIFF only | **Zarr (cloud-native, chunked) primary; COG for 2-D rasters; HDF5 for interop** (conventions.md §5). |
-| **Terrain tiles for View** | 3D Tiles (Cesium); quantized-mesh; custom | **3D Tiles** (+ quantized-mesh/heightfield), matching [View](view.md)'s Cesium renderer (charter §7). |
+| **Terrain tiles for View** | 3D Tiles (Cesium); quantized-mesh; custom | **3D Tiles** (+ quantized-mesh/heightfield), matching [View](view.md)'s Cesium renderer (charter §6). |
 | **Thermal model fidelity** | Static map; 1-D thermophysical (per-class precomputed); full 3-D FEM | **1-D thermophysical model, precomputed per terrain class** and interpolated; full 3-D deferred — out of Phase-0 scope. |
-| **Gravity model** | Point-mass only; **point-mass + spherical harmonics**; polyhedral (small bodies) | **Point-mass + spherical harmonics** for the Moon/Mars; **polyhedral / mascon** added via small-body packs (RFC-0001, Phase 3) for irregular non-central fields, with a harmonic far-field. |
+| **Gravity model** | Point-mass only; **point-mass + spherical harmonics**; polyhedral (small bodies) | **Point-mass + spherical harmonics** for the Moon/Mars; **polyhedral / mascon** added via small-body packs (Phase 3) for irregular non-central fields, with a harmonic far-field. |
 | **Ingest cataloging** | Ad-hoc paths; **STAC**; custom DB only | **STAC** for both source and derived datasets, backed by PostGIS (conventions.md §5). |
 
 **Open questions / research dependencies:**
 
 - **Regolith parameterization taxonomy** — which terramechanics parameters, in which units, with
   what uncertainty representation, form the stable Worlds→Sim tuple? Co-design with
-  [Sim](sim.md); ties to charter §8 (sim-to-real for planetary terramechanics).
+  [Sim](sim.md); ties to charter §7 (sim-to-real for planetary terramechanics).
 - **PSR-mask epoch semantics** — "permanently" shadowed is defined over an epoch window; what
   standard window and tolerance does Bench fix for the reference scenario? Resolve with
   [Bench](bench.md).
@@ -394,10 +395,10 @@ message passing — workers stream the slices they need (conventions.md §8).
   penumbra fidelity does energy-survival planning ([Guard](guard.md)/[Allocate](allocate.md))
   actually need?
 - **DEM void-fill & uncertainty** — standard void-fill and how DEM vertical error propagates into
-  illumination/PSR/trafficability uncertainty (charter §8, §12).
+  illumination/PSR/trafficability uncertainty (charter §7, §10).
 - **Surrogate illumination** — could a learned surrogate replace ray casting for very large
   swarm-scale queries, with tracked error? Co-design with [Surrogate](surrogate.md).
-- **Microgravity regolith taxonomy (RFC-0001)** — which cohesion-dominated parameters (and
+- **Microgravity regolith taxonomy** — which cohesion-dominated parameters (and
   body rotation/tumbling state) form the stable small-body Worlds→[Sim](sim.md) tuple for the
   microgravity-contact regime, distinct from the gravity-dominated lunar/Martian set? Co-design
   with Sim; the boundary with the free-space medium is [Transit](transit.md).
@@ -407,7 +408,7 @@ message passing — workers stream the slices they need (conventions.md §8).
 ## 12. Roadmap alignment
 
 - **Phase 0 (now) — MVP.** Worlds ships with [Core](core.md)/[Sim](sim.md)/[Fleet](fleet.md)/
-  [Bench](bench.md) for the **lunar polar water-ice reference scenario** (charter §11, §13):
+  [Bench](bench.md) for the **lunar polar water-ice reference scenario** (charter §10, §11):
   - ingest LOLA DEM for the Shackleton/south-polar region → COG/Zarr with explicit planetary CRS;
   - SPICE-backed lunar frames, epochs, and Sun/Earth geometry;
   - point-mass + low-order spherical-harmonic lunar gravity;
@@ -421,11 +422,11 @@ message passing — workers stream the slices they need (conventions.md §8).
   Goal: a researcher can select "Shackleton vN" and run/score a baseline in an afternoon.
 - **Phase 1+ — later.** Mars worlds (MOLA/HiRISE) and Martian frames; richer dust model; finer
   GPU on-demand illumination and learned illumination surrogates; additional body packs as
-  plugins (charter §10.2); deeper thermal fidelity.
+  plugins (charter §9.2); deeper thermal fidelity.
 - **Phase 3 — ecosystem.** New environments (asteroids via polyhedral gravity, icy moons like
   Enceladus/Europa) arrive purely as community **body packs** — "support a new world" stays a
-  package, never a Worlds core change (charter §10.2, §11).
-  - **Multi-regime missions (RFC-0001).** The small / irregular-body extension — 3-D shape models,
+  package, never a Worlds core change (charter §9.2, §9).
+  - **Multi-regime missions.** The small / irregular-body extension — 3-D shape models,
     polyhedral/mascon non-central gravity, body rotation/tumbling, and microgravity-regolith
     fields for the `surface` and `proximity_orbit` regimes — lands here, alongside
     [Transit](transit.md) and the new mission-architecture components. The additive

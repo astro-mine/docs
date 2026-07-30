@@ -2,12 +2,17 @@
 
 > **Window:** ~30–54 mo · **Theme:** Operations bridge · **Roadmap home:** [README](README.md)
 > **Goal:** cross the **simulation-to-operations threshold on terrestrial analogs** — run a
-> validated campaign first as a digital-twin shadow, then drive an analog rover swarm (charter §10;
+> validated campaign first as a digital-twin shadow, then drive an analog rover swarm (charter §9;
 > system.md §11).
+
+**Status: next.** Nothing below is built.
 
 **Entry dependencies:** Phase 1 complete — a closed, scored design loop producing a Studio
 [Campaign](../architecture/studio.md); the autonomy stack (Mind/Allocate/Guard) and Sim validated and
-publishable.
+publishable. **Met.** Additionally, `RM-DIST-03` and `RM-DIST-04` ([the distribution
+track](README.md#the-distribution-track)) should land first: Ops and Bridge arrive as new platform
+subpackages, the ops console as a new front-end surface, and both are cheaper to add once the REST and
+front-end distributions exist than to add and then move.
 
 **Integration milestones:**
 
@@ -23,7 +28,7 @@ publishable.
 **Phase exit criteria:** M2.1 + M2.2 met; the **identical-plan invariant** holds (sim and hardware
 driven by the same committed plan bytes, verified by conformance test); every dispatched command
 carries a [Guard](../architecture/guard.md) clearance + shadow verdict; the design loop and operations
-loop demonstrably **share** Mind/Allocate/Guard/Sim (charter §6).
+loop demonstrably **share** Mind/Allocate/Guard/Sim (charter §5).
 
 **Cross-cutting this phase — [CX-S2R](README.md#cross-cutting-workstreams):** Phase 2 is where
 sim-to-real credibility stops being a claim and gets *measured* — terramechanics validation against
@@ -46,15 +51,15 @@ analog field data, and the sim↔HIL/SIL conformance tolerance, are first-class 
   any command lacking a valid Guard clearance. *(trace: ops.md §3, §9; `LUNAR-UX-003`)*
 - **RM-P2-OPS-03** — **Fleet-wide state estimation**: factor-graph collaborative SLAM (GTSAM/iSAM2)
   + per-asset EKF/UKF fusion, comms-aware, in GNSS-denied feature-poor terrain; uncertainty-carrying
-  **fleet belief**. *(trace: ops.md §3, §11; charter §8; `LUNAR-FR`-adjacent)*
+  **fleet belief**. *(trace: ops.md §3, §11; charter §7; `LUNAR-FR`-adjacent)*
 - **RM-P2-OPS-04** — **Digital-twin shadow manager**: a [Sim](../architecture/sim.md) instance run
   *ahead of* real time from the live belief, **vetting every replan before commit** (predictive twin
   + mandatory on-demand vet; adaptive multi-fidelity to stay ahead). *(trace: ops.md §2, §11)*
 - **RM-P2-OPS-05** — **Online replanning** through the **same** Mind/Allocate/Guard used in design
-  (anomaly/monitor breach → propose). *(trace: ops.md §3, §6; charter §6)*
+  (anomaly/monitor breach → propose). *(trace: ops.md §3, §6; charter §5)*
 - **RM-P2-OPS-06** — **Delay-tolerant supervisory model (HITL)**: **intent-envelope approval** with
   expiry + autonomy level, not teleoperation; pre-approved contingency branches for comms-denied PSR
-  intervals; fine-grained OPA operator roles + two-person rule for shield overrides. *(trace: ops.md §3, §9, §11; `LUNAR-UX-003`; charter §8)*
+  intervals; fine-grained OPA operator roles + two-person rule for shield overrides. *(trace: ops.md §3, §9, §11; `LUNAR-UX-003`; charter §7)*
 - **RM-P2-OPS-07** — **Ground+edge split**: heavy estimation/shadow/replanning on the ground; a thin
   Guard-wrapped intent executor at the edge for partition tolerance; replay-as-debugging from the
   event log. *(trace: ops.md §3, §7, §11)*
@@ -80,7 +85,7 @@ real flight-asset operation; multi-phase mission ops + the phase executor.
   package. *(trace: bridge.md §3, §9, §12)*
 - **RM-P2-BRIDGE-03** — **`BridgeTarget` runtime switch + the identical-plan conformance test** (the
   *same* committed plan drives sim and a SIL target; boundary recordings must match within a declared
-  tolerance — a CI gate that *proves* charter §5.6). *(trace: bridge.md §2, §10, §12)*
+  tolerance — a CI gate that *proves* charter §4.6). *(trace: bridge.md §2, §10, §12)*
 - **RM-P2-BRIDGE-04** — **`transform` services**: SPICE TDB/ET ⇄ stack clocks (measured, bounded,
   surfaced skew), SPICE frames ⇄ stack frames (tf2), SI ⇄ stack units, per-adapter codec registry.
   *(trace: bridge.md §3, §11)*
@@ -95,7 +100,7 @@ real flight-asset operation; multi-phase mission ops + the phase executor.
 Guard verdicts, Link profiles, Ops, Sim. **Exit criteria:** identical-plan conformance test green
 (sim ↔ SIL); analog rover swarm driven over ROS 2 (M2.2). **Deferred → P3:** cFS/F´ adapters,
 CFDP/DTN-BP, full HIL, deep-space DSN adapters — sensitive ones partitioned. The certification-grade
-flight-code/targeting generator is **permanently out of scope** (charter §2.2, §10.5).
+flight-code/targeting generator is **permanently out of scope** (charter §9.5, §9.5).
 
 ---
 

@@ -1,6 +1,7 @@
 # Astro-Mine-Hub — Technology Architecture
 
-> Layer: **Commons backbone & platform infrastructure** · Phase: **1** · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
+> Layer: **Commons backbone & platform infrastructure** · Phase: **1** · Extended for multi-regime missions (Phase 3)
+> Ships in: [`astro-mine-platform`](platform.md) (client, index, registry, curation) · [`astro-mine-api`](api.md) (the registry API) · [`astro-mine-ui`](ui.md) (`@astro-mine/hub-ui`)
 > The registry for sharing and discovering everything the community produces — plugins,
 > worlds, assets, policies, and surrogate models — indexed by their [Core](core.md) manifest.
 > Cross-cutting standards: see [conventions.md](conventions.md).
@@ -32,7 +33,7 @@ Hub does, and only does:
   ranges;
 - **Gates** downloads by license and export-control/dual-use policy.
 
-**Mission-architecture artifacts (RFC-0001).** When multi-regime missions land (Phase 3), the same
+**Mission-architecture artifacts.** When multi-regime missions land (Phase 3), the same
 registry indexes new shareable artifact *types* by their [Core](core.md) manifest: **mission
 templates / `MissionSpec`s** (see [mission-model](mission-model.md)), **`TrajectoryRef`/`ManeuverBudget`
 libraries** ([Trajectory](trajectory.md) — *descriptive, design-time* reference arcs, **not**
@@ -71,7 +72,7 @@ leaderboards + Hub are the growth engine), and §10.5 (interop-first; honest abo
 2. **The manifest is the index, not Hub's invention.** Hub indexes artifacts by the
    [Core](core.md) plugin manifest and refuses to invent its own parallel metadata schema for
    anything Core already describes. If discovery needs a field, the field belongs in the Core
-   manifest (via RFC), not as a Hub-private extension.
+   manifest, not as a Hub-private extension.
    **The one thing Core does not describe is container shape**, and that is Hub's to name. An
    artifact's `artifact_kind` — the payload shape behind its `application/vnd.astro-mine.<kind>.v1`
    media type — is a *packaging* fact, whereas `PluginKind` enumerates the *interfaces* a plugin
@@ -102,7 +103,7 @@ leaderboards + Hub are the growth engine), and §10.5 (interop-first; honest abo
 6. **Standards in, standards out.** Hub speaks the **OCI Distribution Spec** so any
    `oci`/`oras`/`docker`/`cosign` client interoperates; there is no proprietary push/pull
    protocol. The value is in the *index and policy*, not in lock-in.
-7. **Library first, service second.** A client SDK (`astro-mine-hub`) resolves, verifies, and
+7. **Library first, service second.** A client SDK (`astro_mine.hub`) resolves, verifies, and
    caches artifacts on a single workstation against any OCI registry; the hosted service is a
    deployment of that capability, not a separate stack (conventions.md §1, tenet 4).
 8. **Honest about dual use at the download boundary.** License and export-control gating
@@ -116,8 +117,9 @@ leaderboards + Hub are the growth engine), and §10.5 (interop-first; honest abo
 
 ## 3. Application architecture
 
-Hub is a **service**: an OCI-compatible registry plus an index/discovery/policy plane in front
-of it, plus a web UI and a client SDK. Its subsystems:
+Hub is two things that must not be confused: a **local, offline-capable client** every producer and
+consumer imports, and a **hosted service** — an OCI-compatible registry plus an index/discovery/policy
+plane in front of it. The client tier is the one that must always work (§7). Its subsystems:
 
 ```
 astro_mine.hub
@@ -128,10 +130,13 @@ astro_mine.hub
 ├── supply_chain/    # cosign verify, SLSA provenance, SBOM (Syft/CycloneDX), attestations
 ├── policy/          # OPA gate: authz, license & export-control download gating, namespace rules
 ├── curation/        # namespaces, verified publishers, review/moderation, deprecation/yank
-├── api/             # REST + OpenAPI 3.1 (FastAPI) façade over the above
-├── ui/              # TypeScript + React web front-end (browse, compare, artifact pages)
-└── client/          # astro-mine-hub Python/CLI SDK: resolve, verify, pull, cache, publish
+└── client/          # Python SDK: resolve, verify, pull, cache, publish
 ```
+
+Two more surfaces are Hub's design but not Hub's package: the **REST + OpenAPI 3.1 façade** over
+the modules above ships in [`astro-mine-api`](api.md), and the **browse/compare/artifact-page web
+front end** ships as `@astro-mine/hub-ui` in [`astro-mine-ui`](ui.md). Both are thin over what is
+listed here, which is the point (conventions.md §3).
 
 ### Key abstractions exposed
 
@@ -140,12 +145,12 @@ astro_mine.hub
   `…world.v1`, `…asset.v1` for SADF bundles, `…surrogate.v1`, `…plugin.v1`). Its OCI manifest
   layers carry the payload (an ONNX file, a USD/glTF + SADF bundle, a Zarr/COG world, a
   surrogate checkpoint) and reference the **Core plugin manifest** as a layer/config.
-  **(RFC-0001)** The mission-architecture types add `…mission.v1` (a `MissionSpec`),
+  **Phase 3.** The mission-architecture types add `…mission.v1` (a `MissionSpec`),
   `…trajectory.v1` (a descriptive `TrajectoryRef`/`ManeuverBudget`), `…asset.v1` for *sized* SADF
   designs, and `…economics.v1` (a [Ledger](ledger.md) value model) — each indexed by the same Core
   manifest, with the same content-addressing and attestations. Those are **container** kinds, so
-  adding them is a Hub change (an append to its vocabulary) and not automatically a Core RFC —
-  a Core RFC is needed only if they also introduce a new *interface* (principle 2).
+  adding them is a Hub change (an append to its vocabulary) and not automatically a Core change —
+  Core moves only if they also introduce a new *interface* (principle 2).
 - **Catalog record** — the indexed projection of an artifact's Core manifest into Postgres:
   `kind`, `core_interface_versions[]`, `capability_tags[]`, `inputs/outputs`, `license`,
   `provenance`, `signatures[]`, plus Hub-side facets (downloads, publisher, namespace, the
@@ -163,7 +168,7 @@ astro_mine.hub
 - **Artifact-kind handlers** (plugins): per-`artifactType` validators and metadata extractors
   (e.g. an ONNX-policy handler that reads the model's I/O signature; a world handler that reads
   STAC/CRS metadata). New content kinds register a handler rather than patching Hub core
-  (charter §10.2).
+  (charter §9.2).
 - **Policy bundles** (OPA): admission and download policies are data-driven Rego bundles, so
   governance/export-control rules evolve without code changes.
 - **Search providers:** the semantic/full-text backend is swappable behind the `search/`
@@ -190,9 +195,9 @@ astro_mine.hub
   **registry data path** (high-throughput blob/manifest serving) uses a mature OCI registry
   implementation rather than re-implementing the Distribution Spec (see §11). Performance- and
   safety-sensitive client tooling (content-addressed verification, resolution) MAY use **Rust**
-  per conventions.md §2 ("content-addressed registry tooling"). The web UI is
-  the platform front-end baseline (conventions.md §2.1). It is the last front end still on its own
-  styling (Pico CSS); it retires onto `@astro-mine/ui` with the Wave-24 surface conversion.
+  per conventions.md §2 ("content-addressed registry tooling"). The web front end is a console
+  surface on the platform front-end baseline (conventions.md §2.1) — it was the last front end on
+  its own styling (Pico CSS) and has since retired onto `@astro-mine/ui`.
 - **Frameworks & libraries.** **FastAPI** + **Pydantic v2** for the REST/OpenAPI 3.1 façade
   (conventions.md §3); **ORAS** (OCI Registry As Storage) libraries for artifact push/pull of
   non-image content; **Sigstore `cosign`/`sigstore-python`** for signing/verification;
@@ -206,9 +211,10 @@ astro_mine.hub
   in PostgreSQL, the OCI registry, S3-compatible object storage, and **Redis** (cache, rate
   limits, ephemeral resolution state) per conventions.md §5. Async work (embedding computation,
   SBOM scanning, mirror/replication) runs off a **NATS + JetStream** queue (conventions.md §4).
-- **Build & packaging.** OCI service images, multi-arch, reproducible, pinned bases
-  (conventions.md §7); the client ships as the `astro-mine-hub` Python wheel + CLI; SemVer
-  throughout (conventions.md §13).
+- **Build & packaging.** The client, index, registry and curation libraries ship in the
+  [`astro-mine-platform`](platform.md) wheel, and the commands as `astro-mine hub …` in
+  [`astro-mine-cli`](cli.md); the REST façade ships in [`astro-mine-api`](api.md) as a multi-arch OCI
+  service image, reproducible on pinned bases (conventions.md §7).
 
 ---
 
@@ -236,7 +242,7 @@ Hub **owns the distribution and index** of artifacts; it does **not** own their 
   assigns to Hub/Cloud/Bench. Payloads: **ONNX** policies (conventions.md §6), **SADF**
   asset bundles with **USD/glTF** geometry (conventions.md §3), **Zarr/COG** world/resource
   fields (conventions.md §5), surrogate model checkpoints, plugin bundles, and Core **schema
-  bundles**. **(RFC-0001)** plus **`MissionSpec`** documents, **`TrajectoryRef`/`ManeuverBudget`**
+  bundles**. **Phase 3.** plus **`MissionSpec`** documents, **`TrajectoryRef`/`ManeuverBudget`**
   libraries ([Trajectory](trajectory.md)), **sized SADF designs** ([Sizing](sizing.md)), and
   **open economics / value models** ([Ledger](ledger.md)) — content-addressed and provenance-
   tracked like everything else, so a mission trade study reproduces exactly.
@@ -260,12 +266,12 @@ re-publish to an existing version is rejected — publish a new version).
 
 ## 6. Integration architecture
 
-Hub sits at the center of the **contribute-once-use-everywhere** flywheel (charter §6):
+Hub sits at the center of the **contribute-once-use-everywhere** flywheel (charter §5):
 
 - **[Core](core.md)** — Hub indexes *everything* by the Core **plugin manifest** and validates
   the **Core interface versions** an artifact declares; capability negotiation and the
   capability-tag vocabulary used for dual-use gating are Core's, consumed here. Hub depends on
-  `astro-mine-core` for the manifest model and version-range logic.
+  `astro_mine.core` for the manifest model and version-range logic.
 - **Producers (publish to Hub):** [Fleet](fleet.md) SADF assets; [Worlds](worlds.md) and
   [Prospect](prospect.md) world/resource-field content; [Learn](learn.md) **ONNX** policies;
   [Surrogate](surrogate.md) models; [Mind](mind.md)/[Allocate](allocate.md) planners; and
@@ -275,7 +281,7 @@ Hub sits at the center of the **contribute-once-use-everywhere** flywheel (chart
   registry** resolves it through Hub; [Learn](learn.md) pulls baselines/curricula and publishes
   trained policies back; [Ops](ops.md) pulls a validated, signed campaign bundle.
 - **[Bench](bench.md)** — the tightest coupling and the other half of the academic flywheel
-  (charter §10.3): a leaderboard submission *references Hub artifacts by digest*; Bench resolves
+  (charter §9.3): a leaderboard submission *references Hub artifacts by digest*; Bench resolves
   and verifies them through Hub, and Bench results link back to the exact artifact digests they
   scored. Hub never scores; Bench never stores artifacts.
 - **[Cloud](cloud.md)** — Hub is *deployed on* Cloud's Kubernetes substrate; large training/sweep
@@ -296,7 +302,7 @@ concern (that's MCAP, owned by Sim/Ops).
 
 - **Deployment tier:** **Cloud** (conventions.md §7, tier 2) — Kubernetes on [Cloud](cloud.md).
   A **local/dev** tier (tier 1, which MUST always work) runs the registry + Postgres + MinIO via
-  `docker compose`, and the `astro-mine-hub` client resolves/pulls against **any** OCI registry
+  `docker compose`, and the `astro_mine.hub` client resolves/pulls against **any** OCI registry
   (including `ghcr.io` or a private Harbor/Zot) so a researcher needs no hosted Hub to be
   productive.
 - **Containerization & orchestration:** OCI images for every service; deployed via Helm/Argo CD
@@ -371,7 +377,7 @@ want to enter and the place reproducibility lives or dies. This section is centr
   **Shipped today:** the keyed **ECDSA (`sigstore_cosign` scheme)** path, which works offline with
   no account — the local tier's default. **Deferred:** keyless Sigstore (Fulcio/Rekor, OIDC-bound)
   and KMS keys, additive behind the same scheme, decided with the trust-root policy
-  ([astro-mine-hub#14](https://github.com/astro-mine/astro-mine-hub/issues/14), Phase 2).
+  (an open Hub question — the production trust-root policy, Phase 2).
 - **AuthN/AuthZ.** **OIDC** (Keycloak self-host or cloud IdP); **RBAC enforced via OPA**
   (conventions.md §9). Anonymous read of public, non-gated artifacts; authenticated publish;
   namespace-scoped write; **verified-publisher** is a granted, audited role. Service-to-service
@@ -389,17 +395,17 @@ want to enter and the place reproducibility lives or dies. This section is centr
   self-published, signed but unreviewed) and **curated/verified** (reviewed, verified-publisher,
   promoted only after admission checks pass). The trust tier is a first-class facet so consumers
   and [Bench](bench.md) can require, e.g., "verified-publisher + valid SLSA provenance." Yank
-  and deprecation are auditable governance actions (charter §10.4 RFC/governance posture).
+  and deprecation are auditable governance actions (charter §9.4).
 - **Plugin execution isolation.** Hub **never executes** artifact code — it stores, indexes,
   verifies, and serves. Untrusted-plugin sandboxing (seccomp/gVisor, out-of-process gRPC, the
   forward-looking WASM path) is the *consuming* component's responsibility (conventions.md §9,
   core.md §9). Hub's job is to ensure what you pulled is exactly what was signed.
-- **Export control & dual use (download gating).** Per conventions.md §12 and charter §10.5,
+- **Export control & dual use (download gating).** Per conventions.md §12 and charter §9.5,
   Hub evaluates **license + export-control policy at the download boundary** against manifest
   **capability tags** (Core's dual-use taxonomy). Genuinely sensitive operational capability is
   partitioned into **access-controlled/gated namespaces**; license compatibility (Apache-2.0
-  default, charter §10.4) and export posture are checked before resolution returns bytes.
-  "Open does not mean naive." **(RFC-0001)** The supply-chain stack (signing, SLSA provenance,
+  default, charter §9.4) and export posture are checked before resolution returns bytes.
+  "Open does not mean naive." **Phase 3.** The supply-chain stack (signing, SLSA provenance,
   SBOM) and these gates apply unchanged to the mission-architecture artifacts: the reserved
   `operational_targeting` capability tag plus license/export gating (OPA) govern downloads of
   `TrajectoryRef`/`MissionSpec`/sized-SADF artifacts at the boundary — keeping descriptive,
@@ -445,7 +451,7 @@ want to enter and the place reproducibility lives or dies. This section is centr
 | Discovery approach | Keyword only; faceted only; **faceted + full-text + semantic embeddings + capability match** | **All combined** — facets/full-text for precision, embeddings for "find something like this," capability match against manifests for correctness |
 | Curation / moderation | Fully open; reviewed-only; **tiered (open + curated/verified namespaces)** | **Tiered** — frictionless open publish (signed, unreviewed) plus curated/verified-publisher namespaces; trust tier is a queryable facet |
 | Dependency & compat resolution | Pin-only (no resolution); **SemVer + Core interface-range solver** | **SemVer + Core interface ranges** — resolve closures, refuse incompatible Core interface majors, pin to digests |
-| Artifact push/pull client | docker CLI; **ORAS + cosign**; bespoke protocol | **ORAS + cosign** (standard OCI tooling) wrapped by the `astro-mine-hub` SDK; no bespoke protocol |
+| Artifact push/pull client | docker CLI; **ORAS + cosign**; bespoke protocol | **ORAS + cosign** (standard OCI tooling) wrapped by the `astro_mine.hub` SDK; no bespoke protocol |
 | Blob egress scaling | Direct from registry; **CDN / pull-through cache** | **CDN / pull-through cache** — the dominant hot-path lever for fan-out pulls |
 | License / export gating | None; post-hoc; **policy-gated at download (OPA + capability tags)** | **OPA at the download boundary** against Core capability tags (conventions.md §12) |
 
@@ -463,7 +469,7 @@ want to enter and the place reproducibility lives or dies. This section is centr
   useful; validated against curated relevance sets.
 - **Reproducibility ↔ storage cost** of never deleting referenced digests — retention/tiering
   policy for yanked-but-referenced artifacts, co-designed with [Bench](bench.md).
-- **(RFC-0001) Mission-architecture artifact handlers & gating** — per-`artifactType` validators
+- **Phase 3 — Mission-architecture artifact handlers & gating** — per-`artifactType` validators
   for `MissionSpec`/`TrajectoryRef`/sized-SADF/economics artifacts, and the OPA gating that ties
   `TrajectoryRef` downloads to the `operational_targeting` tag — co-designed with
   [Trajectory](trajectory.md), [Sizing](sizing.md), [Ledger](ledger.md), and the
@@ -473,26 +479,26 @@ want to enter and the place reproducibility lives or dies. This section is centr
 
 ## 12. Roadmap alignment
 
-- **Phase 1 (ships).** Hub launches in Phase 1 (charter §11) alongside the autonomy/studio
+- **Phase 1 (ships).** Hub launches in Phase 1 (charter §10) alongside the autonomy/studio
   wave, as the second half of the academic flywheel with [Bench](bench.md): an OCI-backed
   registry that **stores, signs, indexes (by Core manifest), and serves** worlds, SADF assets,
   ONNX policies, surrogate models, and plugins; faceted + full-text + semantic discovery; SemVer
   + Core-interface resolution; cosign/SLSA/SBOM verification at publish and pull; the REST API,
-  web UI, and `astro-mine-hub` client; tiered namespaces with verified publishers; and license/
+  web UI, and `astro_mine.hub` client; tiered namespaces with verified publishers; and license/
   export-control download gating. This is the **MVP** that lets the first public leaderboards and
-  community plugins (charter §11, Phase 1) circulate.
+  community plugins (charter §10, Phase 1) circulate.
 - **Phase 0 (pre-Hub).** Before Hub exists, content is content-addressed and consumable from a
   plain OCI registry (ghcr/Zot) via the client SDK and the [Core](core.md) registry — the
   local/dev tier that MUST always work. Phase 0 deliberately ships *without* a hosted Hub
-  (charter §11 lists Hub in Phase 1), so Phase-0 artifacts are forward-compatible by being OCI +
+  (charter §10 lists Hub in Phase 1), so Phase-0 artifacts are forward-compatible by being OCI +
   signed from day one.
 - **Phase 2+ (later).** Multi-region replication and offline/air-gapped mirrors for
-  [Ops](ops.md) (charter §11, Phase 2); richer curation/review workflows; deeper [Bench](bench.md)
+  [Ops](ops.md) (charter §10, Phase 2); richer curation/review workflows; deeper [Bench](bench.md)
   integration (submission-by-reference, result↔artifact linking) and recommendation/discovery
   ranking; ecosystem features (third-party verified publishers, commercial layers) as the
-  cislunar ecosystem matures (charter §11, Phase 3). The measure of success is the same as the
+  cislunar ecosystem matures (charter §10, Phase 3). The measure of success is the same as the
   commons itself: how readily a contribution published once becomes usable everywhere.
-- **Phase 3 (multi-regime missions, RFC-0001).** Hub indexes and serves the new
+- **Phase 3 (multi-regime missions).** Hub indexes and serves the new
   mission-architecture artifact types — `MissionSpec`s, `TrajectoryRef`/`ManeuverBudget` libraries,
   sized SADF designs, and open economics models — with `operational_targeting`-aware gating. No
   earlier Hub work is required since these reuse the existing artifact/manifest machinery; the

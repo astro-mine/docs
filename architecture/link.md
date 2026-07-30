@@ -1,6 +1,6 @@
 # Astro-Mine-Link — Technology Architecture
 
-> Layer: **World & environment models** · Phase: **0–1** · Extended for multi-regime missions ([RFC-0001](../rfc/0001-multi-regime-missions.md), Phase 3)
+> Layer: **World & environment models** · Phase: **0–1** · Ships in: [`astro-mine-platform`](platform.md) · Extended for multi-regime missions (Phase 3)
 > The communications environment: models *when* and *where* agents can talk to each other and
 > to Earth — the constraint that makes coordination hard.
 > Cross-cutting standards: see [conventions.md](conventions.md).
@@ -30,7 +30,7 @@ Concretely, Link:
 - contributes **communication observation masks** to the [Core](core.md) Environment API so a
   policy literally cannot observe or message a peer that is currently unreachable.
 
-**Deep-space comms (RFC-0001).** Under [RFC-0001](../rfc/0001-multi-regime-missions.md), Link's
+**Deep-space comms.** Under [multi-regime missions](mission-model.md), Link's
 scope extends from cislunar to **deep space** for the `interplanetary_transit` and `proximity_orbit`
 regimes ([mission-model](mission-model.md) §1.2). The same machinery — geometry-first visibility,
 parametric link budgets, store-and-forward delivery — applies, but with three regime-driven
@@ -68,10 +68,10 @@ intermittent comms and partial observability"). Link is the package that makes t
    geometrically open links. The two concerns are cleanly separated so either can be dialed in
    fidelity independently.
 2. **Borrow ephemerides and terrain; never re-derive them.** Frames, epochs, body orientation,
-   and orbits come from SPICE/NAIF through the shared **[`astro-mine-spice`](spice.md)** foundation
-   (`astro_mine.spice`, [RFC-0002](../rfc/0002-shared-spice-foundation.md)); horizons and elevation
+   and orbits come from SPICE/NAIF through the shared **[`astro_mine.spice`](spice.md)** foundation
+   (`astro_mine.spice`, [Spice](spice.md)); horizons and elevation
    come from [Worlds](worlds.md), consumed through the Core `WorldProvider` contract. Link depends on
-   neither a private SPICE adapter nor the `astro-mine-worlds` package — it adds only the
+   neither a private SPICE adapter nor the `astro_mine.worlds` package — it adds only the
    *communications* interpretation, consistent with conventions.md §1.7 ("interop, don't reinvent")
    and the SPICE-backed frame/time mandate in §5.
 3. **Time-varying by construction.** Connectivity is a function of epoch, not a static graph. The
@@ -144,8 +144,8 @@ astro_mine.link
 
 ### Key abstractions consumed
 
-- **SPICE/NAIF** via the shared **[`astro-mine-spice`](spice.md)** foundation (`astro_mine.spice`,
-  [RFC-0002](../rfc/0002-shared-spice-foundation.md)), which realizes [Core](core.md)'s `units`/`frames`
+- **SPICE/NAIF** via the shared **[`astro_mine.spice`](spice.md)** foundation (`astro_mine.spice`,
+  [Spice](spice.md)), which realizes [Core](core.md)'s `units`/`frames`
   vocabulary (conventions.md §5): SPK ephemerides, PCK body orientation, FK/IK frames, CK pointing
   where available (SpiceyPy in Python; CSPICE in native paths). Link drives `astro_mine.spice` for
   body-fixed positions and may run `spiceypy` geometry-finder routines (`gfposc`/`gftfov`) *on top of*
@@ -153,12 +153,12 @@ astro_mine.link
 - **Terrain occlusion** via the Core **`WorldProvider`** contract (`core.world`): `ray_intersect` /
   horizon-map `line_of_sight` over [Worlds](worlds.md) DEMs (Cloud-Optimized GeoTIFF via GDAL) in an
   explicit body-fixed CRS. Link consumes an **injected** provider through the contract; it does **not**
-  import or depend on the `astro-mine-worlds` package (no edge→edge side-channel, conventions.md §1.1).
+  import or depend on the `astro_mine.worlds` package (no edge→edge side-channel, conventions.md §1.1).
 - **[Fleet](fleet.md)/SADF**: each node's comms capability block — antenna gain pattern, EIRP,
   G/T, frequency band, supported mod/cod, pointing capability — read from the [Core](core.md)
   SADF schema. Relay orbiters and ground stations may themselves be SADF assets.
 
-**Deep-space extension (RFC-0001).** For the `interplanetary_transit`/`proximity_orbit` regimes,
+**Deep-space extension.** For the `interplanetary_transit`/`proximity_orbit` regimes,
 the same modules apply with a regime-aware reach: `constellation/ground.py` schedules **DSN passes**
 into sparse Earth-link windows; `budget/propagation.py` computes **light-time of minutes to tens of
 minutes** from heliocentric/free-space geometry rather than the lunar ~1.3 s; `geometry/occlusion.py`
@@ -194,7 +194,7 @@ cloud tier; interactive queries run in-process.
   for hundreds of node-pairs) are the candidate for a **C++20** core via Pybind11, or vectorized
   NumPy/Numba first and promoted only if profiling demands it ("measure before optimizing",
   conventions.md §8).
-- **Geometry/astrodynamics:** SPICE/NAIF accessed through the shared **`astro-mine-spice`**
+- **Geometry/astrodynamics:** SPICE/NAIF accessed through the shared **`astro_mine.spice`**
   foundation (`astro_mine.spice`; SpiceyPy/CSPICE under the hood) for ephemerides, frames, and
   body-fixed positions; Link layers its **SPICE geometry-finder** window search (`gfposc`, `gftfov`,
   occultation/visibility solvers) on top of those primitives (LINK-02). **Astropy** for
@@ -210,10 +210,10 @@ cloud tier; interactive queries run in-process.
 - **Runtime model:** importable library by default; optional **FastAPI** REST edge +
   **gRPC** service for cloud precompute (conventions.md §3, §4). Stateless service; products land
   in object storage.
-- **Build/packaging:** Python wheel `astro-mine-link` (import `astro_mine.link`); OCI image for
-  the service; SemVer; depends on a pinned `astro-mine-core` interface major version **and on
-  `astro-mine-spice`** for SPICE resolution (conventions.md §7, §13). Native kernels ship as manylinux
-  wheels with bundled CSPICE.
+- **Build/packaging:** ships in the [`astro-mine-platform`](platform.md) wheel as
+  `astro_mine.link`; OCI image for the precompute service. It declares the Core interface major
+  version it speaks, and uses **[Spice](spice.md)** for SPICE resolution — now an in-package import
+  rather than a cross-repo pin (conventions.md §7.1, §13).
 
 ---
 
@@ -231,7 +231,7 @@ cloud tier; interactive queries run in-process.
 | Mod/cod & ground-station catalogs | owned (config) | YAML/JSON tables, content-addressed | DSN/ESTRACK/custom antennas; CCSDS mod/cod |
 
 **Schemas.** The `ContactPlan`, contact-graph, and `CommsObservationMask` message types live in
-the [Core](core.md) message catalog (Link proposes them via RFC; conventions.md §3). The
+the [Core](core.md) message catalog (Link proposes them as additive Core schema; conventions.md §3). The
 `LinkScenario`/config schema is owned by Link (JSON Schema + Pydantic).
 
 **Lifecycle & provenance.** Connectivity products are **content-addressed** keyed on the hash of
@@ -244,7 +244,7 @@ fading model is enabled).
 **Versioning.** Link declares the Core interface major versions it supports; products carry the
 Link SemVer and Core schema versions they were produced against (conventions.md §13).
 
-**Deep-space data (RFC-0001).** No new product types are needed: deep-space contact plans, DSN
+**Deep-space data.** No new product types are needed: deep-space contact plans, DSN
 window catalogs, and **DTN / Bundle-Protocol** store-and-forward delivery use the existing
 `ContactPlan`, contact-graph, and ground-station-catalog formats above. Products gain a `regime`
 tag (per the [Core](core.md) Environment-API `regime` descriptor, [mission-model](mission-model.md)
@@ -260,8 +260,8 @@ Link sits in the **World & environment** layer and integrates exclusively throug
 
 - **Consumes** terrain occlusion (DEMs/horizon maps in an explicit planetary CRS) through the Core
   **`WorldProvider`** contract — an injected [Worlds](worlds.md) provider, **not** a dependency on the
-  `astro-mine-worlds` package. **Consumes** SPICE ephemerides/frames through the shared
-  **[`astro-mine-spice`](spice.md)** foundation (`astro_mine.spice`, [RFC-0002](../rfc/0002-shared-spice-foundation.md)),
+  `astro_mine.worlds` package. **Consumes** SPICE ephemerides/frames through the shared
+  **[`astro_mine.spice`](spice.md)** foundation (`astro_mine.spice`, [Spice](spice.md)),
   which realizes Core's `units`/`frames` vocabulary (conventions.md §5). **Consumes** node comms
   capabilities from [Fleet](fleet.md) SADF (relay orbiters and ground stations may be SADF assets
   themselves).
@@ -275,7 +275,7 @@ Link sits in the **World & environment** layer and integrates exclusively throug
   [Mind](mind.md) (so hierarchical planning reasons about comms blackouts). These are delivered as
   the **contact graph** and the latency/bandwidth time-series — both representations, see §11.
 - **Provides** **Earth-link windows** and downlink/uplink latency to [Ops](ops.md) for
-  operations scheduling and the delay-tolerant supervisory console (charter §8). [Ops](ops.md)/
+  operations scheduling and the delay-tolerant supervisory console (charter §7). [Ops](ops.md)/
   [Bridge](bridge.md) own the *actual* data plane (ROS 2/DDS, conventions.md §4); Link supplies the
   constraint model they obey, not the transport.
 - **Bench/Hub:** [Bench](bench.md) pins a Link version + kernel/DEM set per comms-denied scenario;
@@ -344,7 +344,7 @@ precompute jobs ride **NATS/JetStream** for lifecycle events (conventions.md §4
   **degrade-loudly** principle (§2.9): missing/partial inputs raise at the boundary;
   connectivity is never silently defaulted to "available." [Guard](guard.md) and [Ops](ops.md)
   treat Link windows as advisory constraints and keep independent floors.
-- **Export control / dual use** (conventions.md §12, charter §10.5). Generic communications
+- **Export control / dual use** (conventions.md §12, charter §9.5). Generic communications
   geometry, link budgets, and DTN modeling for *science/simulation* are firmly in the open commons.
   The sensitive edge is operational: precise, real-asset ground-station contact scheduling and
   high-fidelity link prediction tied to a live mission can become operational targeting/availability
@@ -380,7 +380,7 @@ precompute jobs ride **NATS/JetStream** for lifecycle events (conventions.md §4
 
 | Decision | Options | Recommendation |
 |---|---|---|
-| **Visibility / geometry engine** | Hand-rolled vector math; **SPICE GF** (geometry finder); Orekit events | **SPICE GF via SpiceyPy** for frames/epochs/windows (charter §7); analytic fallback for spherical bodies; GMAT/STK/Skyfield as test oracles |
+| **Visibility / geometry engine** | Hand-rolled vector math; **SPICE GF** (geometry finder); Orekit events | **SPICE GF via SpiceyPy** for frames/epochs/windows (charter §6); analytic fallback for spherical bodies; GMAT/STK/Skyfield as test oracles |
 | **Terrain occlusion** | On-the-fly DEM raycast (DSK/COG); **precomputed horizon maps** from Worlds; analytic spherical horizon | **Precomputed horizon maps from [Worlds](worlds.md)** (cheap az/el lookup) + DSK/COG raycast fallback for fine geometry |
 | **Link-budget fidelity** | Geometric visibility only; **parametric RF link budget** (gain/path-loss/SNR→rate); ns-3 packet-level sim | **Parametric link budget by default**; visibility-only as a fast mode; **ns-3 bridge as an optional later plugin** for packet-level studies |
 | **DTN modeling depth** | Instantaneous-when-connected; **abstract store-and-forward** (contact-graph delivery); full **Bundle Protocol** fidelity | **Abstract store-and-forward over a CGR-style contact graph** in Phase 0–1; Bundle-Protocol-fidelity plugin later if a benchmark needs it |
@@ -398,11 +398,11 @@ precompute jobs ride **NATS/JetStream** for lifecycle events (conventions.md §4
   actually exploit before the contact graph becomes intractable for [Allocate](allocate.md) —
   resolved empirically against [Bench](bench.md) scenarios.
 - **RF fidelity ceiling.** Whether parametric link budgets are sufficient for credible sim-to-real
-  comms claims, or whether selected scenarios warrant the ns-3 bridge — tied to charter §8/§9.
+  comms claims, or whether selected scenarios warrant the ns-3 bridge — tied to charter §7/§9.
 - **Fading/availability uncertainty model.** How to express link availability under pointing error
   and (Mars) atmospheric/dust effects as first-class uncertainty (conventions.md §1.6).
 
-**Deep-space comms (RFC-0001).** For deep space, the recommended choices above carry over with
+**Deep-space comms.** For deep space, the recommended choices above carry over with
 regime tuning: **SPICE GF** handles small/irregular-body occultation (shared with
 [Transit](transit.md)); the **parametric link budget** spans DSN ranges; and the **abstract
 store-and-forward over a CGR-style contact graph** is the right default for **DTN / Bundle Protocol**
@@ -429,7 +429,7 @@ load-bearing. The much larger latency drives the **delay-tolerant autonomy postu
 - **Later (Phase 2–3).** Optional **ns-3 packet-level** fidelity plugin and **Bundle-Protocol**
   fidelity; Mars atmospheric/dust link effects; live-mission link prediction (capability-gated per
   §9) for [Ops](ops.md) once operations cross to Earth analogs and beyond.
-- **Phase 3 — deep-space comms (RFC-0001).** DSN contact scheduling with sparse Earth-link windows,
+- **Phase 3 — deep-space comms.** DSN contact scheduling with sparse Earth-link windows,
   minutes-to-tens-of-minutes light-time, **DTN / Bundle Protocol** store-and-forward, and
   small/irregular-body occultation for the `interplanetary_transit`/`proximity_orbit` regimes
   (consuming [Transit](transit.md), feeding the delay-tolerant posture in [Ops](ops.md)/Guard). The

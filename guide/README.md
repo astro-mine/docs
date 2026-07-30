@@ -3,7 +3,8 @@
 Task-oriented documentation: how to *do* things with the platform, as opposed to how it is
 designed. The design lives in [`architecture/`](../architecture/), the requirements in
 [`scenarios/`](../scenarios/), the plan in [`roadmap/`](../roadmap/), and accepted interface
-changes in [`rfc/`](../rfc/).
+and cross-cutting standards in
+[`architecture/conventions.md`](../architecture/conventions.md).
 
 **New here?** Start with [getting-started.md](getting-started.md) — the honest 10-minute path.
 

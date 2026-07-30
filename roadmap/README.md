@@ -1,17 +1,18 @@
 # Astro-Mine — Detailed Roadmap
 
-> **Status:** Phase-0 incubation — nothing is built yet. This is a *planning* document: it
+> **Status:** **Phases 0 and 1 are built.** The distribution track between Phase 1 and Phase 2 is in
+> progress, and **Phase 2 is next.** This is both a planning document and a record: it
 > elaborates the high-level [charter §10 phased roadmap](../charter/Swarm_Exploration_ISRU_Orchestrator_OSS_Project.md)
 > and [system.md §11](../architecture/system.md) into per-phase, per-component **scope and
 > requirements** at a fidelity an implementation-planning session can turn into GitHub issues —
-> **without** prescribing implementation steps.
+> **without** prescribing implementation steps. For the delivered phases it also records what
+> actually shipped, because a plan that never records its outcome reads like a forecast forever.
 
-This roadmap is **derived from, and must stay aligned with**, four sources, in this precedence:
+This roadmap is **derived from, and must stay aligned with**, three sources, in this precedence:
 
 1. the [project charter](../charter/Swarm_Exploration_ISRU_Orchestrator_OSS_Project.md) (vision — source of truth);
 2. the [flagship scenarios](../scenarios/README.md) (authoritative requirements: `LUNAR-*` / `AST-*` IDs);
-3. the per-component [architecture docs](../architecture/README.md) (the *how*; each carries a §11 options/recommendations and a §12 roadmap);
-4. [RFC-0001](../rfc/0001-multi-regime-missions.md) (the accepted multi-regime extension and its R1–R6 resolutions).
+3. the per-component [architecture docs](../architecture/README.md) (the *how*; each carries a §11 options/recommendations and a §12 roadmap), plus the four [distribution docs](../architecture/README.md) for what ships.
 
 Where this document and a source disagree, the source wins and this document is corrected.
 
@@ -29,6 +30,8 @@ Where this document and a source disagree, the source wins and this document is 
   - [Phase 1 — Autonomy & studio](phase-1-autonomy-studio.md)
   - [Phase 2 — Operations bridge](phase-2-operations-bridge.md)
   - [Phase 3 — Flight, mission architecture & ecosystem](phase-3-flight-mission-architecture.md)
+- **[The distribution track](#the-distribution-track)** — the packaging correction between Phases 1
+  and 2: one platform wheel, one CLI, one API, one front end.
 - **[Cross-cutting workstreams](#cross-cutting-workstreams)** — threads that span every phase.
 - **[Resolved sequencing decisions](#resolved-sequencing-decisions)** — phase-assignment ambiguities
   in the source docs, pinned down here so a planner is not guessing.
@@ -57,7 +60,7 @@ renumber**, so issues, dependencies, and later phases can cite them. An item is 
 This roadmap scopes the **recommended option as the baseline**; alternatives are out of scope for
 an item unless the item says otherwise. Genuine in-phase forks are called out where they remain open.
 
-**Honesty discipline.** Timeframes (`~0–12 mo`, etc.) are **illustrative** (charter §10), not
+**Honesty discipline.** Timeframes (`~0–12 mo`, etc.) are **illustrative** (charter §9), not
 commitments. Every "MUST validate / reproduce / score" requirement assumes the platform's
 determinism-and-provenance discipline (conventions.md §5, §11).
 
@@ -65,16 +68,17 @@ determinism-and-provenance discipline (conventions.md §5, §11).
 
 ## Phase backbone
 
-| Phase | Window | Theme | Headline ships | Goal (exit definition) |
-|---|---|---|---|---|
-| **[0](phase-0-commons-seed.md)** | ~0–12 mo | Commons seed | Core v0.1 · Spice · Sim · Worlds · Fleet · Bench (+ Prospect, Link MVP, local Cloud) | A runnable, reproducible benchmark on the lunar-polar anchor scenario — *clone, run, score in an afternoon* |
-| **[1](phase-1-autonomy-studio.md)** | ~12–30 mo | Autonomy & studio | Mind · Learn · Allocate · Guard · Studio · Hub · Surrogate · full Link · full Cloud | Become the MARL + planning commons; first public leaderboards & community plugins |
-| **[2](phase-2-operations-bridge.md)** | ~30–54 mo | Operations bridge | Ops · Bridge · View; digital-twin shadow mode | Cross the sim→operations threshold on terrestrial analogs |
-| **[3](phase-3-flight-mission-architecture.md)** | 54 mo + | Flight, mission architecture & ecosystem | Bridge flight adapters; **Transit · Trajectory · Sizing · Ledger** + small-body/microgravity extensions; NEO sample-return → asteroid-mining scenarios | Become the default stack for surface ISRU *and* interplanetary resource missions |
+| Phase | Window | Theme | Headline ships | Goal (exit definition) | State |
+|---|---|---|---|---|---|
+| **[0](phase-0-commons-seed.md)** | ~0–12 mo | Commons seed | Core v0.1 · Spice · Sim · Worlds · Fleet · Bench (+ Prospect, Link MVP, local Cloud) | A runnable, reproducible benchmark on the lunar-polar anchor scenario — *clone, run, score in an afternoon* | **built** |
+| **[1](phase-1-autonomy-studio.md)** | ~12–30 mo | Autonomy & studio | Mind · Learn · Allocate · Guard · Studio · Hub · Surrogate · Seal · full Link · full Cloud; the console and the CLI | Become the MARL + planning commons; first public leaderboards & community plugins | **built** |
+| **[distribution](#the-distribution-track)** | — | Packaging correction | one platform wheel · one CLI · one API · one front end | Four distributions instead of eighteen repositories, with import paths, schemas and public APIs unchanged | **in progress** |
+| **[2](phase-2-operations-bridge.md)** | ~30–54 mo | Operations bridge | Ops · Bridge · the full View ops viewer; digital-twin shadow mode | Cross the sim→operations threshold on terrestrial analogs | next |
+| **[3](phase-3-flight-mission-architecture.md)** | 54 mo + | Flight, mission architecture & ecosystem | Bridge flight adapters; **Transit · Trajectory · Sizing · Ledger** + small-body/microgravity extensions; NEO sample-return → asteroid-mining scenarios | Become the default stack for surface ISRU *and* interplanetary resource missions | later |
 
 **The governing principle:** the narrow waist barely changes — later phases add edges, not core
 rewrites. Success is measured by how *little* [Core](../architecture/core.md) changes as the
-platform grows (system.md §11; charter §9).
+platform grows (system.md §11; charter §8).
 
 ---
 
@@ -109,12 +113,64 @@ platform grows (system.md §11; charter §9).
 | | [Sizing](../architecture/sizing.md) | · | · | · | ● OpenMDAO closure, staging, manifesting, SADF emit |
 | | [Ledger](../architecture/ledger.md) | · | (○ objective hook) | · | ● ValueModel, CERs, MC uncertainty |
 
-‡ [Spice](../architecture/spice.md) added by [RFC-0002](../rfc/0002-shared-spice-foundation.md)
-(accepted) — the shared SPICE foundation; a Phase-0 deliverable sequenced before the Link MVP.
+‡ [Spice](../architecture/spice.md) — the shared SPICE foundation; a Phase-0 deliverable sequenced
+before the Link MVP.
 
-¶ [Seal](../architecture/seal.md) added by [RFC-0005](../rfc/0005-seal-supply-chain-companion.md)
-(accepted) — the shared artifact-integrity companion (signing / verification / SLSA / SBOM); a Phase-1
-deliverable, additive and non-urgent, that must not gate the lunar MVP.
+¶ [Seal](../architecture/seal.md) — the shared artifact-integrity companion (signing / verification /
+SLSA / SBOM); a Phase-1 deliverable, additive and non-urgent, that must not gate the lunar MVP.
+
+**A component is not a distribution.** Every row above is a subpackage of
+[`astro-mine-platform`](../architecture/platform.md), except the front-end packages
+([View](../architecture/view.md), [Console](../architecture/console.md)), which are packages of
+[`astro-mine-ui`](../architecture/ui.md). Nothing in this matrix is separately released — see
+[the distribution track](#the-distribution-track).
+
+---
+
+## The distribution track
+
+Between Phase 1 and Phase 2 the platform's *packaging* was corrected: eighteen component
+repositories became four distributions, with import paths, public APIs, schemas and their `$id`s,
+entry-point groups, and configuration semantics **unchanged**. It adds no capability, which is why it
+is not a phase — but it is real work with real exit criteria, and two of its five items are not done.
+
+See [`conventions.md`](../architecture/conventions.md) §7.1 for the rule, and
+[platform.md](../architecture/platform.md) · [cli.md](../architecture/cli.md) ·
+[api.md](../architecture/api.md) · [ui.md](../architecture/ui.md) for the detail.
+
+**Scope & deliverables**
+
+- **RM-DIST-01** — **One platform wheel.** Consolidate every `astro_mine.<component>` package, test
+  suite, schema source and example into `astro-mine-platform`; adopt maturin (Guard's Rust core MUST
+  be in the wheel); merge eighteen dependency sets into one, with heavy optional stacks behind
+  `<component>-<extra>` extras. Import paths, schemas, entry points and algorithms MUST be unchanged.
+  *(trace: platform.md; conventions.md §7.1)* — **done**
+- **RM-DIST-02** — **One CLI.** Remove every command surface from the platform and provide it from
+  `astro-mine-cli` under one grammar, `astro-mine <component> <verb>`. The platform MUST declare no
+  console scripts; a committed parity fixture MUST assert every verb and argument still matches what
+  the per-component binaries declared. *(trace: cli.md §7, §8; conventions.md §13)* — **done**
+- **RM-DIST-03** — **One REST tier.** Stand up `astro-mine-api` and move the Hub, Studio, Cloud and
+  Bench route modules into it, over the components' unchanged public APIs. Restore the REST tests the
+  consolidation had to exclude; converge the health-endpoint and error conventions; ship one image and
+  one chart. A component MUST NOT ship a FastAPI application. *(trace: api.md; conventions.md §3)*
+- **RM-DIST-04** — **One front end.** Stand up `astro-mine-ui` as one pnpm workspace holding
+  `surface`, `ui`, `view`, the per-component surfaces and the console app; extend the layering check
+  to the surfaces it was always about; replace build-time composition from published versions with
+  workspace links. *(trace: ui.md §4, §9; conventions.md §2.1)*
+- **RM-DIST-05** — **Retire the component repositories.** Once nothing references them: rehome the
+  open issues, archive or delete the eighteen repositories, and sweep the remaining links. A link to a
+  deleted repository is worse than no link. *(trace: conventions.md §13)*
+
+**Dependencies** — RM-DIST-01 before everything; RM-DIST-02 landed with it; RM-DIST-03 and RM-DIST-04
+are independent of each other; RM-DIST-05 last.
+
+**Exit criteria** — four distributions build and test against the platform at `HEAD`; a user installs
+`astro-mine-cli` and holds the whole platform at one self-consistent version; the local tier still
+runs with no service, no account and no extra (CX-LOCAL); layering tests assert the import graph
+(conventions.md §11); and no document or code references a retired repository.
+
+**Deferred** — a unified REST gateway (Phase 2 at the earliest, if ever); public PyPI and public npm
+publication (the public flip — VERSIONING.md §6); the artifact-name migration (also the flip).
 
 ---
 
@@ -132,19 +188,21 @@ not owned by one component, but they gate the phase exit.
 - **CX-SEC — Security & supply chain.** Sigstore/cosign signing, SLSA provenance, SBOMs, OPA
   capability gating, org defaults (Dependabot/secret-scanning/push-protection); plugin isolation
   (out-of-process/gVisor; WASM forward-looking) (conventions.md §9). The signing / provenance / SBOM
-  implementation is consolidated in [Seal](../architecture/seal.md) ([RFC-0005](../rfc/0005-seal-supply-chain-companion.md),
+  implementation is consolidated in [Seal](../architecture/seal.md) ([Seal](../architecture/seal.md),
   Phase 1) — one shared companion, the single home for `cryptography`, rather than a signer copied per
   producer.
 - **CX-GOV — Governance, license, export-control posture** established **up front**, before the
-  community forms (charter §12): Apache-2.0, the RFC process in `astro-mine/.github`, and a
+  community forms (charter §11): Apache-2.0, the governance defaults in `astro-mine/.github`, and a
   documented EAR/ITAR posture and capability-tag taxonomy.
-- **CX-RFC0001 — Multi-regime schema hooks.** The *only* early obligation of the opt-in
+- **CX-MISSION — Multi-regime schema hooks.** The *only* early obligation of the opt-in
   mission-architecture track is **reserving the additive Core schema hooks in Phase 1**
   (`MissionSpec`/`regime`/`PhaseTransition`, `ObjectiveSpec`, propulsion/return SADF capabilities,
   `operational_targeting` tag). Implementations land in Phase 3 and **must not gate the lunar MVP**
-  (RFC-0001 R5; mission-model §3).
+  ([mission-model](../architecture/mission-model.md) §3). *(This workstream was `CX-RFC0001` while the
+  design lived in a separate proposal; the scope is unchanged, and the board's `Workstream` field needs
+  the same rename.)*
 - **CX-S2R — Sim-to-real credibility.** Uncertainty-honest claims from P0; physics validation against
-  external oracles with explicit error budgets; terrestrial-analog validation in P2 (charter §9).
+  external oracles with explicit error budgets; terrestrial-analog validation in P2 (charter §8).
 - **CX-OBS — Observability.** OpenTelemetry traces/metrics/logs, Prometheus/Grafana/Loki, in every
   service as it ships (conventions.md §10).
 

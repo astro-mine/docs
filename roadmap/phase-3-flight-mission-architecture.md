@@ -2,17 +2,19 @@
 
 > **Window:** 54 mo + · **Theme:** Flight, mission architecture & ecosystem · **Roadmap home:** [README](README.md)
 > **Goal:** become the **default stack** — for surface ISRU *and* full interplanetary resource
-> missions — as the cislunar economy matures (charter §10; system.md §11).
+> missions — as the cislunar economy matures (charter §9; system.md §11).
 
-**Entry dependencies:** Phase 2 complete (sim→ops threshold crossed on analogs); the **RFC-0001 Core
-schema hooks reserved in Phase 1** (`RM-P1-CORE-04`) — without them this phase would require
+**Status: later.** Nothing below is built.
+
+**Entry dependencies:** Phase 2 complete (sim→ops threshold crossed on analogs); the **multi-regime Core
+schema hooks reserved in Phase 1** (`RM-P1-CORE-04`, **done**) — without them this phase would require
 retrofitting the frozen waist, the exact failure the charter warns against.
 
 **This phase has two largely independent tracks:**
 
 - **Track A — Flight integration** (continues the operations line): real flight-software adapters and
   flight-asset operation, with sensitive capability **partitioned out of the open core**.
-- **Track B — Mission architecture** *(RFC-0001, opt-in)*: the new
+- **Track B — Mission architecture** *(opt-in)*: the new
   **Transit · Trajectory · Sizing · Ledger** layer + small-body/microgravity extensions, delivering
   end-to-end interplanetary missions. **A single-`surface`-phase mission is unchanged**, so Track B
   never disturbs existing scenarios.
@@ -20,7 +22,7 @@ retrofitting the frozen waist, the exact failure the charter warns against.
 **Integration milestones:**
 
 - **M3.1 — NEO rendezvous + sample-return** ([scenario 2](../scenarios/2-asteroid-mining.md) baseline,
-  the RFC-0001 R5 stepping-stone): a `MissionSpec` spanning all six regimes is architected in Studio's
+  the stepping-stone): a `MissionSpec` spanning all six regimes is architected in Studio's
   Mission Architect, validated in Sim, scored on Bench with mission-level metrics, and runnable in
   multi-phase Ops against the sim backend.
 - **M3.2 — Multi-asteroid mining + ore return** (Phase-3 capstone): sustained anchored excavation +
@@ -38,7 +40,7 @@ design-time** artifacts (reference arcs, Δv/ToF, window feasibility) and **omit
 executable-guidance fields. **Operational maneuver targeting** and **guided atmospheric EDL** stay
 **partitioned out**, gated by the `operational_targeting` capability tag at the registry/[Bridge](../architecture/bridge.md)
 boundary. `earth_interface` is a **delivery/recovery event with mass/Δv accounting, not a guided
-re-entry simulator** (RFC-0001 §6, R3; mission-model §4; conventions §12;
+re-entry simulator** (mission-model §4; mission-model §4; conventions §12;
 [EXPORT_CONTROL.md](https://github.com/astro-mine/.github/blob/main/EXPORT_CONTROL.md)).
 
 ---
@@ -67,8 +69,8 @@ re-entry simulator** (RFC-0001 §6, R3; mission-model §4; conventions §12;
 - **RM-P3-TRANSIT-06** — **Oracle validation** (GMAT/Orekit/Basilisk/STK; SPENVIS-style hazard
   references) with explicit error budgets; determinism + frame/epoch sanity gates. *(trace: transit.md §10; `AST-TR-003`)*
 
-**Dependencies:** Core mission hooks (`RM-P1-CORE-04`), the shared [`astro-mine-spice`](../architecture/spice.md)
-foundation ([RFC-0002](../rfc/0002-shared-spice-foundation.md)). **Exit criteria:** a designer
+**Dependencies:** Core mission hooks (`RM-P1-CORE-04`), the shared [`astro_mine.spice`](../architecture/spice.md)
+foundation ([Spice](../architecture/spice.md)). **Exit criteria:** a designer
 propagates/scores an interplanetary baseline cruise locally; arcs validated against oracles. **Deferred:**
 new target bodies / time-resolved SEP / learned force-hazard surrogates as later packs.
 
@@ -88,7 +90,7 @@ new target bodies / time-resolved SEP / learned force-hazard surrogates as later
   return-window scans** via pykep/poliastro. *(trace: trajectory.md §11, §12; `AST-FR-002`)*
 - **RM-P3-TRAJ-03** — **Descriptive `TrajectoryRef` discipline**: boundary states + maneuver budget +
   coarse-epoch reference control envelope; **schema omits** actuator command channels, closed-loop
-  gains, and flight-clock binding (a contract test asserts their absence). *(trace: trajectory.md §5, §9; RFC-0001 R3; dual-use note above)*
+  gains, and flight-clock binding (a contract test asserts their absence). *(trace: trajectory.md §5, §9; mission-model §4; dual-use note above)*
 - **RM-P3-TRAJ-04** — **Validation downstream of optimization**: every `TrajectoryRef` is propagated
   and checked in [Sim](../architecture/sim.md) (and against GMAT/STK/Copernicus oracles, license-gated)
   before it is trusted. *(trace: trajectory.md §6, §11; `AST-TR-003`)*
@@ -125,7 +127,7 @@ regimes (icy moons, multi-target tours) as optimizer/dynamics plugins.
   Sim, priced by Ledger — no Sizing-private format. *(trace: sizing.md §3, §6; `AST-FR-003`)*
 - **RM-P3-SIZING-05** — **Trajectory↔sizing coupling**: sequential Δv→sizing default, **fully-coupled
   trajectory⇄vehicle MDO** available for final trades; Sizing+Ledger share one OpenMDAO graph (R4).
-  *(trace: sizing.md §11; RFC-0001 R4)*
+  *(trace: sizing.md §11; mission-model §5)*
 - **RM-P3-SIZING-06** — **Validation**: analytic golden vehicles, oracle/Sim Δv-closure cross-checks,
   SADF round-trip/instantiation in Sim, determinism gates. *(trace: sizing.md §10)*
 
@@ -152,7 +154,7 @@ trades. **Deferred:** physics-/Surrogate-backed subsystem fidelity tiers; commun
   [Prospect](../architecture/prospect.md) **belief** posterior **jointly** (correlation preserved;
   never average the resource field first). *(trace: ledger.md §5, §8, §11; `AST-FR-004`)*
 - **RM-P3-LEDGER-04** — **OpenMDAO `LedgerComponent`** as the objective shared with Sizing (the tight
-  vehicle⇄economics inner loop). *(trace: ledger.md §3, §11; RFC-0001 R4)*
+  vehicle⇄economics inner loop). *(trace: ledger.md §3, §11; mission-model §5)*
 - **RM-P3-LEDGER-05** — **Commons/commercial split (enforced)**: open framework + generic public
   models in-repo; **proprietary cost DBs / price feeds / ROI calibrations as access-gated Hub
   plugins**; a **no-proprietary-leak CI test** — a public-only build produces a complete, honestly-
@@ -175,12 +177,12 @@ maturing commercial-plugin ecosystem.
   validation against flight units/engineering models behind the access-controlled boundary. *(trace: bridge.md §11, §12; `AST-SR-003`)*
 - **RM-P3-BRIDGE-31 — Deep-space stacks (DSN), gated.** DSN telecommand/telemetry + extended CCSDS;
   **operational maneuver targeting stays partitioned and excluded**; the `operational_targeting` tag
-  gates the registry/Session edge. *(trace: bridge.md §9, §12; RFC-0001 §6; `AST-SR-001,002`)*
+  gates the registry/Session edge. *(trace: bridge.md §9, §12; mission-model §4; `AST-SR-001,002`)*
 - **RM-P3-OPS-30 — Real flight-asset & multi-phase mission operations.** Flight-asset operation via
   Bridge adapters (sensitive capability partitioned out of open core); the **phase executor** (mirrors
   Sim's sequencer mechanism, performs `PhaseTransition` handoffs, applies Studio-authored cross-phase
   policy), the **multi-regime shadow twin** (spans transit/proximity/surface, vets each phase),
-  **regime-gated adjustable autonomy** (ratchet up for deep-space light-time). *(trace: ops.md §3, §11, §12; RFC-0001 R2; `AST-FR-001,006,007`)*
+  **regime-gated adjustable autonomy** (ratchet up for deep-space light-time). *(trace: ops.md §3, §11, §12; mission-model §3; `AST-FR-001,006,007`)*
 
 **Dependencies:** Phase-2 Ops/Bridge; Core mission hooks. **Exit criteria:** M3.3 (real flight-asset
 op) and multi-phase Ops running a `MissionSpec` against the sim backend (toward M3.1).
@@ -190,7 +192,7 @@ op) and multi-phase Ops running a `MissionSpec` against the sim backend (toward 
 ## Track B — multi-regime extensions to existing components
 
 Each is an **additive extension** consuming the Phase-1-reserved Core hooks — *extended, not
-replaced* (RFC-0001 §4).
+replaced* (mission-model §5).
 
 - **RM-P3-WORLDS-30 — Small / irregular bodies + microgravity regolith.** 3-D closed polyhedral shape
   models (not 2.5-D heightfields), polyhedral/mascon non-central gravity, body rotation/tumbling, and
@@ -200,7 +202,7 @@ replaced* (RFC-0001 §4).
   `ResourceField` contract reused for asteroid/small-body volatile inventories (paired with the
   RM-P3-WORLDS-30 body packs), **plus** the multi-species and depth-resolved (3-D) field axes deferred
   since P0. Both widen the Core `ResourceField`/`FieldMetadata` contract shape — the shipped field is
-  single-species, 2-D surface-only — so they are RFC-gated and land here with the other
+  single-species, 2-D surface-only — so they are contract-widening changes and land here with the other
   contract-widening work. *(trace: prospect.md §11, §12; refines the P0 "P1+" deferral; `AST-*` env)*
 - **RM-P3-SIM-30 — Microgravity engine + multi-regime propagation + multi-phase sequencer.** A
   distinct cohesion-dominated low-g DEM contact domain (Project Chrono-class) behind the same waist;
@@ -228,7 +230,7 @@ replaced* (RFC-0001 §4).
   window-gated events (proximity ops, landing/anchoring); embeddable Rust core behind Bridge. *(trace: guard.md §9.4, §11, §12; `AST-FR-007`)*
 - **RM-P3-STUDIO-30 — Mission Architect mode.** A distinct workspace/persona authoring a `MissionSpec`
   and the outer **trajectory⇄fleet⇄swarm⇄economics** co-optimization (orchestrating Trajectory/Sizing/
-  Ledger; Sizing+Ledger share one OpenMDAO graph); `MissionSpec` stays **declarative** (R4). *(trace: studio.md §3, §6, §12; RFC-0001 §5)*
+  Ledger; Sizing+Ledger share one OpenMDAO graph); `MissionSpec` stays **declarative** (R4). *(trace: studio.md §3, §6, §12; mission-model §5)*
 - **RM-P3-VIEW-30 — Multi-body visualization.** Heliocentric/multi-body scene mode (transfer arcs,
   rendezvous geometry, porkchop plots), a **mission timeline across regimes**, cross-phase plan
   explanation; renders `TrajectoryRef`/Transit geometry only — no guidance synthesis. *(trace: view.md §3, §11, §12; `AST-UX-002,003,007`)*

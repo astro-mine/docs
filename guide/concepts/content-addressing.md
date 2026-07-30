@@ -33,15 +33,15 @@ That is the audit trail a commons needs: not just *which* bytes, but *why these*
 ## Verify twice
 
 Signatures are checked **at publish and again at admission**. Publishing with
-`astro-mine-fleet publish --pub <key>` pulls the artifact back and re-verifies it; pulling with
-`astro-mine-bench fetch` verifies every artifact fail-closed on arrival — the digest must match, and
+`astro-mine fleet publish --pub <key>` pulls the artifact back and re-verifies it; pulling with
+`astro-mine bench fetch` verifies every artifact fail-closed on arrival — the digest must match, and
 a signature must be present, intact, and bound to the artifact.
 
 Fail-closed means an unverifiable artifact is an error, never a warning. `--trusted-key` narrows it
 further: pin *whose* signature you accept, not merely that one exists.
 
-Signing lives in `astro-mine-seal`, the one home for the `cryptography` dependency
-([RFC-0005](../../rfc/0005-seal-supply-chain-companion.md)), so Core stays crypto-free and every
+Signing lives in `astro_mine.seal`, the one home for the `cryptography` dependency
+([Seal](../../architecture/seal.md)), so Core stays crypto-free and every
 producer shares one signer.
 
 ## It works offline
@@ -50,9 +50,9 @@ The tier-1 client is a local **OCI-layout** directory — `oci-layout`, `index.j
 `blobs/sha256/…`. No server, no account, no Docker:
 
 ```bash
-astro-mine-bench fetch --registry ./my-store        # mirror by digest, verified
-astro-mine-fleet publish asset.yaml --registry ./my-store --sign --key ./keys/cosign.key
-astro-mine-fleet catalog --registry ./my-store
+astro-mine bench fetch --registry ./my-store        # mirror by digest, verified
+astro-mine fleet publish asset.yaml --registry ./my-store --sign --key ./keys/cosign.key
+astro-mine fleet catalog --registry ./my-store
 ```
 
 The same layout is what a remote registry serves, so a local store and `ghcr.io/astro-mine` are the

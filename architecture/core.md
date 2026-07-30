@@ -1,6 +1,7 @@
 # Astro-Mine-Core — Technology Architecture
 
-> Layer: **Commons backbone** · Phase: **0** (interfaces v0.1) · Mission/Phase/Regime hooks added in Phase 1 ([RFC-0001](../rfc/0001-multi-regime-missions.md))
+> Layer: **Commons backbone** · Phase: **0** (interfaces v0.1) · Ships in: [`astro-mine-platform`](platform.md)
+> Mission/Phase/Regime hooks reserved in Phase 1 ([multi-regime missions](mission-model.md))
 > The narrow waist. The single most important package to design well.
 > Cross-cutting standards: see [conventions.md](conventions.md).
 
@@ -22,7 +23,7 @@ and *no* heavy dependencies. If something can live in a plugin, it MUST NOT live
 ships reference *types and validators*, not reference *implementations* (those are separate
 packages that depend on Core).
 
-**Multi-regime missions (RFC-0001).** Core additively absorbs the Mission/Phase/Regime model —
+**Multi-regime missions.** Core additively absorbs the Mission/Phase/Regime model —
 the `MissionSpec` schema, a bounded `regime` dimension and `PhaseTransition` events on the
 Environment API, propulsion/staging/return SADF capability declarations, the descriptive
 design-time `TrajectoryRef`/`ManeuverBudget` message schemas, and an `operational_targeting`
@@ -49,7 +50,8 @@ superbly, it must be Astro-Mine-Core."
 ## 2. Architecture principles
 
 1. **Guard the waist jealously.** Every addition to Core is a permanent liability. The default
-   answer to "should this go in Core?" is **no**. Changes require an RFC.
+   answer to "should this go in Core?" is **no**. A change to the waist is a deliberate change with
+   a named consumer, not a convenience.
 2. **Mechanism, not policy.** Core defines *how* to describe and exchange; it never decides
    *what* is correct physics, good planning, or the right robot. No domain opinions baked in.
 3. **Zero heavy dependencies.** Core depends only on schema/serialization runtimes (protobuf,
@@ -82,7 +84,7 @@ astro_mine.core
 ├── messages/       # Canonical message schemas (proto + generated types)
 ├── objective/      # ObjectiveSpec + objective→metric binding (the shared objective contract)
 ├── registry/       # Plugin manifest schema, discovery, resolution, version negotiation
-├── units/          # SI units, frames, time (SPICE-backed): types + canonical JSON Schema + proto/Cap'n Proto wire form (RFC-0007)
+├── units/          # SI units, frames, time (SPICE-backed): types + canonical JSON Schema + proto/Cap'n Proto wire form
 └── compat/         # Interface version negotiation & contract-test utilities
 ```
 
@@ -96,7 +98,7 @@ astro_mine.core
   masks. Maps cleanly onto Gymnasium/PettingZoo without being limited to them.
 - **Policy/Planner contract** — a uniform interface for "given observations + context, produce
   actions/assignments," with sub-interfaces for mission planners, task-and-motion planners,
-  allocators, and controllers, so layers compose (charter §5.4).
+  allocators, and controllers, so layers compose (charter §4.4).
 - **Plugin manifest** — declares a plugin's kind, the Core interface versions it implements,
   its inputs/outputs, resource needs, capability tags, and provenance/signature. The manifest is
   `extra="forbid"` and is not subclassable; `attributes` is the sanctioned extension point for
@@ -112,16 +114,16 @@ astro_mine.core
 
   Some members are **packaging metadata** for content nobody loads as code — an `asset` manifest
   describes a SADF document instantiated by Sim's loader, and `design`/`campaign` describe frozen
-  Studio artifacts whose bytes Core never parses ([RFC-0008](../rfc/0008-design-campaign-artifact-kinds.md)).
+  Studio artifacts whose bytes Core never parses ([core.md](core.md)).
   The vocabulary names what Core *describes for discovery*, not only what it executes.
 
   It is **published as a schema** at `$defs/PluginKind` under the manifest's absolute `$id`, so
   cross-language consumers resolve it rather than transcribe it (conventions.md §3.1). It is
-  **append-only, and widening it is a Core RFC** — the rule that makes it safe for other components
-  to key on. Three accepted RFCs turn on that: [RFC-0004](../rfc/0004-safetyspec-safety-contract.md)
-  reuses `POLICY` rather than adding a kind, RFC-0008 appended `design`/`campaign` through the RFC
-  process, and [RFC-0010](../rfc/0010-console-surface-contract.md) keys the console's contribution
-  model on the vocabulary without changing it.
+  **append-only, and widening it is a deliberate Core change** — the rule that makes it safe for
+  other components to key on, and three decisions turn on it: [Guard](guard.md) reuses `POLICY`
+  rather than adding a kind, `design`/`campaign` were *appended* for Studio's frozen artifacts
+  rather than folded into an existing member, and [Console](console.md) keys the console's
+  contribution model on the vocabulary without changing it at all.
 
   **What a kind does *not* answer is "what am I looking at."** A [Worlds](worlds.md) illumination
   field model and a [Surrogate](surrogate.md) excavation model both carry `field_model`; the kind is
@@ -129,7 +131,7 @@ astro_mine.core
   browser, an inspector — must discriminate on a second facet, which is why [Hub](hub.md) §2
   principle 2 carries its container kind as a separate queryable field and never folds the two
   vocabularies into one. Leaving this implicit is how the question got answered wrongly twice before
-  RFC-0010 settled it.
+  the console's design settled it.
 - **Objective contract** — `ObjectiveSpec` (objective + success criteria + their **binding** to
   [Bench](bench.md) metrics and the [Ledger](ledger.md) value model); authored by
   [Studio](studio.md), consumed by Bench/Ledger/[Ops](ops.md)/[View](view.md). Schema only — the
@@ -158,9 +160,10 @@ stubs. Core exposes no network service of its own.
 - **Runtime helpers:** Python 3.12+ (Pydantic v2 validators, loaders). A **Rust** core
   validation/codegen library is recommended for performance and for embedding in non-Python
   contexts (see conventions.md §2).
-- **Packaging:** Python wheel `astro-mine-core`; generated client libs per language published
-  alongside; schemas also published as a versioned schema bundle (an OCI artifact) so any tool
-  can fetch them.
+- **Packaging:** ships in the [`astro-mine-platform`](platform.md) wheel; generated client libs per
+  language published alongside; schemas also published as a versioned schema bundle (an OCI artifact)
+  so any tool can fetch them — which is how a non-Python consumer resolves a Core `$id` without a
+  Python import (conventions.md §3.1).
 
 ---
 
@@ -183,7 +186,7 @@ record which Core schema versions they were produced against (provenance, conven
 Core is the integration substrate; it doesn't integrate *with* others so much as it *is* what
 others integrate through:
 
-- **Every component** depends on `astro-mine-core` and generates its gRPC/data bindings from
+- **Every component** depends on `astro_mine.core` and generates its gRPC/data bindings from
   Core schemas.
 - **Fleet** authors assets in SADF; **Worlds/Prospect/Link** expose worlds via the Environment
   API; **Sim** implements the Environment API; **Mind/Learn/Allocate/Guard** implement the
@@ -230,7 +233,7 @@ others integrate through:
 - **No execution in Core:** Core never executes plugin code; it only describes, validates, and
   resolves. Execution/sandboxing is the host component's responsibility (conventions.md §9).
 - **Export control:** Core's capability-tag vocabulary is the mechanism the rest of the
-  platform uses to partition dual-use functionality (charter §10.5).
+  platform uses to partition dual-use functionality (charter §9.5).
 
 ---
 
@@ -258,7 +261,7 @@ others integrate through:
 **Open questions / research dependencies:**
 
 - How expressive must SADF be to span orbiters → excavators *without* becoming a leaky
-  god-schema (charter §9 "durable abstraction")? Resolve via reference assets in `Fleet`.
+  god-schema (charter §8 "durable abstraction")? Resolve via reference assets in `Fleet`.
 - Exact boundary of the Environment API for variable-fidelity and comms-masked observation —
   co-designed with `Sim` and `Learn`.
 - Capability-tag taxonomy for dual-use gating — co-designed with governance/export-control.
@@ -271,5 +274,6 @@ others integrate through:
   schemas, plugin manifest/registry — sufficient for `Sim + Worlds + Fleet + Bench` to run one
   reference scenario end-to-end. Stability over completeness.
 - **Phase 1+:** extend (additively) for autonomy composition, hub indexing, and studio intent;
-  every change via RFC with deprecation windows. The measure of success is how *little* Core
+  every change additive, machine-checked for wire compatibility, and carrying a deprecation window
+  where it removes anything. The measure of success is how *little* Core
   has to change as the edges grow.

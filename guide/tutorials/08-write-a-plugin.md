@@ -32,7 +32,8 @@ A **Bench metric** is the exception: it is a Hub artifact resolved by a scenario
 entry point. Recipe in the how-to.
 
 If your change does not fit any of these, it may belong in Core — which means an
-[RFC](../../rfc/), not a plugin. The how-to's *"When it is an RFC instead"* section is the test.
+change to a **Core contract**, not a plugin. The how-to's *"When it is a contract change instead"*
+section is the test.
 
 ## 2. Scaffold it (UC-H2)
 
@@ -51,13 +52,9 @@ Install it and the id becomes selectable:
   # then: AllocationPlanner(backend='demo-solver')
 ```
 
-If the owning component is not installed, the umbrella tells you which package provides the kind
-rather than failing obscurely:
-
-```
-`astro-mine plugin new solver` needs astro-mine-allocate — install it with
-`pip install astro-mine-allocate` (or `uv add astro-mine-allocate`), then re-run.
-```
+Every component is always installed, so `plugin new` can never fail for a missing owner — the
+degradation path that used to be documented here is unreachable. The scaffold's job is now only to
+write a package that registers correctly.
 
 ## 3. Read what it generated
 
@@ -68,7 +65,7 @@ The `pyproject.toml` is the whole registration mechanism:
 name = "my-solver"
 version = "0.1.0"
 requires-python = ">=3.12"
-# Note what is NOT here: astro-mine-cli. The umbrella loads this package; it is not a dependency of it.
+# Note what is NOT here: astro-mine-cli. The CLI loads this package; it is not a dependency of it.
 dependencies = ["astro-mine-allocate"]
 
 [project.entry-points."astro_mine.allocate.solvers"]
@@ -79,8 +76,14 @@ Three things worth noticing:
 
 - **The entry-point name is the backend id**, and it is recorded in a plan's `provenance.backend`.
   Which solver produced a plan is provenance, which is why your id may not shadow a built-in.
-- **You depend on the component, not on the umbrella.** `astro-mine-cli` loads your package; it is
-  not a dependency of it. Reversing that would make every plugin drag the CLI in.
+- **You depend on the platform, not on the CLI.** `astro-mine-cli` loads your package; it is not a
+  dependency of it. Reversing that would make every plugin drag a command surface in.
+- **That `astro-mine-allocate` dependency is a bug in the scaffold, and you must fix it by hand.**
+  There is no such distribution any more: every component ships in `astro-mine-platform`
+  ([conventions.md](../../architecture/conventions.md) §7.1). Change the line to
+  `dependencies = ["astro-mine-platform"]`, or the generated package will not install. Filed as
+  [astro-mine-cli#18](https://github.com/astro-mine/astro-mine-cli/issues/18) — the one place in this
+  tutorial where what ships is wrong rather than merely different.
 - **Nothing else is registered anywhere.** There is no central list to add yourself to.
 
 The generated module starts from the shipped stub, so it produces valid output from the first
@@ -153,11 +156,11 @@ interface versions it supports.
 Real examples to copy — either works as-is:
 
 ```bash
-cp astro-mine-core/examples/plugins/greedy-prospecting-baseline.manifest.yaml \
+cp astro-mine-platform/examples/plugins/greedy-prospecting-baseline.manifest.yaml \
    my-plugin.manifest.yaml
 # the other example: lunar-terramechanics-engine.manifest.yaml
-astro-mine-core kinds       # `manifest` -> .../core/registry/v0.1/manifest.schema.json
-astro-mine-core validate my-plugin.manifest.yaml
+astro-mine core kinds       # `manifest` -> .../core/registry/v0.1/manifest.schema.json
+astro-mine core validate my-plugin.manifest.yaml
 ```
 
 ```
@@ -169,10 +172,10 @@ Edit `name`, `version` and `description` to yours. **Keep `name`/`version` in st
 publishes under one name and is found under the other.
 
 Both on-disk shapes are accepted, YAML or JSON: a **manifest document** (`manifest_version` + a
-`manifest:` mapping — what the examples above are, and what `astro-mine-core validate` blesses) or a
+`manifest:` mapping — what the examples above are, and what `astro-mine core validate` blesses) or a
 bare `PluginManifest`. `hub publish` used to require the bare JSON form only, so the shipped examples
 validated and then could not be published; that is fixed
-([astro-mine-hub#46](https://github.com/astro-mine/astro-mine-hub/issues/46)).
+(tracked as an open Hub issue).
 
 ### Which `kind` does a solver declare?
 
@@ -195,8 +198,8 @@ The how-to's *"The manifest side"* section covers the fields.
 ## 7. Publish it (UC-H7)
 
 ```bash
-astro-mine-hub keygen --out ./keys
-astro-mine-hub publish \
+astro-mine hub keygen --out ./keys
+astro-mine hub publish \
   --registry ./myreg \
   --name my-solver --version 0.1.0 --kind plugin \
   --manifest ./my-plugin.manifest.yaml \
@@ -221,11 +224,11 @@ Signed, content-addressed, discoverable by digest — the same pipeline as every
 Then confirm it is findable, which is the point of the step:
 
 ```bash
-astro-mine-hub search --registry ./myreg --text my-solver
+astro-mine hub search --registry ./myreg --text my-solver
 ```
 
 **Do not skip this step.** A plugin nobody can find is not a contribution to a commons; it is a
-local patch that happens to be well-structured. `astro-mine-hub search` is how someone else finds
+local patch that happens to be well-structured. `astro-mine hub search` is how someone else finds
 it, and a digest is how they depend on it without you promising never to change it.
 
 ---

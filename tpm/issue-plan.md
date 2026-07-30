@@ -1,5 +1,11 @@
 # Phase-1 UX & User-Guide backlog — issue plan (Waves 21–26)
 
+> **Point-in-time, 2026-07.** Read as history. This predates the platform's consolidation into four
+> distributions ([conventions.md](../architecture/conventions.md) §7.1) and the retirement of the
+> formal design-proposal process; per-component install lines, per-repo issue counts and RFC numbers
+> in what follows describe the world as it then was. See [tpm/README.md](README.md).
+
+
 > **Status: complete (2026-07-24).** All six waves shipped; every `Wave 21`–`Wave 26` issue is
 > closed. This document is the plan **as drafted**, kept for the reasoning behind each issue — it is
 > not edited to match what was built. What execution found, including where the plan was wrong, is
@@ -57,13 +63,13 @@ outside this workspace can run.*
 
 | # | Repo | Title | Gap | Pri | Size | Milestone |
 |---|---|---|---|---|---|---|
-| 21.1 | `astro-mine-bench` | `[G1.1]` Score against Sim, not the fixture — add `--runner`, and make the stand-in unmistakable | G1.1 | High | M | M1.1 |
-| 21.2 | `astro-mine-hub` | `[G1.2]` Publish the anchor content set so it can be fetched by digest | G1.2 | **High** | L | M1.1 |
-| 21.3 | `astro-mine-bench` | `[G1.2]` `astro-mine-bench fetch` — populate a local registry from the published anchor content | G1.2 | High | M | M1.1 |
-| 21.4 | `astro-mine-sim` | `[G2.2]` Give Sim a CLI and a README a user can start from | G2.2 | High | M | M1.1 |
-| 21.5 | `astro-mine-sim` | `[G1.3]` An anchor baseline that scores non-empty against Sim | G1.3 | High | M | M1.1 |
+| 21.1 | `bench` | `[G1.1]` Score against Sim, not the fixture — add `--runner`, and make the stand-in unmistakable | G1.1 | High | M | M1.1 |
+| 21.2 | `hub` | `[G1.2]` Publish the anchor content set so it can be fetched by digest | G1.2 | **High** | L | M1.1 |
+| 21.3 | `bench` | `[G1.2]` `astro-mine bench fetch` — populate a local registry from the published anchor content | G1.2 | High | M | M1.1 |
+| 21.4 | `sim` | `[G2.2]` Give Sim a CLI and a README a user can start from | G2.2 | High | M | M1.1 |
+| 21.5 | `sim` | `[G1.3]` An anchor baseline that scores non-empty against Sim | G1.3 | High | M | M1.1 |
 
-**21.1 detail.** `astro-mine-bench score --runner fixture|sim` (default `fixture`, honest).
+**21.1 detail.** `astro-mine bench score --runner fixture|sim` (default `fixture`, honest).
 **Bench must not import Sim** — resolve runners through an entry-point group
 (`astro_mine.bench.runners`) that `astro-mine-sim[bench]` registers into; Bench discovers, never
 imports. Fix the same gap in `scripts/determinism_gate.py` (**G2.16** — the repro oracle currently
@@ -77,14 +83,14 @@ ContactPlan). All 9 exist today **only** in a hand-built local registry on one d
 content-addressed set to private GHCR via a release workflow, reusing the shipped Hub publish path
 + Seal signing. Must stay pullable offline after first fetch. **This is the root blocker.**
 
-**21.3 detail.** `astro-mine-bench fetch [scenario]` resolves a ScenarioSpec's pins and pulls them
+**21.3 detail.** `astro-mine bench fetch [scenario]` resolves a ScenarioSpec's pins and pulls them
 via the Hub client into a local OCI-layout registry, verify-twice fail-closed. Prints the store path
 for `open_bundle_store(...)`. Consider a small synthetic anchor world shipped in-package for a
 5-minute offline path (also gives P3 a WorldSpec to copy — see 26.x / G2.11).
 
 **21.4 detail.** Sim ships no console script; `python -m astro_mine.sim` is documented as a
 container entrypoint and consumes a **different schema** (Sim `Scenario`) from Bench's
-`ScenarioSpec` — a real trap. Add `astro-mine-sim run <scenario> [--seed] [--out run.mcap]`
+`ScenarioSpec` — a real trap. Add `astro-mine sim run <scenario> [--seed] [--out run.mcap]`
 accepting a **Bench ScenarioSpec id** and resolving via `sim_scenario_from_spec`. Rewrite the
 35-line README (it still says *"Phase 0 — scaffolding"*): quickstart, the two scenario schemas and
 when each applies, the `[bench]` extra, MCAP output.
@@ -102,10 +108,10 @@ report §9.**
 
 | # | Repo | Title | Gap | Pri | Size | Milestone |
 |---|---|---|---|---|---|---|
-| 22.1 | `astro-mine-learn` | `[G1.4]` Export the trained policy — the CLI currently discards it | G1.4 | **High** | S | M1.2 |
-| 22.2 | `astro-mine-learn` | `[G2.10]` Ship an anchor env factory so the quickstart is copy-pasteable | G2.10 | High | M | M1.2 |
-| 22.3 | `astro-mine-bench` | `[G2.14]` `astro-mine-bench submit` — a CLI path to the leaderboard | G2.14 | Med | M | M1.2 |
-| 22.4 | `astro-mine-allocate` | `[G2.9]` Open the solver registry — it is advertised as pluggable and is a hardcoded dict | G2.9 | Med | M | M1.2 |
+| 22.1 | `learn` | `[G1.4]` Export the trained policy — the CLI currently discards it | G1.4 | **High** | S | M1.2 |
+| 22.2 | `learn` | `[G2.10]` Ship an anchor env factory so the quickstart is copy-pasteable | G2.10 | High | M | M1.2 |
+| 22.3 | `bench` | `[G2.14]` `astro-mine bench submit` — a CLI path to the leaderboard | G2.14 | Med | M | M1.2 |
+| 22.4 | `allocate` | `[G2.9]` Open the solver registry — it is advertised as pluggable and is a hardcoded dict | G2.9 | Med | M | M1.2 |
 | 22.5 | `docs` | `[G2.8]` Write the plugin-authoring guide — 5 live entry-point groups, zero recipes | G2.8 | High | M | M1.2 |
 
 **22.1 detail.** `train/run.py` `main()` does `report, _export = train(...)` and drops the export;
@@ -131,17 +137,17 @@ Allocate and Guard both register into it), `astro_mine.learn.algorithms`,
 manifest-driven metric plugins. CONTRIBUTING mentions "plugins" once, as a principle. Write the
 recipe per plugin kind, with `[project.entry-points]` snippets. Best existing references to build
 from: `allocate/mind.py` and `guard/mind/plugin.py` (both exceptionally well-commented). Note the
-`plugin new` scaffold is **25.x**, gated on the umbrella-CLI RFC.
+`plugin new` scaffold is **25.x**, gated on the umbrella-CLI decision.
 
 ---
 
 ## Wave 23 — Console foundation (6 issues)
 
-*RFC-0010 gates the rest of this wave. Issues 23.3–23.5 carry: "may be revised by RFC-0010."*
+*The console contract gates the rest of this wave. Issues 23.3–23.5 carry: "may be revised by the console contract."*
 
 | # | Repo | Title | Gap | Pri | Size | Workstream |
 |---|---|---|---|---|---|---|
-| 23.1 | `docs` | **RFC-0010: the console shell and the Surface contract** | G1.5 | **High** | L | CX-GOV |
+| 23.1 | `docs` | **The console shell and the Surface contract** | G1.5 | **High** | L | CX-GOV |
 | 23.2 | `astro-mine-console` | `[setup]` Repo standup — pnpm workspace, CI, ARCHITECTURE.md | — | High | M | — |
 | 23.3 | `astro-mine-console` | Design pass — mockups and design tokens before implementation | G1.5 | High | L | — |
 | 23.4 | `astro-mine-console` | `@astro-mine/surface` — the contract (types only, zero deps) | G1.5 | High | M | — |
@@ -152,8 +158,8 @@ from: `allocate/mind.py` and `guard/mind/plugin.py` (both exceptionally well-com
 regardless of phase, Phase=Phase 1, Priority High. The repo is created from `.repo-template` and is
 bare (LICENSE + README).
 
-**23.1 — RFC-0010 scope.** Introduces new top-level packages **and** a cross-cutting convention —
-the same bar RFC-0002 (Spice) and RFC-0005 (Seal) cleared, so it goes through GOVERNANCE.md. Must
+**23.1 — Console-contract scope.** Introduces new top-level packages **and** a cross-cutting convention —
+the same bar the Spice and Seal companions cleared, so it was written up before implementation. Must
 record: the layering (`surface` ← `ui`/`view` ← surfaces ← `console`) and the no-cycles rule (a
 shell inside `view` would be circular: `studio-ui → view`, `view/app → studio-ui`); the `Surface`
 contract; **contributions keyed by Core's existing `PluginKind` vocabulary** rather than a
@@ -161,7 +167,7 @@ UI-side vocabulary (this is what makes "contribute once, use everywhere" hold in
 costs Core nothing — **no Core change**, `CORE_INTERFACE_VERSIONS` stays `0.1.0`); build-time
 composition with runtime federation **rejected for Phase 1** because it fetches over a network and
 breaks CX-LOCAL; **no new REST surface** (per-surface base URLs; the gateway stays Phase 2, as
-view.md already reserves); and the Phase-1 hooks-now argument (RFC-0001's precedent). Doc impact:
+view.md already reserves); and the Phase-1 hooks-now argument (the multi-regime schema hooks' precedent). Doc impact:
 new `architecture/console.md`, updates to `system.md`, `view.md`, `conventions.md §2`.
 
 **23.3 — Design pass.** Deliverable is mockups + a token set, reviewed before code. Bar: one visual
@@ -184,11 +190,11 @@ blank. Nothing depends on `console`.
 
 | # | Repo | Title | Gap | Pri | Size | Milestone |
 |---|---|---|---|---|---|---|
-| 24.1 | `astro-mine-bench` | Leaderboard surface — `@astro-mine/bench-ui` (**closes bench#27**) | G1.6 | High | L | M1.2 |
-| 24.2 | `astro-mine-studio` | `@astro-mine/studio-ui` — convert the SPA to a surface | G1.5 | High | M | M1.1 |
-| 24.3 | `astro-mine-studio` | The authoring journey — wire `/intent`, `/studies`, `/campaigns/publish` into the UI | G1.5 | High | L | M1.1 |
-| 24.4 | `astro-mine-studio` | `[G2.3/G2.4]` `studio serve` — one command to a working Studio | G2.3 | High | M | M1.1 |
-| 24.5 | `astro-mine-hub` | `@astro-mine/hub-ui` — convert the SPA to a surface; add publish/resolve | G2.x | Med | M | M1.2 |
+| 24.1 | `bench` | Leaderboard surface — `@astro-mine/bench-ui` (**closes bench#27**) | G1.6 | High | L | M1.2 |
+| 24.2 | `studio` | `@astro-mine/studio-ui` — convert the SPA to a surface | G1.5 | High | M | M1.1 |
+| 24.3 | `studio` | The authoring journey — wire `/intent`, `/studies`, `/campaigns/publish` into the UI | G1.5 | High | L | M1.1 |
+| 24.4 | `studio` | `[G2.3/G2.4]` `studio serve` — one command to a working Studio | G2.3 | High | M | M1.1 |
+| 24.5 | `hub` | `@astro-mine/hub-ui` — convert the SPA to a surface; add publish/resolve | G2.x | Med | M | M1.2 |
 | 24.6 | `astro-mine-view` | Resolve `@astro-mine/view` distribution; document the harness as a dev gallery | G1.5 | **High** | M | — |
 
 **24.1** — the leaderboard is REST-only today; M1.2's public face does not exist. Rankings,
@@ -201,7 +207,7 @@ a `?study=` URL param with no picker, no upload, no authoring. Ship: objective f
 compare → publish, plus a **seeded example study** so the surface is never empty on first open.
 
 **24.4** — Studio has no console script and its README documents no server command; `_require()`
-makes 5 of 9 routes **503** without hand-wired `[hub]` seams. `astro-mine-studio serve` should
+makes 5 of 9 routes **503** without hand-wired `[hub]` seams. `astro-mine studio serve` should
 compose the backend, wire the Hub seams, serve the built bundle (`app.py` mounts world/asset caches
 but **never** `ui/dist`), and seed the example study.
 
@@ -217,16 +223,16 @@ console and should not pretend to be.
 
 | # | Repo | Title | Gap | Pri | Size |
 |---|---|---|---|---|---|
-| 25.1 | `docs` | **RFC-0011: the `astro-mine` umbrella CLI and command naming** | G2.1 | Med | M |
-| 25.2 | `astro-mine-core` | `[G2.5]` `astro-mine-core validate <file>` — 9 authored formats, 1 has a checker | G2.5 | Med | M |
-| 25.3 | `astro-mine-guard` | `[G2.6/G2.7]` Guard CLI + ship the anchor SafetySpec as package data | G2.6 | Med | M |
-| 25.4 | `astro-mine-mind` | `[G2.6]` Mind CLI + a README with a stack spec in it | G2.6 | Med | M |
+| 25.1 | `docs` | **The `astro-mine` umbrella CLI and command naming** | G2.1 | Med | M |
+| 25.2 | `core` | `[G2.5]` `astro-mine core validate <file>` — 9 authored formats, 1 has a checker | G2.5 | Med | M |
+| 25.3 | `guard` | `[G2.6/G2.7]` Guard CLI + ship the anchor SafetySpec as package data | G2.6 | Med | M |
+| 25.4 | `mind` | `[G2.6]` Mind CLI + a README with a stack spec in it | G2.6 | Med | M |
 
-**25.1 — RFC-0011.** Decides the umbrella's **home and shape** (the open question): one package
+**25.1 — the umbrella CLI.** Decides the umbrella's **home and shape** (the open question): one package
 depending on all components, or a **thin dispatcher** shelling out to installed `astro-mine-*`
 binaries — the local-tier rule favors the dispatcher, since a dependency-heavy umbrella would drag
 the whole platform into every install. Also settles naming: 8 CLIs today, 2 schemes (bare `fleet`,
-`worlds`, `link`, `prospect` vs prefixed `astro-mine-bench`, `-hub`, `-cloud`, `-train`). Proposes
+`worlds`, `link`, `prospect` vs prefixed `astro-mine bench`, `-hub`, `-cloud`, `-train`). Proposes
 `astro-mine <verb>` with aliases for one deprecation cycle, and hosts `plugin new` (22.5's
 scaffold) and `validate` dispatch.
 
@@ -273,7 +279,7 @@ docs/guide/{getting-started.md, tutorials/, how-to/, reference/{cli,file-formats
 |---|---|---|---|---|---|
 | 26.7 | multi | `[G2.13]` Surface the shipped anchor content in the READMEs that hide it | G2.13 | Med | M |
 | 26.8 | multi | `[G3.x]` Fix doc drift — phantom commands, "Planning" classifiers, stale status lines | G3.1–3.4 | Low | S |
-| 26.9 | `astro-mine-core` | `[G3.5]` Repo hygiene — committed `.venv` and build artifacts | G3.5 | Low | S |
+| 26.9 | `core` | `[G3.5]` Repo hygiene — committed `.venv` and build artifacts | G3.5 | Low | S |
 
 **26.7** — Fleet's 6-asset anchor roster, Prospect's Shackleton priors, and Mind's 6 reference
 stacks all ship, are one call away, and are mentioned in **none** of their READMEs. Also **G2.12**:
@@ -293,9 +299,9 @@ out if they grow.
 ## Totals
 
 **33 issues** across 8 repos + 1 new: bench 5 · sim 2 · learn 2 · allocate 1 · hub 2 · studio 3 ·
-view 1 · guard 1 · mind 1 · core 2 · console 5 · docs 8 (2 RFCs + 6 guide) · multi 2.
+view 1 · guard 1 · mind 1 · core 2 · console 5 · docs 8 (2 design write-ups + 6 guide) · multi 2.
 
-**Two RFCs gate real work:** RFC-0010 (console/Surface — gates wave 23–24) and RFC-0011 (umbrella
+**Two design decisions gate real work:** the console/`Surface` contract (gates wave 23–24) and the umbrella-CLI decision (umbrella
 CLI — gates 25.x's dispatch surface and 22.5's scaffold).
 
 **Critical path:** 21.2 (publish anchor content) → 21.3 (fetch) → 21.1/21.5 (honest Sim scoring) →
@@ -319,12 +325,12 @@ everything downstream unblocked in the predicted order. The **sequencing rule wa
 written first (01 and 04) needed no rework.
 
 The **one-console decision** and the **surface-lives-in-its-component-repo** decision both survived
-contact: registering a shipped surface in the shell is one line, exactly as RFC-0010's acceptance
+contact: registering a shipped surface in the shell is one line, exactly as the contract's acceptance
 test claimed.
 
 ### Where the plan was wrong
 
-- **26.9 (`G3.5`, committed `.venv`) was struck** — verified false. `astro-mine-core`'s
+- **26.9 (`G3.5`, committed `.venv`) was struck** — verified false. `astro-mine core`'s
   `examples/downstream-consumer/.venv/` exists on disk but is untracked, gitignored, and has never
   appeared in a commit. It was never filed.
 - **Three of the gap report's own claims did not survive verification** and are corrected in-place
@@ -332,11 +338,11 @@ test claimed.
   `1 - Planning` drift was **15 of 18** repos, not Hub and Seal); `G3.4`'s list (Surrogate was
   already on the org package map — Spice and Seal were missing, and later Console and Cli too).
 - **Wave 26's gate assumptions went stale mid-flight.** The issues were re-verified 2026-07-23 and a
-  large RFC-0011 rollout landed 07-23/24, so four of the eight carried statements that were false by
+  large CLI rollout landed 07-23/24, so four of the eight carried statements that were false by
   the time the work started — most consequentially "`astro-mine-cli` is not built" (it was) and
   "tutorial 05 is still gated" (`astro-mine-worlds#57` had closed the gate hours earlier). The guide
   was written against the code, as each issue instructs, not against its own issue text.
-- **`astro-mine-cli` is a repo the plan did not anticipate.** RFC-0011 was drafted as a naming
+- **`astro-mine-cli` is a repo the plan did not anticipate.** The umbrella-CLI decision was drafted as a naming
   decision inside Wave 25 and produced a new package, a new entry-point group, and a rename of every
   component binary.
 
@@ -348,9 +354,9 @@ documented path end to end:
 
 | Defect | Why it mattered |
 |---|---|
-| [`astro-mine-sim#80`](https://github.com/astro-mine/astro-mine-sim/issues/80) | **No CLI furnished a SPICE kernel pool.** `bench score --runner sim` — the platform's central claim — could not be run from a shell at all. |
-| [`astro-mine-bench#79`](https://github.com/astro-mine/astro-mine-bench/issues/79) | The provider refusal escaped as a traceback, so integrity read as breakage. |
-| [`astro-mine-learn#33`](https://github.com/astro-mine/astro-mine-learn/issues/33) | `--export` with a relative path left a half-written content-addressed entry — a model resolvable by digest with no provenance beside it. |
+| `astro-mine-sim#80` | **No CLI furnished a SPICE kernel pool.** `bench score --runner sim` — the platform's central claim — could not be run from a shell at all. |
+| `astro-mine-bench#79` | The provider refusal escaped as a traceback, so integrity read as breakage. |
+| `astro-mine-learn#33` | `--export` with a relative path left a half-written content-addressed entry — a model resolvable by digest with no provenance beside it. |
 
 All three are fixed, and the guide's caveats about them removed. Plus a fourth class found in the
 same pass: **five CLIs printed a deprecated command name in their own `--help`**, and Fleet's `new`
@@ -364,13 +370,13 @@ followed the instructions.
 
 - **G2.15** — whether Prospect priors should have a hand-authored file format. A design question, not
   a doc gap; the guide records the state truthfully and invents no schema.
-- **G3.6** — Hub artifact naming ([`astro-mine-hub#44`](https://github.com/astro-mine/astro-mine-hub/issues/44)).
+- **G3.6** — Hub artifact naming (`astro-mine-hub#44`).
   Now a content migration rather than a rename, since the anchor set is published with immutable
   digests. Cheaper before the public flip than after.
-- **G3.7** — Seal has no CLI ([`astro-mine-seal#13`](https://github.com/astro-mine/astro-mine-seal/issues/13)).
+- **G3.7** — Seal has no CLI (`astro-mine-seal#13`).
   A feature, and correctly kept out of a Low/Small sweep.
-- **UC-E3's single-command form** — `astro-mine-mind run`
-  ([`astro-mine-mind#25`](https://github.com/astro-mine/astro-mine-mind/issues/25)). The narrow waist
+- **UC-E3's single-command form** — `astro-mine mind run`
+  (`astro-mine-mind#25`). The narrow waist
   says Mind cannot own an Environment; the guide documents the Bench/Sim hop instead.
 
 ### The standing constraint

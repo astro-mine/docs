@@ -1,6 +1,7 @@
 # Astro-Mine-Transit — Technology Architecture
 
-> Status: **Accepted** ([RFC-0001: Multi-regime missions](../rfc/0001-multi-regime-missions.md)) — implementation Phase 3.
+> Status: **Designed, not built** — the [multi-regime mission track](mission-model.md) lands in Phase 3.
+> Ships in: [`astro-mine-platform`](platform.md), as a new subpackage.
 > Layer: **World & environment models** · Phase: **3** (proposed)
 > The deep-space / free-space environment *between* bodies: the n-body dynamical substrate
 > and the long-cruise hazard environment (radiation, thermal/eclipse, micrometeoroid) for the
@@ -81,7 +82,7 @@ across orbital, surface, manipulation, ISRU" — Transit is the orbital/free-spa
    Orekit / Basilisk / STK** for canonical cases with explicit error budgets (conventions.md §11).
 8. **Library first, then a plugin-extensible service.** Importable on a workstation (build a force
    model, query dose along an arc) before it is a field service (conventions.md §1.4); a new body's
-   gravity field or hazard model is a registry plugin, never a core change (charter §10.2).
+   gravity field or hazard model is a registry plugin, never a core change (charter §9.2).
 
 ---
 
@@ -160,7 +161,7 @@ Aligned with conventions.md §2:
   per-step force evaluation, polyhedral-gravity summation, ray/occultation — that a propagator calls
   millions of times. **Rust** optional for the content-addressed bundle packing/verification tool.
 - **Astrodynamics & force models:** ephemerides, frames, epochs (TDB/ET), and Sun/Earth/body geometry
-  via the shared **`astro-mine-spice`** foundation ([RFC-0002](../rfc/0002-shared-spice-foundation.md); SpiceyPy/CSPICE under the hood) — the charter §7 standard, the same resolver Worlds and Link use. **Orekit** (py-wrapped)
+  via the shared **`astro_mine.spice`** foundation ([Spice](spice.md); SpiceyPy/CSPICE under the hood) — the charter §6 standard, the same resolver Worlds and Link use. **Orekit** (py-wrapped)
   and/or **Basilisk** supply validated force models (harmonics, SRP, third-body, drag); **GMAT/STK**
   serve as external verification oracles. Small-body **polyhedral gravity** via an established C++
   kernel; spherical harmonics via a `pyshtools`-class evaluator, mirroring Worlds' gravity stack.
@@ -174,7 +175,7 @@ Aligned with conventions.md §2:
   §5); USD/glTF only where a proximity scene is visualized in [View](view.md).
 - **Service layer:** **FastAPI** (REST/OpenAPI 3.1) + **gRPC** service-to-service (conventions.md §3,
   §4).
-- **Build/packaging:** Python wheel `astro-mine-transit` (Pybind11 native extension, manylinux); OCI
+- **Build/packaging:** ships in the [`astro-mine-platform`](platform.md) wheel (with a Pybind11 native extension); OCI
   image for the service; **environment bundles are OCI artifacts** discovered via [Hub](hub.md).
   SemVer on the package; content hashes on bundles (conventions.md §7).
 
@@ -198,7 +199,7 @@ Transit is both a **field producer** (precomputed hazard/dose maps) and an **on-
 
 - **Owned:** `TransitEnvSpec` schema, the bundle manifest, precomputed hazard fields, validation
   arcs. **Consumed:** NAIF SPICE kernels; published gravity, radiation, micrometeoroid model data
-  (charter §7).
+  (charter §6).
 - **Schemas:** `TransitEnvSpec` and the manifest are JSON Schema + Pydantic v2 (conventions.md §3),
   owned by Transit; the **force-model and hazard surface of the Environment API is a [Core](core.md)-
   owned Protobuf contract** (the free-space profile, [mission-model.md §2.2](mission-model.md)).
@@ -243,7 +244,7 @@ side-channels):
   body-pack and a Transit gravity pack are co-published for the same target and share the body
   frame/SPICE ID.
 - **→ [Hub](hub.md) / [Cloud](cloud.md) / [Bench](bench.md).** Environment bundles are published and
-  discovered as content-addressed OCI artifacts via [Hub](hub.md) (charter §6); heavy ephemeris/
+  discovered as content-addressed OCI artifacts via [Hub](hub.md) (charter §5); heavy ephemeris/
   hazard precompute (dose maps, GCR/SEP fields, long reference arcs) runs as `Argo`/`Ray` batch on
   [Cloud](cloud.md); [Bench](bench.md) pins an environment + Core interface version per scenario for
   exactly reproducible leaderboard results (conventions.md §1.5).
@@ -258,8 +259,8 @@ reads (conventions.md §8).
 ## 7. Infrastructure & deployment
 
 - **Deployment tiers** (conventions.md §7):
-  1. **Local/dev** — `pip install astro-mine-transit`; assemble a force model, query dose along an
-     arc on a workstation. *This tier MUST work* (charter §13).
+  1. **Local/dev** — `pip install astro-mine-cli`; assemble a force model, query dose along an
+     arc on a workstation. *This tier MUST work* (charter §12).
   2. **Cloud** — the stateless field/force service on **Kubernetes** reading immutable bundles from
      S3-compatible storage; **Argo Workflows**/**Ray** on [Cloud](cloud.md) for batch precompute.
   3. **Operations/ground** — read-only force/geometry queries for [Ops](ops.md)/[View](view.md)
@@ -308,7 +309,7 @@ reads (conventions.md §8).
   provenance, **SBOM** (Syft/CycloneDX), with the pinned **SPICE/Orekit/Basilisk** toolchain as a
   deliberate, scanned dependency surface (conventions.md §7, §9).
 - **Export control / dual-use:** Transit publishes **published ephemerides and standard
-  space-environment models** — open science, squarely in the commons (charter §12, conventions.md
+  space-environment models** — open science, squarely in the commons (charter §11, conventions.md
   §12). **The dual-use line is at [Trajectory](trajectory.md), not here** ([mission-model.md
   §4](mission-model.md)): Transit provides the *force model and environment*, not *executable maneuver
   guidance* or *operational targeting*, and deliberately exposes **no closed-loop guidance and no
@@ -334,7 +335,7 @@ reads (conventions.md §8).
   superposition, energy/momentum invariants of conservative terms); **physics validation** of
   propagated states against **GMAT / Orekit / Basilisk / STK** for canonical transfers and perturbed
   cases with explicit error budgets, geometry against NAIF reference cases, and radiation/
-  micrometeoroid outputs against **SPENVIS-style reference cases** (conventions.md §11, charter §7);
+  micrometeoroid outputs against **SPENVIS-style reference cases** (conventions.md §11, charter §6);
   **determinism gates** (same `TransitEnvSpec` + pinned kernels/toolchain ⇒ same environment hash and
   propagated arc; CI fails otherwise); **contract tests** proving the claimed [Core](core.md)
   free-space Environment-API version; and a **frame/epoch sanity gate** — every field/arc must carry a
@@ -347,7 +348,7 @@ reads (conventions.md §8).
 | Decision | Options | Recommendation |
 |---|---|---|
 | **Force-model fidelity tier** | Point-mass patched-conic; perturbed n-body (point-mass + SRP/third-body/harmonics); high-precision ephemeris-backed (+ relativity, full perturbations) | **All three behind one `ForceModel` interface as a fidelity dial** — patched-conic for fast/interactive design, **perturbed n-body as the default** working tier, high-precision for validation; the Sim scheduler selects per task (conventions.md §8). |
-| **Force-model engine** | Roll-our-own; **Orekit**; **Basilisk**; mix | **Wrap Orekit/Basilisk validated force models behind the Core surface**; native C++ kernel only for the hottest path and small-body polyhedral gravity (charter §7 "reinvent as little as possible"); **GMAT/STK as oracles**. |
+| **Force-model engine** | Roll-our-own; **Orekit**; **Basilisk**; mix | **Wrap Orekit/Basilisk validated force models behind the Core surface**; native C++ kernel only for the hottest path and small-body polyhedral gravity (charter §6 "reinvent as little as possible"); **GMAT/STK as oracles**. |
 | **Small-body gravity** | Point-mass; spherical harmonics; **polyhedral**; mascon | **Polyhedral (exact) in close proximity + harmonic/interpolated field farther out** — the proximity analog of Worlds' "polyhedral via body packs" (worlds.md §11), shipped as gravity packs. |
 | **Radiation/hazard source** | Build from first principles; **standard published models (AE8/AP8, AE9/AP9, GCR, SEP)**; couple SPENVIS-class libraries | **Standard published models behind `HazardField`** (AE8/AP8 → AE9/AP9 trapped; ISO-15390/Badhwar–O'Neill GCR; SEP event models), SPENVIS-style, swappable as model packs. Never invented. |
 | **Micrometeoroid/debris model** | None; interplanetary flux (Grün-class); NASA **MEM**-class; ORDEM near Earth | **Grün/MEM-class interplanetary flux as default; ORDEM-class near Earth** — as hazard-model packs with carried uncertainty. |
@@ -362,7 +363,7 @@ reads (conventions.md §8).
   gradients without leaking optimization into the environment (mission-model.md §6).
 - **Hazard fidelity for survival planning.** How time-resolved must the radiation environment be
   (climatological mean vs. modeled SEP events) for ultra-long-horizon survival planning to be honest
-  (charter §8)? Resolve with [Guard](guard.md)/[Sim](sim.md) against reference cruises.
+  (charter §7)? Resolve with [Guard](guard.md)/[Sim](sim.md) against reference cruises.
 - **Proximity-regime boundary with Worlds.** For `proximity_orbit`, where does the Transit external
   field hand off to a Worlds small-body surface near-field? Co-design the pairing and shared frame
   (mission-model.md §1.2).
@@ -381,7 +382,7 @@ reads (conventions.md §8).
   implementation exists — avoiding the retrofit-into-a-frozen-waist failure the charter warns of (§9).
 - **Phase 3 (proposed) — MVP.** Transit ships with [Trajectory](trajectory.md)/[Sizing](sizing.md)/
   [Ledger](ledger.md) and the mission model for the **first interplanetary reference scenario** (e.g.
-  a NEO water/volatiles prospecting cruise, charter §11 Phase 3): SPICE-backed heliocentric/
+  a NEO water/volatiles prospecting cruise, charter §10 Phase 3): SPICE-backed heliocentric/
   body-centered frames; a **perturbed n-body force model** (point-mass + SRP + third-body +
   harmonics) behind the Core free-space surface with patched-conic and high-precision tiers,
   validated against GMAT/Orekit/Basilisk; **small-body gravity packs** (polyhedral + harmonic) paired
@@ -392,4 +393,4 @@ reads (conventions.md §8).
 - **Phase 3+ — ecosystem.** New target bodies (asteroids, icy-moon systems), richer time-resolved SEP
   modeling, finer micrometeoroid environments, and learned force/hazard surrogates arrive purely as
   community **packs** — "support a new transit environment" stays a package, never a Transit core change
-  (charter §10.2, §11).
+  (charter §9.2, §9).

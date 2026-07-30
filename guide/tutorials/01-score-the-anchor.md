@@ -14,19 +14,21 @@ exactly **what ran** to produce your numbers — which is the whole point of thi
 ## 1. Install
 
 ```bash
-export CORE_REPO_TOKEN=<a GitHub token with read access to astro-mine>
-uv venv --python 3.12 .venv
-uv pip install ./astro-mine-bench
+pip install astro-mine-cli
 ```
 
-Bench is deliberately light: it depends on Core and pydantic and **nothing else** — no simulator,
-no geospatial stack. It ships the scenario zoo in-package, so the next two steps work with nothing
-downloaded.
+One line, one version, everything ([getting-started](../getting-started.md) has the
+install-from-source path you need until the public flip).
+
+Bench is still **architecturally** light — it never imports the simulator, which is why `bench` and
+`sim` can be swapped independently. What changed is that "light" no longer means "a smaller install":
+one wheel carries every component. Bench ships the scenario zoo in-package, so the next two steps work
+with nothing downloaded.
 
 ## 2. List the scenarios (UC-B1)
 
 ```bash
-astro-mine-bench list
+astro-mine bench list
 ```
 
 ```
@@ -43,7 +45,7 @@ scenario, 43,200 ticks of 60 s (a 30-day lunar month). It is the default for eve
 ## 3. Score it, right now (UC-B2)
 
 ```bash
-astro-mine-bench score
+astro-mine bench score
 ```
 
 ```
@@ -86,7 +88,7 @@ This distinction is structural, not editorial:
 To check any scorecard, machine-readably:
 
 ```bash
-astro-mine-bench score --json | python -c 'import json,sys; print(json.load(sys.stdin)["runner"])'
+astro-mine bench score --json | python -c 'import json,sys; print(json.load(sys.stdin)["runner"])'
 ```
 
 ```
@@ -159,7 +161,7 @@ itself and to everyone else's. See
 To obtain them:
 
 ```bash
-astro-mine-bench fetch
+astro-mine bench fetch
 ```
 
 > **Read this before you run it.** It pulls **~461 MB** — the world bundle is 99.6% of that — from
@@ -168,7 +170,7 @@ astro-mine-bench fetch
 > idempotent, and once fetched everything works offline.
 
 ```
-usage: astro-mine-bench fetch [-h] [--registry PATH] [--from REGISTRY]
+usage: astro-mine bench fetch [-h] [--registry PATH] [--from REGISTRY]
                               [--trusted-key PATH] [scenario_id]
 ```
 
@@ -188,8 +190,8 @@ Determinism is not something this platform asks you to take on faith. Score twic
 scorecard hash:
 
 ```bash
-astro-mine-bench score --seeds 1001 1002 | grep scorecard
-astro-mine-bench score --seeds 1001 1002 | grep scorecard
+astro-mine bench score --seeds 1001 1002 | grep scorecard
+astro-mine bench score --seeds 1001 1002 | grep scorecard
 ```
 
 ```

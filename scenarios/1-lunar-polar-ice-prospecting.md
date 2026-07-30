@@ -2,7 +2,8 @@
 
 > **Scenario id:** `lunar-polar-ice-prospecting` · **Anchor body:** the Moon, south-polar region
 > (Shackleton–de Gerlache ridge) · **Regime:** `surface` (single-phase Mission) · **Roadmap:**
-> Phase 0 anchor · **Status:** Draft.
+> Phase 0 anchor · **Status:** Built — the anchor benchmark ships, its content is published, and
+> its requirements are the ones the platform is measured against.
 >
 > The platform's anchor scenario — the runnable MVP the whole Phase-0 stack is built to execute.
 > Read with the [charter](../charter/Swarm_Exploration_ISRU_Orchestrator_OSS_Project.md),
@@ -26,7 +27,7 @@ feature-complete objective achievable in Phase 0. Downstream conversion (electro
 propellant) is a documented **future extension** (§15), not part of the baseline.
 
 This scenario is the platform's proof that "thin core, thick swappable edges" produces a runnable,
-reproducible benchmark a researcher can clone, run, and score in an afternoon (charter §12), while
+reproducible benchmark a researcher can clone, run, and score in an afternoon (charter §11), while
 stressing the hardest surface-autonomy problems: comms-denied PSR coordination, lunar-night
 survival, granular excavation physics, and decision-making under deep resource-field uncertainty.
 
@@ -34,19 +35,19 @@ survival, granular excavation physics, and decision-making under deep resource-f
 
 - **It is where the users already are.** Researchers in multi-agent autonomy, planetary robotics,
   terramechanics, and planetary science can use this scenario today; it needs no flight market to
-  be valuable (charter §2, §11). This is the academic-flywheel ignition point.
+  be valuable (charter §2, §9). This is the academic-flywheel ignition point.
 - **It defines "done" for Phase 0.** The MVP loop — [Core](../architecture/core.md) +
   [Sim](../architecture/sim.md) + [Worlds](../architecture/worlds.md) +
   [Fleet](../architecture/fleet.md) + [Bench](../architecture/bench.md) on this scenario — is the
-  concrete deliverable the roadmap is organized around (charter §10, §12; system.md §11).
+  concrete deliverable the roadmap is organized around (charter §9, §10; system.md §11).
 - **It is rich in the hard problems.** Resource uncertainty, comms-denied PSRs, and energy survival
-  are all present in one concrete, valued task (charter §12), so it is an honest benchmark, not a toy.
+  are all present in one concrete, valued task (charter §11), so it is an honest benchmark, not a toy.
 - **It is the one-phase case of the whole platform.** Because a single-`surface`-phase Mission is
   the degenerate case of the multi-regime model, everything proven here is directly reused by the
   full interplanetary [Scenario 2](2-asteroid-mining.md) — the two are points on one continuum.
 - **It forces uncertainty-honest science.** Where the ice is, and how much, is genuinely unknown;
   the swarm must *plan to learn* (active perception), which is the platform's distinguishing
-  commitment to first-class uncertainty (charter §9; conventions.md §1.6).
+  commitment to first-class uncertainty (charter §8; conventions.md §1.6).
 
 ## 3. Mission objective & success criteria
 
@@ -329,7 +330,7 @@ comparable.
   hauling fuel. Con: pointing/efficiency, immature.
 - **Recommendation: peak-of-light solar + storage, RTG/RHU for survival**, with **surface fission
   documented as the continuous-PSR-ops stretch**. Night survival is a flagship hard problem
-  (charter §7), so the baseline must face it head-on rather than assume continuous power.
+  (charter §6), so the baseline must face it head-on rather than assume continuous power.
 
 **Fork D — Comms (lighter fork).** Relay orbiter + rim relay towers (recommended — LOS into PSRs;
 comms-denied coordination is the core challenge) vs. direct-to-Earth only (simpler, but
@@ -498,7 +499,7 @@ is **not** exercised here. Still:
   [Sim](../architecture/sim.md) + [Worlds](../architecture/worlds.md) +
   [Fleet](../architecture/fleet.md) + [Bench](../architecture/bench.md) (+
   [Prospect](../architecture/prospect.md), local [Cloud](../architecture/cloud.md)) — a runnable,
-  reproducible benchmark on this anchor scenario (charter §10; system.md §11). The
+  reproducible benchmark on this anchor scenario (charter §9; system.md §11). The
   *prospecting-only* slice (§3) is the first runnable milestone; *water extraction* is the
   feature-complete Phase-0 baseline.
 - **Phase 1:** [Mind](../architecture/mind.md), [Learn](../architecture/learn.md),
@@ -520,14 +521,14 @@ is **not** exercised here. Still:
 - **Active-perception objective** — BALD/mutual-information vs. expected-value-of-information on ISRU
   yield (Prospect ↔ Allocate co-design).
 - **Stochastic vs. deterministic re-solve** under resource uncertainty — how much planning-to-learn
-  beats deterministic re-solve (charter §8; allocate.md).
+  beats deterministic re-solve (charter §7; allocate.md).
 - **Surrogate error bounds for autoregressive excavation rollouts** — calibrated long-horizon
-  coverage is an open research problem (charter §9; surrogate.md).
+  coverage is an open research problem (charter §8; surrogate.md).
 - **Night-survival modeling depth** — how faithfully to simulate the full thermal night vs. a gated
   survival check, and how it scores in Bench.
 - **Sim-to-real terramechanics** — honestly bounding low-gravity granular uncertainty without
-  on-world data (charter §9).
-- **Objective contract** *(resolved — Phase-0 direct decision, no RFC)* — the `ObjectiveSpec` and
+  on-world data (charter §8).
+- **Objective contract** *(resolved — a Phase-0 direct decision)* — the `ObjectiveSpec` and
   the objective→metric **binding** are a **first-class additive [Core](../architecture/core.md)
   schema**; [Studio](../architecture/studio.md) authors instances, and
   [Bench](../architecture/bench.md)/[Ledger](../architecture/ledger.md)/[Ops](../architecture/ops.md)/[View](../architecture/view.md)
@@ -548,5 +549,5 @@ is **not** exercised here. Still:
   [Hub](../architecture/hub.md), [Cloud](../architecture/cloud.md).
 - External: SPICE/NAIF; LOLA DEM; Diviner/LEND/M³ volatile priors; USGS Astrogeology / PDS;
   PettingZoo/Gymnasium, Ray RLlib, OR-Tools/CP-SAT.
-- Multi-regime continuity: [RFC-0001](../rfc/0001-multi-regime-missions.md),
+- Multi-regime continuity: [multi-regime missions](../architecture/mission-model.md),
   [mission-model.md](../architecture/mission-model.md) — this scenario is the one-phase case.

@@ -27,10 +27,10 @@ code; the group names and constants are quoted from source, with the file that d
 
 That last row is the important one.
 
-### When it is an RFC instead
+### When it is a Core change instead
 
 Core's `PluginKind` vocabulary is **closed and Core-owned**
-([`core/registry/enums.py`](https://github.com/astro-mine/astro-mine-core/blob/main/src/astro_mine/core/registry/enums.py)):
+([`core/registry/enums.py`](https://github.com/astro-mine/astro-mine-platform/blob/main/src/astro_mine/core/registry/enums.py)):
 
 ```
 regime_engine · sensor_model · coupling_scheme · world_provider · body_pack · field_model
@@ -39,10 +39,10 @@ asset · policy · metric · design · campaign
 ```
 
 If your extension **implements one of these contracts**, ship a plugin — that is what this guide is
-for, and no Core change is needed. If it needs a *new* kind, that is a **Core change and therefore
-an RFC** ([GOVERNANCE.md](https://github.com/astro-mine/.github/blob/main/GOVERNANCE.md)): every
-addition to Core is a permanent liability, and the default answer to "should this go in Core?" is
-no ([core.md §2](../../architecture/core.md)).
+for, and no Core change is needed. If it needs a *new* kind, that is a **Core change**, and Core's bar
+is high: every addition is a permanent liability, the vocabulary is append-only, and the default
+answer to "should this go in Core?" is no ([core.md §2](../../architecture/core.md)). Bring a named
+consumer that cannot be served by an existing kind, or you do not have a case.
 
 Note what is *not* on that list: several groups below (`bench.runners`, `allocate.solvers`,
 `learn.algorithms`, `learn.curricula`) deliberately add nothing to Core. A Bench runner or a MARL
@@ -96,7 +96,7 @@ on Mind.
 **Contract.** A **zero-argument provider** returning a
 `TierPlugin(manifest=…, factory=…)` — a Core manifest plus a callable that builds the tier from a
 params mapping. Defined in
-[`mind/registry/registry.py`](https://github.com/astro-mine/astro-mine-mind/blob/main/src/astro_mine/mind/registry/registry.py)
+[`mind/registry/registry.py`](https://github.com/astro-mine/astro-mine-platform/blob/main/src/astro_mine/mind/registry/registry.py)
 (`ENTRY_POINT_GROUP`, line 44).
 
 Requirements the registry enforces:
@@ -171,12 +171,12 @@ manifest:
 ```
 
 **Best references to copy:** Guard's
-[`guard/mind/plugin.py`](https://github.com/astro-mine/astro-mine-guard/blob/main/src/astro_mine/guard/mind/plugin.py)
+[`guard/mind/plugin.py`](https://github.com/astro-mine/astro-mine-platform/blob/main/src/astro_mine/guard/mind/plugin.py)
 is a one-liner over a package-data manifest — the cleanest shape. Allocate's
-[`allocate/mind.py`](https://github.com/astro-mine/astro-mine-allocate/blob/main/src/astro_mine/allocate/mind.py)
+[`allocate/mind.py`](https://github.com/astro-mine/astro-mine-platform/blob/main/src/astro_mine/allocate/mind.py)
 builds its manifest programmatically and shows the cross-package pattern: the module that knows
 *both* vocabularies lives on Allocate's side of the waist, the only side permitted to know both, so
-there is still no `mind → allocate` dependency in either base package (RFC-0006).
+there is still no `mind → allocate` dependency in either component.
 
 ---
 
@@ -188,7 +188,7 @@ Worlds, Prospect, and Link each self-register a factory here.
 
 **Contract.** `(PluginManifest, {media_type: bytes}) -> provider` — a live Core provider (a
 `WorldProvider`, a `ResourceField`, …). Consumed by
-[`sim/runtime/content.py`](https://github.com/astro-mine/astro-mine-sim/blob/main/src/astro_mine/sim/runtime/content.py)
+[`sim/runtime/content.py`](https://github.com/astro-mine/astro-mine-platform/blob/main/src/astro_mine/sim/runtime/content.py)
 (`PROVIDER_ENTRY_POINT_GROUP`, line 103).
 
 **The entry-point name is a Core `PluginKind` value** — this is the one group whose names come from
@@ -233,12 +233,12 @@ for swarm-scale queries. Your backend joins that set without a PR to Worlds.
 
 **Contract.** A factory `(terrain, **kwargs) -> SunVisibilityModel` — the structural query surface
 in
-[`worlds/illumination/_backend.py`](https://github.com/astro-mine/astro-mine-worlds/blob/main/src/astro_mine/worlds/illumination/_backend.py):
+[`worlds/illumination/_backend.py`](https://github.com/astro-mine/astro-mine-platform/blob/main/src/astro_mine/worlds/illumination/_backend.py):
 `sun_visible` / `illumination_at` / `illuminated_mask` / `psr_mask`, plus the attributes a provider
 reads through the model (most importantly the per-azimuth `horizon` map, the always-present product
 Link queries for line of sight). It is a `Protocol`, so **you inherit nothing from Worlds** — match
 the shape. Resolved by
-[`worlds/illumination/_registry.py`](https://github.com/astro-mine/astro-mine-worlds/blob/main/src/astro_mine/worlds/illumination/_registry.py)
+[`worlds/illumination/_registry.py`](https://github.com/astro-mine/astro-mine-platform/blob/main/src/astro_mine/worlds/illumination/_registry.py)
 (`FIELD_MODEL_ENTRY_POINT_GROUP`).
 
 **`field_model` is a Core `PluginKind`** — unlike `bench.runners` or `allocate.solvers`, this
@@ -299,7 +299,7 @@ So the Sim-backed runner lives in *Sim*, registers here, and Bench discovers it 
 
 **Contract.** A `BenchRunnerProvider`: a `runner_id` property, `episode_runner(store)`, and
 `harness_runner(store)`. Defined in
-[`bench/baseline/_registry.py`](https://github.com/astro-mine/astro-mine-bench/blob/main/src/astro_mine/bench/baseline/_registry.py)
+[`bench/baseline/_registry.py`](https://github.com/astro-mine/astro-mine-platform/blob/main/src/astro_mine/bench/baseline/_registry.py)
 (`RUNNER_ENTRYPOINT_GROUP`, line 47). Note `store` is typed `object` precisely so Bench never names
 a Sim type.
 
@@ -331,7 +331,7 @@ folded into its content hash**, so a third-party run is distinguishable by prove
 only by its numbers:
 
 ```console
-$ astro-mine-bench score --runner demo
+$ astro-mine bench score --runner demo
 scenario:  lunar-polar-ice-prospecting-v1
 runner:    demo
 scorecard: sha256:9cd21d94cd739af7ff7f46a559eb07f7a87b15b6dc301ac94d0fc05c160f866c
@@ -349,7 +349,7 @@ miss, and an unknown runner gets an actionable install hint rather than a traceb
 lower the solver-neutral Allocation IR to your encoding, search within the budget, and yield
 incumbents with **monotonically improving bounds**, the last carrying the terminal status. Defined
 in
-[`allocate/solvers/registry.py`](https://github.com/astro-mine/astro-mine-allocate/blob/main/src/astro_mine/allocate/solvers/registry.py)
+[`allocate/solvers/registry.py`](https://github.com/astro-mine/astro-mine-platform/blob/main/src/astro_mine/allocate/solvers/registry.py)
 (`SOLVER_ENTRY_POINT_GROUP`, line 61).
 
 ```toml
@@ -395,7 +395,7 @@ Three things this group guarantees, worth relying on:
 
 **Contract.** A zero-argument callable returning an `Algorithm` — `act`/`learn`/checkpoint/`export`,
 plus an `AlgorithmSpec`. Consumed by
-[`learn/algos/registry.py`](https://github.com/astro-mine/astro-mine-learn/blob/main/src/astro_mine/learn/algos/registry.py)
+[`learn/algos/registry.py`](https://github.com/astro-mine/astro-mine-platform/blob/main/src/astro_mine/learn/algos/registry.py)
 (`ALGORITHM_ENTRY_POINT_GROUP`, line 47).
 
 ```toml
@@ -433,7 +433,7 @@ which Mind, Guard, and Bench consume.
 **Contract.** A zero-argument callable returning **either** a `CurriculumSpec` (a hand-authored
 ladder) **or** a `CurriculumFactory` (an automatic curriculum) — both accepted, so a research
 curriculum needs no adapter. Consumed by
-[`learn/curriculum/registry.py`](https://github.com/astro-mine/astro-mine-learn/blob/main/src/astro_mine/learn/curriculum/registry.py)
+[`learn/curriculum/registry.py`](https://github.com/astro-mine/astro-mine-platform/blob/main/src/astro_mine/learn/curriculum/registry.py)
 (`CURRICULUM_ENTRY_POINT_GROUP`, line 42).
 
 ```toml
@@ -553,7 +553,7 @@ write a module plus a `.dist-info` (`METADATA` + `entry_points.txt`) into `tmp_p
 `sys.path`, and call `importlib.invalidate_caches()`. That exercises the same `importlib.metadata`
 scan a `pip install` would, with nothing patched — which is the only way to prove *discovery* works
 rather than that your registry reads whatever you handed it. Worlds'
-[`tests/test_field_model_entry_points.py`](https://github.com/astro-mine/astro-mine-worlds/blob/main/tests/test_field_model_entry_points.py)
+[`tests/test_field_model_entry_points.py`](https://github.com/astro-mine/astro-mine-platform/blob/main/tests/test_field_model_entry_points.py)
 is the in-tree example.
 
 ---
@@ -564,8 +564,8 @@ Local installation is enough for your own use. To share a plugin, publish it as 
 content-addressed artifact** to Hub:
 
 ```bash
-astro-mine-hub keygen  --out ./keys
-astro-mine-hub publish --registry <registry> --name acme.my-plugin --version 1.0.0 \
+astro-mine hub keygen  --out ./keys
+astro-mine hub publish --registry <registry> --name acme.my-plugin --version 1.0.0 \
     --kind plugin --manifest manifest.json --key ./keys/cosign.key --layer payload.bin
 ```
 
@@ -593,5 +593,6 @@ a prerequisite.
 - [conventions.md §7](../../architecture/conventions.md) — plugin transport and distribution
 - [core.md](../../architecture/core.md) — the manifest, the registry, and what Core will not do
 - [hub.md](../../architecture/hub.md) — publication, verification, and the trust tiers
-- [GOVERNANCE.md](https://github.com/astro-mine/.github/blob/main/GOVERNANCE.md) — the RFC process,
+- [conventions.md](../../architecture/conventions.md) — the normative cross-cutting standards,
+  including where a Core change has to clear its bar (§3, §13)
   for when a plugin is not enough
