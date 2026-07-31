@@ -279,50 +279,50 @@ reading an uploaded file must use an API `jsdom` has.
 
 ## 7. The backlog
 
-25 issues over three waves, continuing the platform's global topological wave numbering (Wave 27 was
+26 issues over three waves, continuing the platform's global topological wave numbering (Wave 27 was
 the CLI's departure from the platform). Repo standup is `Wave 0` by the standing convention.
 
 **Wave 28 — decide, then build the foundations.** Issue 28.1 is gating: the architecture is settled
 in `docs` before any of it is implemented, exactly as the console's own contract was.
 
-| # | Repo | Title | Pri | Size |
+| # | Issue | Title | Pri | Size |
 |---|---|---|---|---|
-| 0.1 | `ui` | `[setup]` Repo standup — pnpm workspace, Next.js app, MUI, CI | High | M |
-| 28.1 | `docs` | Rewrite the front-end architecture for the Next.js/MUI UI **(gating)** | High | L |
-| 28.2 | `api` | CORS for the browser tier — the static UI cannot call the API at all today | High | S |
-| 28.3 | `api` | Stable operation ids and typed responses, so a generated client is usable | High | M |
-| 28.4 | `api` | One error contract and one health endpoint spelling | Medium | M |
-| 28.5 | `ui` | `@astro-mine/api-client` — generated from OpenAPI, with a drift gate | High | L |
-| 28.6 | `ui` | The MUI theme (light/dark) and the honesty kit | High | L |
-| 28.7 | `ui` | The chart layer on MUI X Charts — error bars, parallel coordinates, honesty tests | High | L |
-| 28.8 | `ui` | The app shell — sidebar, navigation, breadcrumbs, keyboard, a11y | High | L |
-| 28.9 | `ui` | Port `@astro-mine/view` into the workspace and make it Next-safe | High | L |
-| 28.10 | `ui` | The artifact inspector registry — the one survivor of the Surface contract | Medium | M |
-| 28.11 | `ui` | The test harness and CI lanes — before the pages, not after | High | M |
+| 0.1 | `ui#1` | `[setup]` Repo standup — pnpm workspace, Next.js app, MUI, CI | High | M |
+| 28.1 | `docs#92` | Rewrite the front-end architecture for the Next.js/MUI UI **(gating)** | High | L |
+| 28.2 | `api#2` | CORS for the browser tier — the static UI cannot call the API at all today | High | S |
+| 28.3 | `api#3` | Stable operation ids and typed responses, so a generated client is usable | High | M |
+| 28.4 | `api#4` | One error contract and one health endpoint spelling | Medium | M |
+| 28.5 | `ui#2` | `@astro-mine/api-client` — generated from OpenAPI, with a drift gate | High | L |
+| 28.6 | `ui#3` | The MUI theme (light/dark) and the honesty kit | High | L |
+| 28.7 | `ui#4` | The chart layer on MUI X Charts — error bars, parallel coordinates, honesty tests | High | L |
+| 28.8 | `ui#5` | The app shell — sidebar, navigation, breadcrumbs, keyboard, a11y | High | L |
+| 28.9 | `ui#6` | Port `@astro-mine/view` into the workspace and make it Next-safe | High | L |
+| 28.10 | `ui#7` | The artifact inspector registry — the one survivor of the Surface contract | Medium | M |
+| 28.11 | `ui#8` | The test harness and CI lanes — before the pages, not after | High | M |
 
 **Wave 29 — the pages.** Parallel once Wave 28 lands.
 
-| # | Repo | Title | Pri | Size |
+| # | Issue | Title | Pri | Size |
 |---|---|---|---|---|
-| 29.1 | `ui` | Home — what this is, who you are, what is configured | Medium | M |
-| 29.2 | `ui` | Registry: browse, search and artifact detail | High | L |
-| 29.3 | `ui` | Registry: resolve, publish and download | Medium | M |
-| 29.4 | `ui` | Benchmark: the leaderboard and the scorecard | High | L |
-| 29.5 | `ui` | Benchmark: provenance and episode replay | High | L |
-| 29.6 | `ui` | Benchmark: submit, jobs, retract and audit — the write path | Medium | L |
-| 29.7 | `ui` | Design: the objective and the candidate swarms | High | L |
-| 29.8 | `ui` | Design: run the study and compare the front | High | L |
-| 29.9 | `ui` | Design: the world and the 3D candidate inspection | High | L |
-| 29.10 | `ui` | Design: publish the campaign, and open a published one | Medium | M |
-| 29.11 | `ui` | Compute: jobs, sweeps, workflows and backends | Low | M |
+| 29.1 | `ui#9` | Home — what this is, who you are, what is configured | Medium | M |
+| 29.2 | `ui#10` | Registry: browse, search and the artifact page | High | L |
+| 29.3 | `ui#11` | Registry: resolve, publish and download | Medium | M |
+| 29.4 | `ui#12` | Benchmark: the leaderboard and the scorecard | High | L |
+| 29.5 | `ui#13` | Benchmark: provenance and episode replay | High | L |
+| 29.6 | `ui#14` | Benchmark: submit, jobs, retract and audit — the write path | Medium | L |
+| 29.7 | `ui#15` | Design: the objective and the candidate swarms | High | L |
+| 29.8 | `ui#16` | Design: run the study and compare the front | High | L |
+| 29.9 | `ui#17` | Design: the world and the 3D candidate inspection | High | L |
+| 29.10 | `ui#18` | Design: publish the campaign, and open a published one | Medium | M |
+| 29.11 | `ui#19` | Compute: jobs, sweeps, workflows and backends | Low | M |
 
 **Wave 30 — close it out.**
 
-| # | Repo | Title | Pri | Size |
+| # | Issue | Title | Pri | Size |
 |---|---|---|---|---|
-| 30.1 | `ui` | The end-to-end journey suite and the accessibility gate | High | L |
-| 30.2 | `ui` | Ship it — the static bundle, its runtime config, and an image that serves it | Medium | M |
-| 30.3 | `docs` | Retire the console, the view repo and the three `ui/` trees (`RM-DIST-04`/`05`) | Medium | M |
+| 30.1 | `ui#20` | The end-to-end journey suite and the accessibility gate | High | L |
+| 30.2 | `ui#21` | Ship it — the static bundle, its runtime config, and an image that serves it | Medium | M |
+| 30.3 | `docs#93` | Retire the console, the view repo and the three `ui/` trees (`RM-DIST-04`/`05`) | Medium | M |
 
 ### Critical path
 

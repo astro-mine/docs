@@ -22,7 +22,7 @@ superseded by later work rather than continuously maintained.
 |---|---|
 | [phase-0-1-user-surface-analysis.md](phase-0-1-user-surface-analysis.md) | **Phase 0/1 user-surface analysis & gap report** (2026-07-16). Designs the complete user-oriented surface (CLI + GUI) for the Phase-0 and Phase-1 objectives, inventories what ships today against it, and gap-analyses the difference. Defines 7 personas, 46 use cases, 6 user journeys, and the single-console GUI architecture. |
 | [issue-plan.md](issue-plan.md) | **The Waves 21–26 issue backlog** derived from the gap report — 33 issues across 9 repos, with per-issue detail, verified evidence, and board conventions. Closes with an **Outcome** section recording what execution found. |
-| [ui-rebuild-plan.md](ui-rebuild-plan.md) | **The UI rebuild — plan and issue backlog (Waves 28–30)** (2026-07-31). Re-implements the front end as a Next.js + Material UI multi-page application over a generated REST client, replacing `RM-DIST-04`'s move of five package trees. Records the decisions, the feature inventory the rebuild must not lose, the target information architecture, the CI test lanes, and 25 issues. |
+| [ui-rebuild-plan.md](ui-rebuild-plan.md) | **The UI rebuild — plan and issue backlog (Waves 28–30)** (2026-07-31). Re-implements the front end as a Next.js + Material UI multi-page application over a generated REST client, replacing `RM-DIST-04`'s move of five package trees. Records the decisions, the feature inventory the rebuild must not lose, the target information architecture, the CI test lanes, and 26 issues. |
 
 ## Status
 
