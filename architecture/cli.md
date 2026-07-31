@@ -159,11 +159,15 @@ for a usage error — *"I typed this wrong"* — and is kept distinct from the 1
 uses for its own failures. Such a verb was invoked correctly; the installation is incomplete.
 Answering it with 2 points the reader at their command line instead of at their environment.
 
-> **Inconsistency.** `hub`, `seal` and `studio` follow that split; `sim` and `bench` return 2 from
-> every failure path, including missing optional extras that no invocation could have avoided. The
-> divergence predates this rule and is tracked as
-> [astro-mine-cli#24](https://github.com/astro-mine/astro-mine-cli/issues/24) — until it is closed,
-> **do not** read a 2 from those two components as "you typed this wrong".
+That split governs every failure a command reports, not only an absent capability, and it is what a
+script branching on the status is entitled to read:
+
+- **1** — the command was invoked correctly and could not complete: a missing optional extra, an
+  unreadable file, content that did not resolve, a runner that refused to score.
+- **2** — the user named something that does not exist or cannot be parsed, or supplied nothing
+  where something was required: an unknown scenario id, an unregistered `--runner`, a malformed
+  flag value, a store named by neither a flag nor its environment fallback. `argparse` already
+  produces this status for free on a genuine parse error.
 
 **When the hint cannot resolve, omit it.** "How to get it" assumes something to get. Where the
 capability ships in a distribution that does not yet exist, the honest message names that
