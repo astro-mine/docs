@@ -244,9 +244,13 @@ allowed, not only what is forbidden — because "no private imports" was never a
    not exist — see dependency inversion below.
 3. **Pointing down, never up.** Dependencies follow the layer table in
    [README.md](README.md): a lower layer MUST NOT import a higher one. An upward edge is a design
-   defect, and the fix is inversion rather than permission. (Live example: `sim → bench`. Bench runs
-   Sim through the `EpisodeRunner` seam, so Sim importing the benchmark harness has the arrow
-   backwards.)
+   defect, and the fix is inversion rather than permission. (The worked example is `sim → bench`,
+   which used to exist. Bench runs Sim through the `EpisodeRunner` seam and deliberately never
+   imports Sim, so Sim importing the benchmark harness had the arrow backwards — and it pointed
+   that way for one reason: the *types* the seam is written in lived in Bench. Moving them to
+   `core.scoring` inverted it. Four of the five imports were a straight move; the fifth was Sim
+   calling Bench's metric registry, which became an injected `EpisodeScorer`. Nothing about the
+   design changed, only where the vocabulary lived.)
 4. **Runtime and type-only edges are both edges, and are not the same edge.** An import under
    `TYPE_CHECKING`, or inside a function body, still counts for acyclicity — it is still a design
    dependency. It does **not** count against import cost (§8), which is why deferring one is a
@@ -263,13 +267,23 @@ reverse — with one defect left: the abstraction lives in a component instead o
 lateral edge scattered across a component's modules is a different thing entirely, and is not
 permitted.
 
-**Where this stands today.** Nine runtime module-scope lateral edges exist, six of them to
-companions. The three genuine component-to-component edges — `allocate → mind`, `guard → mind`,
-`sim → bench` — each have the shape above and each disappear when their protocol moves to Core;
-`TierPlugin` already has two implementors, which by §3.3 makes it Core's to own today. Separately,
-[Hub](hub.md) is referenced by eight components and imported at runtime module scope by **none**:
-every edge is `TYPE_CHECKING` or deferred. That is dependency inversion already being done by hand,
-with the crudest available tool, and it is the case the next section exists to serve properly.
+**Where this stands today.** There are **no** genuine component-to-component runtime lateral edges.
+The layering suite's recorded-edge table is empty, and adding an entry to it is a deliberate act
+requiring the matching §6 paragraph and a reviewer who agrees §3.2 rule 2's test is answered *no*.
+
+That is worth reading as an outcome rather than as luck, because it was not the starting position.
+Three edges existed — `allocate → mind`, `guard → mind`, `sim → bench` — each with the acceptable
+shape above and each carrying the same defect: the shared abstraction lived in a component instead
+of at the waist. All three dissolved when `TierPlugin`, the shield-report vocabulary, the allocation
+delegation contract and the episode-scoring vocabulary moved to Core. No behaviour changed; each
+step was a move plus a signature change. The rules did not need an exception, which is the useful
+part of the story.
+
+Type-only and deferred edges remain, and they are not failures. [Hub](hub.md) is still referenced by
+eight components and imported at runtime module scope by **none** — but where that used to be
+inversion done by hand with the crudest available tool, those components now take an injected
+registry, so the deferred import is a load-cost choice (rule 4) rather than a way of avoiding a
+dependency nothing declared.
 
 ### 3.3 Dependency inversion (normative)
 
@@ -288,8 +302,19 @@ with the crudest available tool, and it is the case the next section exists to s
 **Wiring happens at composition roots, and only there.** The platform uses
 [`svcs`](https://svcs.hynek.me/) — a small, explicit, typed registry, no decorators and no
 import-time magic — at the four places that compose the platform into an application:
-[`astro-mine-cli`](cli.md), [`astro-mine-api`](api.md), the Cloud in-pod worker, and Studio's
-orchestration worker.
+[`astro-mine-cli`](cli.md), [`astro-mine-api`](api.md), the Cloud in-pod worker
+(`astro_mine.cloud.submission.harness`), and Studio's orchestration worker
+(`astro_mine.studio.orchestrate.worker`). The last two are wired; the CLI is wired in its own
+distribution; `astro-mine-api` is not built yet, and naming an unbuilt thing as unbuilt is the
+honest form.
+
+**A root is an application entrypoint, not a component that happens to wire things** — reached by
+`python -m` or a container `ENTRYPOINT`. It does not follow that nothing else imports it: the Cloud
+harness is imported by the cluster backend for its sentinel parser, and the Studio worker for its
+I/O constants. So a root imports `svcs` *inside* its container function rather than at module
+scope, and the suite asserts the consequence rather than the shape — importing a component MUST NOT
+load `svcs`. A file-level allowlist alone would pass while the container sat on an ordinary
+backend's import path, which is a mistake that has already been made once and caught by that check.
 
 ```python
 # a component: no container, no framework, no import of an implementation
@@ -546,11 +571,21 @@ Normative consequences:
   - an import of another component's **underscore-private** module, or of a name absent from its
     `__all__`;
   - a component importing the **CLI or API** distribution, or importing **`svcs`** (§3.3);
+  - **importing a component loading `svcs`** — asserted by importing, not by reading the source.
+    The rule above is about which *file* may hold a container; this is about where the container
+    ends up. A composition root is legitimately imported by its own component for non-container
+    reasons, so an `import svcs` at its module scope satisfies a file-level allowlist and still
+    puts the container on an ordinary backend's import path (§3.3, §8). Static analysis of the
+    allowlisted file cannot see that; the check exists because the mistake was made and missed.
   - a front-end **surface** package importing another surface.
 
   It MUST also *report* — without failing — the runtime and type-only lateral edges separately, and
   fail on a **new runtime lateral edge** that is not recorded in the depending component's §6. The
   point is not to forbid lateral edges but to make adding one a deliberate, visible act.
+
+  Each rule SHOULD be tested twice: once for conformance against the tree, and once against a
+  synthetic violation proving the check fires. A check that silently stopped working reads as a
+  passing suite forever.
 - **CI/CD:** GitHub Actions (read-only default workflow permissions, per org policy); artifacts
   signed on release.
 - **Contract tests:** every component proves it honors the Core interface versions it claims, and

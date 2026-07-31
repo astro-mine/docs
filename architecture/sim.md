@@ -278,13 +278,21 @@ Sim is the hub of the design/training loop and the shadow of the operations loop
 - **Executes policies/planners from** [Mind](mind.md), [Allocate](allocate.md), and
   [Guard](guard.md): they implement the Core Policy/Planner API and drive `step` actions; Guard's
   shield wraps actions before they enter the physics.
-- **Lateral dependency — `sim → bench` (runtime, declared per `conventions.md` §3.2, and the one that
-  most wants inverting).** Confined to `astro_mine.sim.bench`, which imports Bench's metric and
-  harness types (`EpisodeTrace`, `ScoringContext`, `RunOutcome`, `BeliefSnapshot`, `ScoringRefused`) so
-  Sim can satisfy Bench's runner contract. The arrow is backwards from the design: **Bench runs Sim**
-  through the `EpisodeRunner` seam, and Bench deliberately never imports Sim. What makes the import go
-  the other way is that the scoring vocabulary lives in Bench rather than at the waist. Moving those
-  types to Core inverts it, and is tracked with the other two.
+- **No runtime lateral dependency on [Bench](bench.md).** `astro_mine.sim.bench` used to import
+  Bench's metric and harness types (`EpisodeTrace`, `ScoringContext`, `RunOutcome`,
+  `BeliefSnapshot`, `ScoringRefused`) so Sim could satisfy Bench's runner contract — a runtime
+  lateral edge, and the one `conventions.md` §3.2 rule 3 named as its example of an arrow pointing
+  up the layer table. The design was never in doubt: **Bench runs Sim** through the `EpisodeRunner`
+  seam and deliberately never imports Sim. The import went the other way only because the scoring
+  vocabulary lived in Bench rather than at the waist. It now lives in `astro_mine.core.scoring`, and
+  the arrow points the way the design always described.
+
+  One import was not a move. `SimHarnessRunner` also called Bench's `resolve_metrics`/`score`,
+  because a `RunOutcome` carries metric values — so it takes an injected Core `EpisodeScorer`, and
+  Bench passes its own when it constructs the runner. That is the mirror image of the content
+  `store` Bench hands Sim: each side is given what the other owns rather than importing it. Sim
+  still names Bench's *scenario* types under `TYPE_CHECKING`, which §3.2 rule 4 permits and the
+  layering suite reports rather than fails.
 - **Scored by** [Bench](bench.md): Sim runs pinned scenarios deterministically; Bench ingests the
   MCAP recording + provenance and computes metrics.
 - **Streamed to** [View](view.md): live frames over gRPC server-streaming during interactive runs;
