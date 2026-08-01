@@ -103,7 +103,7 @@ The threshold from simulation to reality. The same plans that were validated in 
 | **Astro-Mine-Ops** | Orchestration runtime: fleet-wide state estimation, plan execution, monitoring, replanning, and anomaly handling, with a human-in-the-loop supervisory console and a digital-twin shadow that validates plans before they are committed. | Operators, mission ops teams | Actually runs a swarm — against the simulator today, against real assets later — with supervisory override and explanation. |
 | **Astro-Mine-Bridge** | Hardware and flight-software abstraction: adapters to ROS 2, NASA core Flight System (cFS), F´, and CCSDS, so identical plans drive either the simulator or real flight hardware. | Flight-software engineers, integrators | Connects Astro-Mine to real robots and flight stacks without changing the layers above it. |
 | **Astro-Mine-View** | Visualization and telemetry: 3D geospatial views (Cesium / 3D Tiles), OpenMCT integration, swarm dashboards, and plan explanations. | Operators, stakeholders, educators | See and understand what the swarm is doing and why — for operations, demos, and teaching. |
-| **Astro-Mine-Console** | The single GUI shell: one front door composing per-component *surfaces* over a small, stable contract, plus the platform design system every surface renders with. | Everyone who would rather click than type | One application spans every component, so no component ships an app of its own. |
+| **Astro-Mine-Console** | The single GUI shell: one front door to every component, plus the platform design system it renders with. | Everyone who would rather click than type | One application spans every component, so no component ships an app of its own. |
 
 ### 4.7 Commons backbone & platform infrastructure
 
