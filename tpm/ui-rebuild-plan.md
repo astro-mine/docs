@@ -124,9 +124,15 @@ decode**), replay tracks and channels, the shared timeline clock and scrubber, a
 
 ## 3. What the API serves — and what bounds the scope
 
-`astro-mine-api` serves **37 routes over 4 surfaces** (OpenAPI 3.1, 70 component schemas). That is
+`astro-mine-api` serves **40 routes over 4 surfaces** (OpenAPI 3.1, 78 component schemas). That is
 the whole of what the UI can do, and it is the right constraint: the front end renders capability the
 platform already exposes.
+
+> This said *37 routes, 70 component schemas* when the plan was drafted, which was before `api#2`,
+> `api#3` and `api#4` landed; the figures above are the document at `api#4`. **Nothing should encode
+> either number.** `ui#2`'s generated client asserts its surface against the document itself, which
+> is the only count that cannot go stale — and this correction is the argument for that having been
+> the right call.
 
 **Served and never surfaced by any UI** — the new scope in D8:
 
