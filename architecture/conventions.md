@@ -570,7 +570,9 @@ Normative consequences:
 - **Logs:** structured JSON; aggregated with **Loki**.
 - **Tracing:** distributed traces across the design and operations loops (a replan in `Ops`
   is traceable through `Mind`/`Allocate`/`Guard`).
-- **Health:** standard liveness/readiness endpoints; SLOs defined per service.
+- **Health:** standard liveness/readiness endpoints; SLOs defined per service. The REST tier spells
+  liveness `GET /healthz` and answers one body from every surface — see [api.md](api.md) §4, which
+  is where that decision is normative.
 
 ---
 
