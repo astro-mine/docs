@@ -86,21 +86,29 @@ cites it rather than restating it, and documents only where it deviates and why 
 
 | Concern | Standard |
 |---|---|
-| Language / framework | **TypeScript 5.5** · **React 18.3** |
-| Runtime | **Node >= 20.19** (Vite 8 and Vitest 4 require it) |
+| Framework | **Next.js 16** (app router), **static export** (`output: 'export'`) |
+| Language / UI | **TypeScript 5.9** · **React 19** · **Material UI 9** |
+| Runtime | **Node >= 22.13** — pnpm's floor, not a preference (see below) |
 | Package manager | **pnpm 11.10.0**, pinned in the workspace root's `package.json` `packageManager` |
-| Build | **Vite 8** — library mode for published packages, app mode for the console |
-| Unit tests | **Vitest 4** + Testing Library, `jsdom` environment |
-| Browser tests | **Playwright** against the built artifact, not the dev server |
-| Lint / format | **ESLint 8** (classic config) + `typescript-eslint` 7 · **Prettier 3** |
-| Routing | **react-router** — nested routes map onto the console's surface namespaces |
-| Server state | **None.** `fetch` plus the design system's `AsyncState` primitive |
-| Charts | **visx** + `d3-scale` |
+| Lint / format | **ESLint 9** (flat config) + `typescript-eslint` 8 · **Prettier 3** |
+| Routing | **The framework's.** File-based app-router routes; identity in the query string ([ui.md](ui.md) §5.1) |
+| Server state | **None.** `fetch` through the generated client plus the design system's `AsyncState` primitive |
+| Charts | **MUI X Charts**, behind the design system's wrappers |
+| API access | A **generated** TypeScript client from the API's OpenAPI document, with a CI drift gate |
+| Unit tests | **Vitest** + Testing Library + **MSW**, `jsdom` environment |
+| Browser tests | **Playwright** against the built **export**, not the dev server |
+| Accessibility | **axe**, every route, both modes — a build gate |
 
-**On the package manager.** One pinned version, everywhere. Three managers across four trees is how
-a cold clone acquires three ways to fail, and `--frozen-lockfile` turns any drift into a red build
-rather than a silent one — which is the point. The pin is a floor for reproducibility, not a
-statement that newer is unusable; move it deliberately, in one sweep.
+**On the package manager, and on the Node floor.** One pinned version, everywhere.
+`--frozen-lockfile` turns any drift into a red build rather than a silent one — which is the point.
+The pin is a floor for reproducibility, not a statement that newer is unusable; move it deliberately,
+in one sweep.
+
+The **Node** floor is pnpm's own: pnpm 11.10.0 declares `engines.node >= 22.13` and dies on Node 20
+with *"No such built-in module: `node:sqlite`"*. It is recorded here as a requirement rather than a
+preference because the first version of this baseline said 20.19, no runner ever exercised it, and it
+took a green-looking repository into a red pipeline the moment CI could run. **A floor asserted in a
+file and never enforced by a runner is a floor nobody is standing on.**
 
 **On server state.** The platform deliberately ships **no** data-fetching or client-cache library.
 Every front end already uses bare `fetch`, and the loading / error / empty discipline lives in a
@@ -111,11 +119,26 @@ are read-mostly and human-paced. Revisit it when a surface has a concrete need (
 polling, cross-surface cache invalidation) — as a deliberate, documented change to this baseline,
 not as an import in one surface.
 
-**On charts.** `visx` composes D3 primitives as React components, so the chart discipline is
-enforced by the API rather than by care: `@astro-mine/ui` owns the chart layer, a second y-axis is
-unrepresentable, and a value with no uncertainty bound renders as an open mark by construction
-rather than as a zero-length error bar. Parallel coordinates is the one form `visx` does not
-provide and is hand-built.
+**On charts (normative).** `@astro-mine/ui` **owns every chart the application renders and exports no
+raw chart primitive.**
+
+This is a rule now because it used to be a property. The previous baseline used `visx`, which
+composes D3 primitives as React components: a second y-axis was unrepresentable and a value with no
+uncertainty bound rendered as an open mark *by construction*, so the discipline was enforced by an API
+that could not express the wrong thing. **MUI X Charts guarantees neither and ships no error bars.**
+The design system therefore supplies the error-bar and parallel-coordinates layers itself, and MUST
+carry unit tests asserting that a null bound renders as an open mark and that no chart can be given
+two y-axes. A rule enforced only by review is a rule that erodes — which is why it is a test
+([ui.md](ui.md) §7.1).
+
+**On the framework, and what it replaced.** The front end is a multi-page application, not a shell
+composing plugin *surfaces* at build time. The `Surface` contract, its registry and the
+per-component `<component>-ui` packages are retired; adding a page is adding a route. Static export
+keeps the property that mattered — a bundle any host serves, with no Node process to run — at the
+cost of two constraints that are load-bearing rather than incidental: **route identity lives in the
+query string**, because a pre-rendered dynamic segment needs a closed enumerable parameter set that
+digests and artifact names are not; and **the API must send CORS headers or the application is
+inert**. Both are stated in [ui.md](ui.md) §5.1, which is the design authority for the front end.
 
 ---
 
