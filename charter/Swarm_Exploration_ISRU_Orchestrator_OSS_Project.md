@@ -139,7 +139,7 @@ The component catalog above is a map of *design* boundaries. It is not a map of 
 | **`astro-mine-platform`** | One Python wheel carrying every component of §4.1–4.8 as `astro_mine.<name>`. It is a **library** and ships no commands. | anyone using the platform from Python |
 | **`astro-mine-cli`** | The one executable, `astro-mine`, under one grammar: `astro-mine <component> <verb>`. Depends on the platform; installing it installs everything. | anyone using the platform from a terminal |
 | **`astro-mine-api`** | The REST services — the Hub registry API, the Studio API, Cloud's submission service, and the Bench leaderboard — behind one deployable. | whoever runs a hosted tier |
-| **`astro-mine-ui`** | The browser front end: the console shell, its surface contract, the design system, the visualization library, and the per-component surfaces, published under the `@astro-mine` npm scope. | whoever serves the GUI |
+| **`astro-mine-ui`** | The browser front end: the console application, its generated API client, the design system, and the visualization library, published under the `@astro-mine` npm scope. | whoever serves the GUI |
 
 Three properties this buys, each of which was leaking before:
 

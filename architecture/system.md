@@ -205,7 +205,7 @@ policy is decided with Hub); Core does not depend on it. See [seal.md](seal.md) 
 | `astro-mine-platform` | Python wheel | every component below whose runtime is a library or a gRPC service | [platform.md](platform.md) |
 | `astro-mine-cli` | Python wheel | the one `astro-mine` executable, `astro-mine <component> <verb>` | [cli.md](cli.md) |
 | `astro-mine-api` | wheel + image | the Hub, Studio, Cloud and Bench REST surfaces | [api.md](api.md) |
-| `astro-mine-ui` | npm `@astro-mine/*` | the console shell, the surface contract, the design system, View, and the per-component surfaces | [ui.md](ui.md) |
+| `astro-mine-ui` | npm `@astro-mine/*` | the console application, the generated API client, the design system, View, and the artifact inspectors | [ui.md](ui.md) |
 
 A component with more than one kind of surface is split by *kind*, not forked: Hub's client, index and
 registry are library code in the platform; its registry API is a route module in the API distribution;

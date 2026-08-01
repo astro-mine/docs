@@ -60,15 +60,15 @@ for both, and says which it means whenever the difference matters.
 | Performance-critical kernels (physics, contact, granular, hot inner loops) | **C++20** | Pybind11 bindings exposed to Python. Integrates with Drake / MuJoCo / Isaac / BehaviorTree.CPP. |
 | High-assurance & safety-critical logic, schema/codegen tooling | **Rust** | Recommended where memory safety + performance matter most: `Guard`'s runtime monitors (a PyO3 extension the platform wheel bundles), `Core` schema validation/codegen, content-addressed registry tooling. Optional elsewhere. |
 | GPU kernels | **CUDA** (+ vendor-neutral fallback) | Used inside Sim/Surrogate; abstracted behind device-agnostic interfaces where feasible. |
-| Web front-ends | **TypeScript + React** | The console shell, the design system, the visualization library, and every per-component surface. The full baseline is §2.1. |
+| Web front-ends | **TypeScript + React** | The console application, the generated API client, the design system, and the visualization library. The full baseline is §2.1. |
 
 **Rule:** the *public* API surface of any component MUST be reachable from Python. Native code
 sits behind Python bindings or a gRPC service.
 
 **Scope of that rule.** It binds *components* — the Python packages that own platform capability.
-It does **not** bind the **front-end packages** of §2.1 (`@astro-mine/surface`, `@astro-mine/ui`,
-`@astro-mine/console`, `@astro-mine/view`, and the per-component surfaces), which are TypeScript
-and have no Python surface at all. That is not an exemption from the rule but a consequence of it:
+It does **not** bind the **front-end packages** of §2.1 (`@astro-mine/console`,
+`@astro-mine/api-client`, `@astro-mine/ui`, `@astro-mine/view` and `@astro-mine/inspectors`), which
+are TypeScript and have no Python surface at all. That is not an exemption from the rule but a consequence of it:
 a front-end package renders capability that a component already exposes from Python, and adds none
 of its own. A front-end package that needed its own Python API would be a component wearing the
 wrong clothes.
@@ -471,13 +471,15 @@ Astro-Mine publishes four things, and a component belongs to exactly one of them
 | **`astro-mine-platform`** | Python wheel (maturin; bundles Guard's Rust core) | every component as `astro_mine.<name>` — a **library**, no console scripts | — |
 | **`astro-mine-cli`** | Python wheel | the one `astro-mine` executable and every command | the platform |
 | **`astro-mine-api`** | Python wheel / OCI image | every REST surface as FastAPI route modules | the platform |
-| **`astro-mine-ui`** | npm packages under `@astro-mine` | the console shell, its surface contract, the design system, the visualization library, and the per-component surfaces | the API at runtime |
+| **`astro-mine-ui`** | npm packages under `@astro-mine` | the console application, the generated API client, the design system, the visualization library, and the artifact inspectors | the API at runtime |
 
-> **Where this stands.** The platform and CLI distributions ship. `astro-mine-api` and
-> `astro-mine-ui` are **not yet stood up**: the REST route modules and the `@astro-mine/*` packages
-> exist and run, but still sit in the repositories they were written in. The rules below are
-> normative for both today — a new REST surface is written as a route module, not woven into a
-> component — and the move is tracked in the [roadmap](../roadmap/README.md).
+> **Where this stands.** The platform, CLI and UI distributions are stood up; `astro-mine-api`'s
+> route modules have landed and its documentation sweep is outstanding. The front end is a **rebuild
+> rather than a move** ([ui.md](ui.md) §11): the workspace, the application and its gates ship, and
+> the pages land across Waves 29–30. The rules below are normative today — a new REST surface is
+> written as a route module, not woven into a component; a new page is a route in the one
+> application, not an app of its own — and the remaining work is tracked in the
+> [roadmap](../roadmap/README.md).
 
 Normative consequences:
 
