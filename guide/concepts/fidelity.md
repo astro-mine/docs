@@ -65,7 +65,8 @@ substituting:
   than scoring blind.
 - `astro-mine fleet render` labels an inertia-equivalent proxy box as a proxy, per link, and stamps
   the output `lossy`.
-- A console surface with unmet capabilities **degrades visibly**, never blank.
+- A console page whose backend is absent or whose capability is unmet **degrades visibly**, never
+  blank.
 
 The unifying idea: it is always acceptable to run something cheaper, and never acceptable to let a
 reader believe they ran something more expensive.

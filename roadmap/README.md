@@ -121,7 +121,7 @@ SLSA / SBOM); a Phase-1 deliverable, additive and non-urgent, that must not gate
 
 **A component is not a distribution.** Every row above is a subpackage of
 [`astro-mine-platform`](../architecture/platform.md), except the front-end packages
-([View](../architecture/view.md), [Console](../architecture/console.md)), which are packages of
+([View](../architecture/view.md), [Console](../architecture/ui.md)), which are packages of
 [`astro-mine-ui`](../architecture/ui.md). Nothing in this matrix is separately released — see
 [the distribution track](#the-distribution-track).
 
@@ -153,10 +153,13 @@ See [`conventions.md`](../architecture/conventions.md) §7.1 for the rule, and
   Bench route modules into it, over the components' unchanged public APIs. Restore the REST tests the
   consolidation had to exclude; converge the health-endpoint and error conventions; ship one image and
   one chart. A component MUST NOT ship a FastAPI application. *(trace: api.md; conventions.md §3)*
-- **RM-DIST-04** — **One front end.** Stand up `astro-mine-ui` as one pnpm workspace holding
-  `surface`, `ui`, `view`, the per-component surfaces and the console app; extend the layering check
-  to the surfaces it was always about; replace build-time composition from published versions with
-  workspace links. *(trace: ui.md §4, §9; conventions.md §2.1)*
+- **RM-DIST-04** — **One front end.** Stand up `astro-mine-ui` as one pnpm workspace holding the
+  application and its packages, with the layering check asserting the dependency direction. **This is
+  a rebuild, not a move.** It was originally scoped as relocating five package trees into one
+  workspace; the front end is instead re-implemented as a multi-page Next.js application on Material
+  UI, calling the REST tier through a generated client. Every capability the previous front end had
+  is carried over; almost none of the code is, and the `Surface` contract is retired
+  ([ui.md](../architecture/ui.md) §11). *(trace: ui.md §3, §5, §12; conventions.md §2.1)*
 - **RM-DIST-05** — **Retire the component repositories.** Once nothing references them: rehome the
   open issues, archive or delete the eighteen repositories, and sweep the remaining links. A link to a
   deleted repository is worse than no link. *(trace: conventions.md §13)*

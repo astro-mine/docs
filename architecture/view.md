@@ -74,8 +74,8 @@ supervisory autonomy; trust models), §11 (Phase 2, with [Ops](ops.md)/[Bridge](
    embeddable only.** Every capability ships as a framed, dependency-light React component;
    [Studio](studio.md) and [Ops](ops.md) are peer consumers (library-first, conventions.md §1.4).
    View hosts no application of its own: the platform's standalone GUI is
-   [`@astro-mine/console`](console.md), which sits above every surface, and View is the leaf those
-   surfaces depend on (§3).
+   [`@astro-mine/console`](ui.md), the one application, and View is a leaf package it composes —
+   never the reverse (§3, [ui.md](ui.md) §3).
 5. **Degrade, don't blank.** Tiles, telemetry, and traces arrive over flaky links and at scale.
    The client level-of-details, decimates, and back-pressures (conventions.md §8) — a stale or
    partial view is labelled stale, never a frozen or empty screen.
@@ -99,7 +99,7 @@ gateway holds no authoritative state — it is a translation and aggregation lay
 > **"Gateway" names two different things — this is View's.** The **View Gateway** below is View's
 > *own* telemetry/tile fan-out backend. A **platform API gateway** — one unified REST edge in front
 > of every component — is a separate idea, deferred to Phase 2 at the earliest and deliberately not
-> built by the [console](console.md) (this document). Neither
+> built by the [application](ui.md). Neither
 > exists in Phase 1, and they are not the same future thing.
 
 ```
@@ -120,23 +120,24 @@ View Gateway            # Phase 2, a stateless FastAPI service in astro-mine-api
 └── bff/                #   REST/GraphQL backend-for-frontend (session, layout, catalog)
 ```
 
-The split across two distributions is not incidental: the library is TypeScript a surface imports,
-the gateway is a Python service a deployment runs, and nothing in Phase 1 needs the second. View's
+The split across two distributions is not incidental: the library is TypeScript the application
+imports, the gateway is a Python service a deployment runs, and nothing in Phase 1 needs the second.
+View's
 `telemetry/` barrel is a deliberate `export {}` stub today, and it is correct that it is empty.
 
 > **There is no `app/`, by decision.** Earlier drafts reserved `app/` for a *"standalone hosted
 > application (routing, layout, session shell)"*. this document
 > **descopes it.** §6 below establishes that View's component library is embedded in
-> [Studio](studio.md), and principle 4 makes Studio and [Ops](ops.md) peers consuming it — so
-> `studio-ui → view` holds by View's own design, and a shell inside View that hosts Studio's surface
-> closes the cycle `view → studio-ui → view`. The shell must sit **above** every surface, and every
-> surface may use `view`, so the shell is a separate leaf package above them all:
-> [`@astro-mine/console`](console.md). **View stays a leaf that surfaces depend on — never the
-> reverse** — and the layering check in the front-end workspace asserts it ([ui.md](ui.md) §3).
-> Sharing a workspace with the shell does not weaken that; it is what finally lets the check see it.
+> the design pages of the application, and principle 4 makes those pages and [Ops](ops.md) peer
+> consumers — so an application that hosts View, inside a View that hosts the application, is a cycle.
+> The application must sit **above** every package, and any page may use `view`, so View is a leaf and
+> the application — [`@astro-mine/console`](ui.md) — is the sink above them all. **View stays a leaf
+> the application composes — never the reverse** — and the layering check in the front-end workspace
+> asserts it ([ui.md](ui.md) §3). Sharing a workspace with the application does not weaken that; it is
+> what finally lets the check see it.
 >
 > The `lib/` demo harness is therefore a **developer component gallery** and a WebGL test surface:
-> every scene is a committed fixture, and nothing loads user data. It is *not* the console, not an
+> every scene is a committed fixture, and nothing loads user data. It is *not* the application, not an
 > application, and not a way to view your own run — and it must not present itself as one. That it
 > is currently the most immediately runnable front end in the platform is exactly why the
 > distinction is worth stating.
@@ -195,11 +196,15 @@ shape genuinely demands it (conventions.md §3).
 
 ## 4. Application programming & runtime platforms
 
-- **Front end:** the platform front-end baseline (conventions.md §2.1) — TypeScript + React, Vite,
-  pnpm, Vitest + Playwright.
-  **Deviation: no Storybook.** Storybook caps at Vite <= 6 and Vite-version parity across the
-  front ends was prioritized, so component docs and visual checks are served by the Playwright lane
-  over the `lib/` demo harness until Storybook supports Vite 8.
+- **Front end:** the platform front-end baseline (conventions.md §2.1) — TypeScript + **React 19**,
+  pnpm, Vitest + Playwright. View is a package of the front-end workspace and moves with that
+  baseline; the React 19 peer range is the first thing to check when Cesium's React bindings
+  misbehave, since that is where the version move lands.
+  **Deviation: no Storybook.** Component docs and visual checks are served by the Playwright lane
+  over the `lib/` demo harness instead.
+  **Mounted client-only.** Cesium touches the DOM and WebGL at module scope, so View is loaded
+  through a dynamic import and never pre-rendered by the application's static export
+  ([ui.md](ui.md) §5.1). It works, and it will not work by accident.
 - **3D geospatial:** **CesiumJS** + **3D Tiles** (charter §6) for planetary terrain and entities.
   **three.js / raw WebGL/WebGPU** is used *inside* Cesium (custom primitives / instanced draw) only
   where Cesium's entity API is too slow for very large swarms — not as a parallel renderer.
@@ -217,9 +222,11 @@ shape genuinely demands it (conventions.md §3).
 - **Build/packaging:** the **`@astro-mine/view`** npm component library, one package of
   [`astro-mine-ui`](ui.md) (conventions.md §2.1, §13), and — from Phase 2 — the gateway as a route
   set in [`astro-mine-api`](api.md)'s image. There is no View-owned application artifact: the hosted
-  GUI is [`@astro-mine/console`](console.md), which consumes this library (§3). Cesium's binary
-  assets are copied by the consuming build rather than fetched, so a deployed console has no
-  external CDN dependency at runtime.
+  GUI is [`@astro-mine/console`](ui.md), which consumes this library (§3). Cesium's binary
+  assets are copied by the consuming build rather than fetched, so the deployed application has no
+  external CDN dependency at runtime. In that application View is mounted **client-only**, through a
+  dynamic import: Cesium touches the DOM and WebGL at module scope and cannot be pre-rendered by the
+  static export ([ui.md](ui.md) §5.1).
 
 ---
 
@@ -294,7 +301,7 @@ transport: **WebSocket/Foxglove** for high-rate channels, **SSE** for low-rate, 
 
 - **Deployment tiers** (conventions.md §7):
   1. **Local/dev** — `docker compose` (gateway + Sim/Ops mock), or a consuming static front end
-     ([console](console.md), [Studio](studio.md)) pointed at a local Sim; a researcher watches a
+     (the [application](ui.md), [Studio](studio.md)) pointed at a local Sim; a researcher watches a
      scenario in the browser with no cluster. *This tier MUST work.*
   2. **Operations / ground** — co-located near operators with [Ops](ops.md)/[Bridge](bridge.md);
      gateway on the ground K8s, static assets on a local CDN; consumes the ROS 2/DDS data plane via
@@ -302,7 +309,7 @@ transport: **WebSocket/Foxglove** for high-rate channels, **SSE** for low-rate, 
   3. **Cloud** — gateway behind an ingress/load balancer for demos, hosted replay, and embedding in
      a hosted [Studio](studio.md); tiles/overlays served from object storage + CDN.
 - **Containerization:** an OCI image for the gateway; the front-end assets that embed this library
-  are content-hashed and CDN-cached by whoever hosts them ([console](console.md),
+  are content-hashed and CDN-cached by whoever hosts them (the [application](ui.md),
   [Studio](studio.md), [Ops](ops.md)). Pinned, reproducible builds (conventions.md §7).
 - **Orchestration:** **Kubernetes**; gateway runs as a stateless `Deployment` with an HPA;
   WebSocket/SSE connections handled by a sticky ingress (or NATS-fanned, see §8). No GPU on the
@@ -397,8 +404,8 @@ option for cinematic demos — explicitly not the default (see §11). Measure be
     interface versions it claims (consumer-driven, conventions.md §11, §13).
   - **End-to-end:** **Playwright** drives the `lib/` developer gallery against a mock gateway
     feeding a known scenario, checking globe entities, dashboard values, and explanation contents.
-    (A consuming application's own shell is tested by that application — see
-    [console.md](console.md) §10.)
+    (A consuming application's own pages are tested by that application — see
+    [ui.md](ui.md) §8.)
   - **Performance:** scripted scene benchmarks (N assets × M channels) with frame-budget and
     latency assertions, run in CI on representative hardware.
 

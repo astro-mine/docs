@@ -60,15 +60,15 @@ for both, and says which it means whenever the difference matters.
 | Performance-critical kernels (physics, contact, granular, hot inner loops) | **C++20** | Pybind11 bindings exposed to Python. Integrates with Drake / MuJoCo / Isaac / BehaviorTree.CPP. |
 | High-assurance & safety-critical logic, schema/codegen tooling | **Rust** | Recommended where memory safety + performance matter most: `Guard`'s runtime monitors (a PyO3 extension the platform wheel bundles), `Core` schema validation/codegen, content-addressed registry tooling. Optional elsewhere. |
 | GPU kernels | **CUDA** (+ vendor-neutral fallback) | Used inside Sim/Surrogate; abstracted behind device-agnostic interfaces where feasible. |
-| Web front-ends | **TypeScript + React** | The console shell, the design system, the visualization library, and every per-component surface. The full baseline is §2.1. |
+| Web front-ends | **TypeScript + React** | The console application, the generated API client, the design system, and the visualization library. The full baseline is §2.1. |
 
 **Rule:** the *public* API surface of any component MUST be reachable from Python. Native code
 sits behind Python bindings or a gRPC service.
 
 **Scope of that rule.** It binds *components* — the Python packages that own platform capability.
-It does **not** bind the **front-end packages** of §2.1 (`@astro-mine/surface`, `@astro-mine/ui`,
-`@astro-mine/console`, `@astro-mine/view`, and the per-component surfaces), which are TypeScript
-and have no Python surface at all. That is not an exemption from the rule but a consequence of it:
+It does **not** bind the **front-end packages** of §2.1 (`@astro-mine/console`,
+`@astro-mine/api-client`, `@astro-mine/ui`, `@astro-mine/view` and `@astro-mine/inspectors`), which
+are TypeScript and have no Python surface at all. That is not an exemption from the rule but a consequence of it:
 a front-end package renders capability that a component already exposes from Python, and adds none
 of its own. A front-end package that needed its own Python API would be a component wearing the
 wrong clothes.
@@ -86,21 +86,29 @@ cites it rather than restating it, and documents only where it deviates and why 
 
 | Concern | Standard |
 |---|---|
-| Language / framework | **TypeScript 5.5** · **React 18.3** |
-| Runtime | **Node >= 20.19** (Vite 8 and Vitest 4 require it) |
+| Framework | **Next.js 16** (app router), **static export** (`output: 'export'`) |
+| Language / UI | **TypeScript 5.9** · **React 19** · **Material UI 9** |
+| Runtime | **Node >= 22.13** — pnpm's floor, not a preference (see below) |
 | Package manager | **pnpm 11.10.0**, pinned in the workspace root's `package.json` `packageManager` |
-| Build | **Vite 8** — library mode for published packages, app mode for the console |
-| Unit tests | **Vitest 4** + Testing Library, `jsdom` environment |
-| Browser tests | **Playwright** against the built artifact, not the dev server |
-| Lint / format | **ESLint 8** (classic config) + `typescript-eslint` 7 · **Prettier 3** |
-| Routing | **react-router** — nested routes map onto the console's surface namespaces |
-| Server state | **None.** `fetch` plus the design system's `AsyncState` primitive |
-| Charts | **visx** + `d3-scale` |
+| Lint / format | **ESLint 9** (flat config) + `typescript-eslint` 8 · **Prettier 3** |
+| Routing | **The framework's.** File-based app-router routes; identity in the query string ([ui.md](ui.md) §5.1) |
+| Server state | **None.** `fetch` through the generated client plus the design system's `AsyncState` primitive |
+| Charts | **MUI X Charts**, behind the design system's wrappers |
+| API access | A **generated** TypeScript client from the API's OpenAPI document, with a CI drift gate |
+| Unit tests | **Vitest** + Testing Library + **MSW**, `jsdom` environment |
+| Browser tests | **Playwright** against the built **export**, not the dev server |
+| Accessibility | **axe**, every route, both modes — a build gate |
 
-**On the package manager.** One pinned version, everywhere. Three managers across four trees is how
-a cold clone acquires three ways to fail, and `--frozen-lockfile` turns any drift into a red build
-rather than a silent one — which is the point. The pin is a floor for reproducibility, not a
-statement that newer is unusable; move it deliberately, in one sweep.
+**On the package manager, and on the Node floor.** One pinned version, everywhere.
+`--frozen-lockfile` turns any drift into a red build rather than a silent one — which is the point.
+The pin is a floor for reproducibility, not a statement that newer is unusable; move it deliberately,
+in one sweep.
+
+The **Node** floor is pnpm's own: pnpm 11.10.0 declares `engines.node >= 22.13` and dies on Node 20
+with *"No such built-in module: `node:sqlite`"*. It is recorded here as a requirement rather than a
+preference because the first version of this baseline said 20.19, no runner ever exercised it, and it
+took a green-looking repository into a red pipeline the moment CI could run. **A floor asserted in a
+file and never enforced by a runner is a floor nobody is standing on.**
 
 **On server state.** The platform deliberately ships **no** data-fetching or client-cache library.
 Every front end already uses bare `fetch`, and the loading / error / empty discipline lives in a
@@ -111,11 +119,26 @@ are read-mostly and human-paced. Revisit it when a surface has a concrete need (
 polling, cross-surface cache invalidation) — as a deliberate, documented change to this baseline,
 not as an import in one surface.
 
-**On charts.** `visx` composes D3 primitives as React components, so the chart discipline is
-enforced by the API rather than by care: `@astro-mine/ui` owns the chart layer, a second y-axis is
-unrepresentable, and a value with no uncertainty bound renders as an open mark by construction
-rather than as a zero-length error bar. Parallel coordinates is the one form `visx` does not
-provide and is hand-built.
+**On charts (normative).** `@astro-mine/ui` **owns every chart the application renders and exports no
+raw chart primitive.**
+
+This is a rule now because it used to be a property. The previous baseline used `visx`, which
+composes D3 primitives as React components: a second y-axis was unrepresentable and a value with no
+uncertainty bound rendered as an open mark *by construction*, so the discipline was enforced by an API
+that could not express the wrong thing. **MUI X Charts guarantees neither and ships no error bars.**
+The design system therefore supplies the error-bar and parallel-coordinates layers itself, and MUST
+carry unit tests asserting that a null bound renders as an open mark and that no chart can be given
+two y-axes. A rule enforced only by review is a rule that erodes — which is why it is a test
+([ui.md](ui.md) §7.1).
+
+**On the framework, and what it replaced.** The front end is a multi-page application, not a shell
+composing plugin *surfaces* at build time. The `Surface` contract, its registry and the
+per-component `<component>-ui` packages are retired; adding a page is adding a route. Static export
+keeps the property that mattered — a bundle any host serves, with no Node process to run — at the
+cost of two constraints that are load-bearing rather than incidental: **route identity lives in the
+query string**, because a pre-rendered dynamic segment needs a closed enumerable parameter set that
+digests and artifact names are not; and **the API must send CORS headers or the application is
+inert**. Both are stated in [ui.md](ui.md) §5.1, which is the design authority for the front end.
 
 ---
 
@@ -448,13 +471,15 @@ Astro-Mine publishes four things, and a component belongs to exactly one of them
 | **`astro-mine-platform`** | Python wheel (maturin; bundles Guard's Rust core) | every component as `astro_mine.<name>` — a **library**, no console scripts | — |
 | **`astro-mine-cli`** | Python wheel | the one `astro-mine` executable and every command | the platform |
 | **`astro-mine-api`** | Python wheel / OCI image | every REST surface as FastAPI route modules | the platform |
-| **`astro-mine-ui`** | npm packages under `@astro-mine` | the console shell, its surface contract, the design system, the visualization library, and the per-component surfaces | the API at runtime |
+| **`astro-mine-ui`** | npm packages under `@astro-mine` | the console application, the generated API client, the design system, the visualization library, and the artifact inspectors | the API at runtime |
 
-> **Where this stands.** The platform and CLI distributions ship. `astro-mine-api` and
-> `astro-mine-ui` are **not yet stood up**: the REST route modules and the `@astro-mine/*` packages
-> exist and run, but still sit in the repositories they were written in. The rules below are
-> normative for both today — a new REST surface is written as a route module, not woven into a
-> component — and the move is tracked in the [roadmap](../roadmap/README.md).
+> **Where this stands.** The platform, CLI and UI distributions are stood up; `astro-mine-api`'s
+> route modules have landed and its documentation sweep is outstanding. The front end is a **rebuild
+> rather than a move** ([ui.md](ui.md) §11): the workspace, the application and its gates ship, and
+> the pages land across Waves 29–30. The rules below are normative today — a new REST surface is
+> written as a route module, not woven into a component; a new page is a route in the one
+> application, not an app of its own — and the remaining work is tracked in the
+> [roadmap](../roadmap/README.md).
 
 Normative consequences:
 

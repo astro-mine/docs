@@ -37,7 +37,7 @@ every component belongs to at least one:
 | **[platform.md](platform.md)** | Python wheel | `astro-mine-platform` — every component as `astro_mine.<name>`. A library; no commands, no server, no front end. |
 | **[cli.md](cli.md)** | Python wheel | `astro-mine-cli` — the one executable, `astro-mine <component> <verb>`. |
 | **[api.md](api.md)** | wheel + image | `astro-mine-api` — every REST surface as route modules over the library. *Not yet stood up.* |
-| **[ui.md](ui.md)** | npm `@astro-mine/*` | `astro-mine-ui` — the console shell, the surface contract, the design system, View, and the per-component surfaces. *Not yet stood up.* |
+| **[ui.md](ui.md)** | npm `@astro-mine/*` | `astro-mine-ui` — the console application, the generated API client, the design system, View, and the artifact inspectors. *Stood up; the pages land across Waves 29–30.* |
 
 Read the distribution docs when the question is *how does this ship, get built, or get released*, and
 the component docs when the question is *how does this work*.
@@ -52,7 +52,7 @@ the component docs when the question is *how does this work*.
 | **Simulation** | [Sim](sim.md) · [Surrogate](surrogate.md) |
 | **Autonomy & coordination** | [Mind](mind.md) · [Learn](learn.md) · [Allocate](allocate.md) · [Guard](guard.md) |
 | **Mission architecture & logistics** † | [Trajectory](trajectory.md) · [Sizing](sizing.md) · [Ledger](ledger.md) |
-| **Design & operations** | [Studio](studio.md) · [Ops](ops.md) † · [Bridge](bridge.md) † · [View](view.md) ◊ · [Console](console.md) ◊ |
+| **Design & operations** | [Studio](studio.md) · [Ops](ops.md) † · [Bridge](bridge.md) † · [View](view.md) ◊ · [Console](ui.md) ◊ |
 
 [Core](core.md) is the "narrow waist" — the single most important component; if only one thing is
 designed superbly, it must be Core.
@@ -71,13 +71,14 @@ encoding is decided once. Consolidation does not weaken the argument: the point 
 could avoid installing SPICE or crypto, it is that exactly one code path resolves a frame and exactly
 one decides whether a signature is valid.
 
-◊ **Front-end packages.** [View](view.md) and [Console](console.md) are TypeScript packages of
-[`astro-mine-ui`](ui.md), not Python components. `conventions.md` §2's Python-reachability rule binds
-components; a front-end package renders capability a component already exposes rather than adding its
-own. **Console** is the platform's single GUI shell — one front door composing per-component
-*surfaces* over the zero-dependency `@astro-mine/surface` contract and the `@astro-mine/ui` design
-system, so one application spans every component without any of them importing another. It changes
-nothing in [Core](core.md): contributions are keyed by Core's existing `PluginKind` vocabulary,
+◊ **Front-end packages.** [View](view.md) and **Console** are TypeScript packages of
+[`astro-mine-ui`](ui.md), not Python components — and [ui.md](ui.md) is their design authority.
+`conventions.md` §2's Python-reachability rule binds components; a front-end package renders
+capability a component already exposes rather than adding its own. **Console** is the platform's
+single GUI front door: one multi-page application in which every component with a web face is a set
+of pages, so one application spans every component without any of them importing another. It changes
+nothing in [Core](core.md): its artifact inspectors are keyed by Core's existing `PluginKind`
+vocabulary,
 consumed by its published `$id` rather than extended.
 
 ## Multi-regime missions

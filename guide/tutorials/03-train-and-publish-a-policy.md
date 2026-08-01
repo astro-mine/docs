@@ -262,7 +262,7 @@ astro-mine bench submit \
 - `--wait` polls to a terminal status and prints the resulting submission and rank.
 
 Your entry renders with the runner that produced it. Reading the board is account-free — see the
-[console guide](../console.md) for the leaderboard surface (UC-G5).
+[console guide](../console.md) for the leaderboard page (UC-G5).
 
 ---
 

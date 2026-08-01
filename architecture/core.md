@@ -122,8 +122,8 @@ astro_mine.core
   **append-only, and widening it is a deliberate Core change** — the rule that makes it safe for
   other components to key on, and three decisions turn on it: [Guard](guard.md) reuses `POLICY`
   rather than adding a kind, `design`/`campaign` were *appended* for Studio's frozen artifacts
-  rather than folded into an existing member, and [Console](console.md) keys the console's
-  contribution model on the vocabulary without changing it at all.
+  rather than folded into an existing member, and the front end keys its artifact inspector
+  registry on the vocabulary without changing it at all ([ui.md](ui.md) §6).
 
   **What a kind does *not* answer is "what am I looking at."** A [Worlds](worlds.md) illumination
   field model and a [Surrogate](surrogate.md) excavation model both carry `field_model`; the kind is

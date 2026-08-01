@@ -67,7 +67,7 @@ satisfied locally stays unsatisfied and says so — both in the banner and, thro
 in the UI itself. Nothing 503s silently, and nothing 503s by default when you passed a registry.
 
 Studio also appears as a surface inside the console
-([console guide](../console.md)) — point `endpoints.studio` at this server.
+([console guide](../console.md)) — point the console's `apiBaseUrl` at the REST tier.
 
 ## 2. Open the Design workspace
 
@@ -265,7 +265,7 @@ swarm's positions are a stated layout convention rather than simulated poses, di
 inspection pane. Both are the same rule: a surface that cannot tell you *how* it knows something
 tells you that instead.
 
-- **See it alongside the other surfaces:** [the console guide](../console.md).
+- **See it alongside the rest of the GUI:** [the console guide](../console.md).
 - **Run your campaign as a benchmark:** [02 — run it in the simulator](02-run-it-in-the-simulator.md).
 - **Author the assets it picks from:** [04 — author an asset](04-author-an-asset.md).
 - **The artifacts it wrote:** [reference/file-formats.md](../reference/file-formats.md).
