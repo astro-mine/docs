@@ -40,7 +40,7 @@ Full persona detail, and which commands serve each, is in
 | [07 — design a swarm in Studio](tutorials/07-design-a-swarm-in-studio.md) | P5 · goal in, ranked designs out, entirely in the GUI |
 | [08 — write a plugin](tutorials/08-write-a-plugin.md) | all · one plugin, end to end, published |
 | **Guides** | |
-| [console.md](console.md) | The GUI: one shell, many surfaces |
+| [console.md](console.md) | The GUI: one application, many pages |
 | [how-to/write-a-plugin.md](how-to/write-a-plugin.md) | Extend the platform: one recipe per extension surface |
 | **Reference** | |
 | [reference/cli.md](reference/cli.md) | Every command, organized by task |

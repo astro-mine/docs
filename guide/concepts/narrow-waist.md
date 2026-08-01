@@ -67,7 +67,8 @@ Recipes: [how-to/write-a-plugin.md](../how-to/write-a-plugin.md). Narrative:
 ## The rule, stated normatively
 
 `conventions.md` §1.1: components integrate through Core contracts, **never through private
-side-channels**. In the console the same rule reads: a surface never imports another surface.
+side-channels**. In the console the same rule reads: no package imports the application, and no
+package imports a sibling — and, above both, no capability originates in the front end at all.
 
 Where a capability is heavy but genuinely shared, it becomes a **Core companion** rather than
 entering Core: `astro_mine.spice` for frames, time, and geometry
