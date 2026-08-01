@@ -170,12 +170,14 @@ Results stream back to the UI (SSE/WebSocket) as candidates are evaluated. Studi
 
 ## 4. Application programming & runtime platforms
 
-- **Front end:** the platform front-end baseline (conventions.md §2.1) — TypeScript + React, Vite,
-  `@astro-mine/ui` for the design system and **visx** for Pareto fronts and trade-off
-  scatter/parallel-coordinate plots; embeds [View](view.md) for 3D scene/terrain visualization.
-  Parallel coordinates is hand-built — `visx` has no such mark. Server state is plain `fetch` plus
-  the design system's `AsyncState` primitive; the platform ships **no** data-fetching library
-  (conventions.md §2.1). (Deviation note: the charts and Pareto-exploration views are GraphQL
+- **Front end:** Studio has no front end of its own. Its design journey is a set of pages in the one
+  application (`conventions.md` §2.1, [ui.md](ui.md) §5) — objective, candidates, comparison, 3D
+  inspection, publish. Pareto fronts and parallel-coordinate plots render through
+  `@astro-mine/ui`'s chart layer, which owns **every** chart and exports no raw primitive, so the
+  uncertainty discipline is enforced there rather than re-decided here ([ui.md](ui.md) §7.1);
+  3D scene and terrain visualization embeds [View](view.md). Server state is plain `fetch` through
+  the generated client plus the design system's `AsyncState` primitive; the platform ships **no**
+  data-fetching library (conventions.md §2.1). (Deviation note: the charts and Pareto-exploration views are GraphQL
   candidates per conventions.md §3 — REST is the default, GraphQL only where a view's query shape
   demands it.)
 - **Back end:** **Python 3.12+** (conventions.md §2), **FastAPI** for the REST/OpenAPI edge,

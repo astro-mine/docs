@@ -2,7 +2,8 @@
 
 > **Window:** ~12–30 mo · **Theme:** Autonomy & studio · **Roadmap home:** [README](README.md)
 > **Status: built.** Every item below shipped, plus a UX and console backlog the plan did not
-> anticipate: the single-GUI [console](../architecture/console.md) and its `Surface` contract, the
+> anticipate: the single-GUI [console](../architecture/ui.md) — then a shell composing plugin
+> surfaces, since rebuilt — the
 > `astro-mine` [CLI](../architecture/cli.md), and the [user guide](../guide/README.md). What followed
 > the phase was the packaging correction in [the distribution
 > track](README.md#the-distribution-track) — no new capability, and no change to the deliverables here.

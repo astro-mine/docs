@@ -79,21 +79,22 @@ Both modes drive the **same** simulation core and the **same** autonomy componen
 
 Three clarifications on that picture.
 
-First, the two "console"s are different things: **[Console](console.md)** is the platform's single GUI
-front door, shipping in Phase 1 as a package of [`astro-mine-ui`](ui.md); the **Ops console** is the
-operations supervisory surface in [Ops](ops.md), Phase 2.
+First, the two "console"s are different things: **[Console](ui.md)** is the platform's single GUI
+front door, the one application of [`astro-mine-ui`](ui.md); the **Ops console** is the operations
+supervisory surface in [Ops](ops.md), Phase 2. They stay distinct: one is how a person reaches the
+platform, the other is how an operator commands a live mission.
 
 Second, the console is the **GUI** front door, not the only door. The CLI and the Python API reach the
 platform *in process* — no HTTP, no service, nothing running — and for several audiences that is the
 primary path. The GUI's HTTP hop through [`astro-mine-api`](api.md) is what a browser requires, not
 what the platform requires.
 
-Third, each audience enters through a different *surface* but everything below it is shared. The table
-below names the surface each audience ultimately drives — and note what it also shows: **before the
+Third, each audience enters through a different *entry point* but everything below it is shared. The
+table below names the one each audience ultimately drives — and note what it also shows: **before the
 console, every row named a different entry point and there was no shared one at all.** Two audiences
 the charter names explicitly (mission designers, educators/students) could not reach the platform
-without one, which is the gap the console exists to close. The console does not replace these
-surfaces; it is the one door that leads to all of them.
+without one, which is the gap the console exists to close. The console does not replace these entry
+points; it is the one door that leads to all of them.
 
 | Audience | Primary surface | What they ultimately drive |
 |---|---|---|
@@ -236,7 +237,7 @@ its browser surface is a package in the UI distribution. The design of all three
 | [Ops](ops.md) | Operations | Online orchestration + digital-twin shadow | Stateful service; ground + edge | platform (P2) | Event-sourced state, telemetry, SLAM map | Sim (shadow), Mind/Allocate/Guard, Bridge, View |
 | [Bridge](bridge.md) | Operations | Hardware/flight-software abstraction | Adapters: ground + flight-adjacent | platform (P2) | Core msgs ↔ ROS 2/cFS/F´/CCSDS | Ops; targets Sim or real hardware |
 | [View](view.md) | Operations | Visualization, telemetry, plan explanation | Embeddable React library (Cesium/OpenMCT) | ui | Telemetry, 3D Tiles, MCAP replays | embedded by the console and by surfaces; reads Ops/Sim/Worlds data |
-| [Console](console.md) | Design & ops | The single GUI front door: composes per-component surfaces | Static SPA (TypeScript + React); no server | ui | None owned — renders what the API serves | the API distribution; embeds View |
+| [Console](ui.md) | Design & ops | The single GUI front door: one multi-page application | Static export (TypeScript + React + Next.js); no server | ui | None owned — renders what the API serves | the API distribution; embeds View |
 | [Bench](bench.md) | Backbone | Benchmarks, scenario zoo, leaderboards | Library + eval workers; REST + surface | platform · api · ui | Scenario specs, metrics, results | pins Core; runs Sim; Hub submissions; Cloud |
 | [Hub](hub.md) | Backbone | Registry for policies/worlds/assets/plugins | Tier-1 local OCI client; hosted registry + Postgres | platform · api · ui | OCI artifacts, manifests, provenance | indexed by Core manifest; all producers/consumers |
 | [Cloud](cloud.md) | Backbone | Distributed sim/training orchestration | Kubernetes + Ray + Argo; local backend | platform · api | Content-addressed datasets/artifacts | runs Sim/Learn/Allocate/Surrogate/Bench |
@@ -278,7 +279,7 @@ per-component services is operational — one image, and one origin to configure
 gateway, with its own composed API, remains a Phase-2-at-the-earliest question and would need its own
 justification.
 
-**The GUI adds no edge of its own.** [Console](console.md) is a static SPA; endpoint configuration is
+**The GUI adds no edge of its own.** [Console](ui.md) is a static export; endpoint configuration is
 loaded at boot rather than compiled in, so one build is deployable by someone other than its builder.
 Note that [View](view.md)'s telemetry/tile fan-out backend, where it exists, is View's own and is not a
 platform API gateway; the two are unrelated.
@@ -505,7 +506,7 @@ Steps 1–5 run today, on one workstation, from `astro-mine-cli` and the console
 | Phase | Components stood up | System capability | State |
 |---|---|---|---|
 | **0** | [Core](core.md) v0.1, [Spice](spice.md), [Sim](sim.md), [Worlds](worlds.md), [Fleet](fleet.md), [Bench](bench.md) (+ [Prospect](prospect.md), [Link](link.md) MVP, local [Cloud](cloud.md)) | A runnable, reproducible benchmark on the anchor scenario | **built** |
-| **1** | [Mind](mind.md), [Learn](learn.md), [Allocate](allocate.md), [Guard](guard.md), [Studio](studio.md), [Hub](hub.md), [Surrogate](surrogate.md), [Seal](seal.md), full [Link](link.md) and [Cloud](cloud.md); the [console](console.md) and the [CLI](cli.md) | The MARL + planning commons; public leaderboards & plugins | **built** |
+| **1** | [Mind](mind.md), [Learn](learn.md), [Allocate](allocate.md), [Guard](guard.md), [Studio](studio.md), [Hub](hub.md), [Surrogate](surrogate.md), [Seal](seal.md), full [Link](link.md) and [Cloud](cloud.md); the [console](ui.md) and the [CLI](cli.md) | The MARL + planning commons; public leaderboards & plugins | **built** |
 | — | *(no new components)* | The four distributions: consolidate the components into one wheel, move the CLI out, then stand up [`astro-mine-api`](api.md) and [`astro-mine-ui`](ui.md) | **in progress** |
 | **2** | [Ops](ops.md), [Bridge](bridge.md), the full [View](view.md) ops viewer | Cross the sim→operations threshold on Earth analogs | next |
 | **3** | [Bridge](bridge.md) flight adapters; the **mission-architecture track** ([Transit](transit.md), [Trajectory](trajectory.md), [Sizing](sizing.md), [Ledger](ledger.md)) + small-body/microgravity extensions; **NEO sample-return** then **asteroid-mining** scenarios; new bodies as plugins | Default stack — surface ISRU *and* interplanetary resource missions — as the cislunar economy matures | later |

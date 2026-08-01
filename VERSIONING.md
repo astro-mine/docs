@@ -92,8 +92,8 @@ Two consequences, stated plainly because both are live:
 second expression:
 
 - The version lives in **`package.json` `version`**, and follows the same SemVer and pre-1.0 rules.
-- **They version per package, not per workspace.** `@astro-mine/surface` is a contract and moves
-  rarely; a surface moves with its component's GUI. Sharing a workspace does not make them one
+- **They version per package, not per workspace.** The design system, the visualization library and
+  the generated client each move at their own pace. Sharing a workspace does not make them one
   artifact. The workspace **root** is `private: true`, carries `0.0.0` permanently, and is not a
   package in the sense of this document.
 - The **`packageManager`** field pins pnpm (`conventions.md` §2.1). It is a toolchain pin, not a
@@ -221,8 +221,8 @@ Phase 2):
   Publishing `astro-mine-cli` is the one that matters to a user: it is the install line every document
   quotes.
 - **Publish the `@astro-mine/*` packages to public npm.** This is the open precondition for an outside
-  party building a console surface of their own — the thing the `Surface` contract exists to enable
-  (`architecture/console.md` §7).
+  party building on the design system or the visualization library
+  (`architecture/ui.md` §8).
 - Turn on **full GitHub Releases** with signed wheel assets + SLSA provenance + SBOMs (CX-SEC) — the
   supply chain applied to the distributions that implement it.
 - Turn on **secret scanning, push protection and branch rulesets**, which are unavailable for private
