@@ -39,8 +39,8 @@ The workspace root is `private: true` and publishes nothing; only the packages t
 `@astro-mine` scope (`conventions.md` §13).
 
 **The honesty kit is the part of `@astro-mine/ui` that is not Material UI's job.** MUI supplies the
-ordinary components — buttons, tables, tabs, dialogs. These seven exist because the platform found
-ways to mislead a reader, and each is a named acceptance criterion on the pages that use it:
+ordinary components — buttons, tables, tabs, dialogs. Each of these exists because the platform found
+a way to mislead a reader, and each is a named acceptance criterion on the pages that use it:
 
 | Component | What it is for |
 |---|---|
@@ -50,7 +50,18 @@ ways to mislead a reader, and each is a named acceptance criterion on the pages 
 | `StandInBanner` | A stand-in must never look like the real thing. |
 | `Digest` | Content address as identity — abbreviated, expandable to the full value. |
 | `EmptyState` | Title and hint, never an empty div. |
-| `InspectorSlot` | The extension point for §6. |
+| `RunnerBadge` | What produced a result, in the row itself. A stand-in is labelled unmissably; the caller states `standIn` rather than the badge inferring it from a runner id. |
+| `ProvenanceList` | The lineage of a number, read before the number. An absent lineage is stated, never omitted. |
+| `InspectorSlot` | The extension point for §6. **Ships with the inspector registry, not with the kit** — it is the one entry here that `@astro-mine/ui` does not export yet. |
+
+`RunnerBadge` and `ProvenanceList` are the components for §7's rules 1 and 5, which were the only two
+rules with nothing behind them: *a rule nobody has a component for is a rule that gets skipped under
+deadline*. `RunnerBadge` belongs here rather than to the leaderboard that first needed it — a page
+uses it, no page owns it.
+
+**This table and the package's export surface are the same list**, `InspectorSlot` excepted, and the
+package asserts its own half in a test. A component missing from here is a component someone rewrites
+locally, which is the thing the kit exists to stop.
 
 ## 3. Layering is the product
 
