@@ -115,8 +115,9 @@ Design                   /design               studies
   New study              /design/new           objective → candidates
   Study                  /design/study         comparison · 3D inspection · publish
   Campaign               /design/campaign      a published campaign
-Compute                  /compute              backends
+Compute                  /compute              what this deployment can run
   Jobs                   /compute/jobs         submit · compile · sweeps · workflows
+  Backends               /compute/backends     the execution backends on offer
 Help                     /help                 concepts, personas, where the CLI is the answer
 ```
 
