@@ -269,11 +269,15 @@ which is why installing them needs a `read:packages` token; the application is d
 static bundle and publishes nothing. Cesium ships binary assets the build copies rather than fetches,
 so the app has no external CDN dependency at runtime.
 
-**Two environment notes, because both look like product defects and are not.** Playwright cannot
-launch a browser in this project's WSL development environment (a missing system library), so a red
-browser lane *there* is environmental — units, typecheck, lint and build are the local truth, and CI
-is the arbiter. And `jsdom` does not implement every `File` method, so a page reading an uploaded file
-must use an API `jsdom` has.
+**Two environment notes, because both look like product defects and are not.** The browser lane needs
+one **system package** on a fresh WSL checkout — the failure is `libasound.so.2: cannot open shared
+object file`, and on Ubuntu 24.04 the package is `libasound2t64`, not `libasound2` (renamed in the
+64-bit `time_t` transition, so the obvious `apt install` reports no installation candidate and reads
+like the package is gone). With it installed the lane runs locally and passes, so **a red browser
+lane is a finding, not an environment quirk**; the libraries are a machine-level prerequisite the
+repository cannot install for you, which is the part worth knowing before a first run. And `jsdom`
+does not implement every `File` method, so a page reading an uploaded file must use an API `jsdom`
+has.
 
 ## 9. Interfaces
 
