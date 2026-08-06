@@ -1,7 +1,7 @@
 # Astro-Mine-Hub — Technology Architecture
 
 > Layer: **Commons backbone & platform infrastructure** · Phase: **1** · Extended for multi-regime missions (Phase 3)
-> Ships in: [`astro-mine-platform`](platform.md) (client, index, registry, curation) · [`astro-mine-api`](api.md) (the registry API) · [`astro-mine-ui`](ui.md) (`@astro-mine/hub-ui`)
+> Ships in: [`astro-mine-platform`](platform.md) (client, index, registry, curation) · [`astro-mine-api`](api.md) (the registry API) · [`astro-mine-ui`](ui.md) (the `/registry` pages)
 > The registry for sharing and discovering everything the community produces — plugins,
 > worlds, assets, policies, and surrogate models — indexed by their [Core](core.md) manifest.
 > Cross-cutting standards: see [conventions.md](conventions.md).
@@ -135,7 +135,7 @@ astro_mine.hub
 
 Two more surfaces are Hub's design but not Hub's package: the **REST + OpenAPI 3.1 façade** over
 the modules above ships in [`astro-mine-api`](api.md), and the **browse/compare/artifact-page web
-front end** ships as `@astro-mine/hub-ui` in [`astro-mine-ui`](ui.md). Both are thin over what is
+front end** as the `/registry` pages of [`astro-mine-ui`](ui.md). Both are thin over what is
 listed here, which is the point (conventions.md §3).
 
 ### Key abstractions exposed
@@ -195,9 +195,9 @@ listed here, which is the point (conventions.md §3).
   **registry data path** (high-throughput blob/manifest serving) uses a mature OCI registry
   implementation rather than re-implementing the Distribution Spec (see §11). Performance- and
   safety-sensitive client tooling (content-addressed verification, resolution) MAY use **Rust**
-  per conventions.md §2 ("content-addressed registry tooling"). The web front end is a console
-  surface on the platform front-end baseline (conventions.md §2.1) — it was the last front end on
-  its own styling (Pico CSS) and has since retired onto `@astro-mine/ui`.
+  per conventions.md §2 ("content-addressed registry tooling"). The web front end is a set of pages
+  in the one application, on the platform front-end baseline (conventions.md §2.1) — it was the last
+  front end on its own styling (Pico CSS) and has since retired onto `@astro-mine/ui`.
 - **Frameworks & libraries.** **FastAPI** + **Pydantic v2** for the REST/OpenAPI 3.1 façade
   (conventions.md §3); **ORAS** (OCI Registry As Storage) libraries for artifact push/pull of
   non-image content; **Sigstore `cosign`/`sigstore-python`** for signing/verification;

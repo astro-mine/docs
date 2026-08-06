@@ -236,7 +236,7 @@ its browser surface is a package in the UI distribution. The design of all three
 | [Studio](studio.md) | Design | Goal-in/design-out authoring + trade studies | Library + orchestration worker; REST + surface | platform · api · ui | ObjectiveSpec, DesignCandidate, Campaign | orchestrates Sim/Learn/Mind/Allocate/Guard; Hub, Bench, View |
 | [Ops](ops.md) | Operations | Online orchestration + digital-twin shadow | Stateful service; ground + edge | platform (P2) | Event-sourced state, telemetry, SLAM map | Sim (shadow), Mind/Allocate/Guard, Bridge, View |
 | [Bridge](bridge.md) | Operations | Hardware/flight-software abstraction | Adapters: ground + flight-adjacent | platform (P2) | Core msgs ↔ ROS 2/cFS/F´/CCSDS | Ops; targets Sim or real hardware |
-| [View](view.md) | Operations | Visualization, telemetry, plan explanation | Embeddable React library (Cesium/OpenMCT) | ui | Telemetry, 3D Tiles, MCAP replays | embedded by the console and by surfaces; reads Ops/Sim/Worlds data |
+| [View](view.md) | Operations | Visualization, telemetry, plan explanation | Embeddable React library (Cesium/OpenMCT) | ui | Telemetry, 3D Tiles, MCAP replays | embedded by the application's pages; reads Ops/Sim/Worlds data |
 | [Console](ui.md) | Design & ops | The single GUI front door: one multi-page application | Static export (TypeScript + React + Next.js); no server | ui | None owned — renders what the API serves | the API distribution; embeds View |
 | [Bench](bench.md) | Backbone | Benchmarks, scenario zoo, leaderboards | Library + eval workers; REST + surface | platform · api · ui | Scenario specs, metrics, results | pins Core; runs Sim; Hub submissions; Cloud |
 | [Hub](hub.md) | Backbone | Registry for policies/worlds/assets/plugins | Tier-1 local OCI client; hosted registry + Postgres | platform · api · ui | OCI artifacts, manifests, provenance | indexed by Core manifest; all producers/consumers |
@@ -273,8 +273,8 @@ leaderboard. mTLS between services; OIDC + OPA for authz.
 
 **The API distribution is a composition, not a gateway.** It mounts each component's route modules
 into one deployable so REST conventions, auth, and telemetry are decided once. It adds **no**
-aggregation endpoint, **no** request rewriting, and **no** backend-for-frontend: a console surface
-still calls the routes of the component it is a surface for. The practical difference from the earlier
+aggregation endpoint, **no** request rewriting, and **no** backend-for-frontend: a page still calls
+the routes of the component whose data it renders. The practical difference from the earlier
 per-component services is operational — one image, and one origin to configure instead of four. A true
 gateway, with its own composed API, remains a Phase-2-at-the-earliest question and would need its own
 justification.

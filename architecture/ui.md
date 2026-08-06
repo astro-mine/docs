@@ -79,9 +79,16 @@ Three rules, and they are why this is one workspace rather than five repositorie
 2. **A package MUST NOT import the application.** The app is the sink. If the app holds something a
    package needs, the something is in the wrong place — move it down.
 3. **A package MUST NOT import a sibling**, with exactly one exception: `inspectors` may import `ui`
-   and `view`, because it renders artifacts and so needs the design system and — for a world — the
-   globe. Two packages needing the same thing means the thing belongs in `ui` or `view`; and if it is
-   *platform* behaviour, it belongs in the platform and then in the API (§10).
+   and `view`. It imports `ui` because it renders artifacts and so needs the design system. **The
+   edge to `view` is permitted and currently unused, and that is deliberate** — a panel MUST NOT
+   reach for the globe (§6). `@astro-mine/view` publishes a single entry that re-exports its Cesium
+   module, so a static import from a panel would put four megabytes into the first paint of every
+   page that renders an artifact row, and CI asserts from the other side that no prerendered route
+   preloads the Cesium chunk. The edge stays in the allowlist for View's pure `frames` subtree — CRS,
+   time and units, no Cesium — which is a legitimate consumer, and reopening an allowlist is a worse
+   moment to think about layering than now. Two packages needing the same thing means the thing
+   belongs in `ui` or `view`; and if it is *platform* behaviour, it belongs in the platform and then
+   in the API (§10).
 
 **The rules are enforced mechanically.** `scripts/check-layering.mjs` fails the build on any
 violation, checking both what a package *declares* in its manifest and what its sources actually
@@ -206,6 +213,31 @@ three keys, and a contribution that needs one is evidence the artifact's facets 
 **A new `PluginKind` is not an extension point here.** That is a Core change, argued from a named
 consumer. The front end must never become a back door for widening the waist.
 
+### 6.1 Heavy visuals arrive through slots (normative)
+
+Resolution says *which panel*. It does not say how a panel gets a globe — and the opening claim of
+this section, that a `world` artifact renders a globe *without the page knowing what a world is*,
+only holds because of a second rule. **A panel is handed its heavy visuals; it never summons one.**
+
+- **The composition root owns the mount.** The page rendering `InspectorSlot` passes heavy visuals
+  in as `InspectorSlots` — `globe` for a world, `geometry` for an asset. It is the only thing that
+  may own a Cesium mount: one `next/dynamic`, one `ssr: false`, one `CESIUM_BASE_URL` assignment, in
+  one file. A second owner of that mount inherits none of its care, which is why a panel MUST NOT
+  take the `inspectors → view` edge for this (§3 rule 3).
+- **A slot is an element, not a call.** The root passes a *created React element*, so creating it
+  runs no component and triggers no import; only a panel that actually renders the slot pays for it.
+  **This is what makes the rule cheap enough to be unconditional:** the page supplies the capability
+  to every subject — "terrain can be drawn here" — and stays ignorant of kinds. A page that instead
+  gated on `kind === "world_provider"` would have put the vocabulary back in the page, which is the
+  whole thing this section exists to prevent.
+- **An unfilled slot is stated, not hidden.** A panel handed nothing renders the absence in words,
+  the same discipline `AsyncState`'s empty case applies (§2). Never a hole where a globe would be.
+
+This stopped being academic once. `ui#51` was exactly this rule being unwritten: the artifact page
+resolved `WorldInspector` correctly and passed no `globe`, so every world artifact read *"no globe
+was supplied"* for two waves before `astro-mine-ui#54` closed it. Written down, the next page gets
+it right.
+
 ## 7. Conventions (normative)
 
 The baseline — framework, language, package manager, test stack — is
@@ -309,7 +341,7 @@ libraries publish to GitHub Packages — which was the design while the `Surface
 - `@astro-mine/console` is an **application**: `private: true`, deployed, never consumed.
 - The four libraries **build and are gated; they are not published.** Their one class of external
   consumer was the per-component `<component>-ui` surface packages, and the contract that created it
-  is retired (§11); `docs#93` retires the repositories. A release train with nothing on the other end
+  is retired (§11); the repositories that held them are archived. A release train with nothing on the other end
   costs a hand-set version and a tag per cut, and npm's release-age floor blocks installs for a day
   after each publish (`VERSIONING.md` §2.3).
 - `publishConfig.registry` **stays pinned** to GitHub Packages in every manifest. That is a safety
@@ -319,6 +351,38 @@ libraries publish to GitHub Packages — which was the design while the `Surface
 
 Public npm publication is the deferred item in `VERSIONING.md` §6, gated on the public flip. It is the
 open precondition for an outside party building on the design system or the visualization library.
+
+**What became of the packages the previous front end did publish.** Six names reached GitHub
+Packages before this decision, and "publish nothing from now on" says nothing about them —
+`RM-DIST-05` closes that. **A published package that is history and does not say so is a trap**: the
+registry is the one place a consumer looks, and silence there reads as maintained.
+
+| Package | Last published | Disposition |
+|---|---|---|
+| `@astro-mine/surface` | 0.1.1 | **Retired outright.** The `Surface` contract is gone (§11); nothing will republish the name, and there is no replacement package — a page is a route. |
+| `@astro-mine/hub-ui` · `@astro-mine/studio-ui` | 0.2.0 | **Retired outright.** Their pages are the `/registry` and `/design` routes of the application now (§5). |
+| `@astro-mine/bench-ui` | 0.1.1 | **Retired outright.** Its pages are the `/bench` routes. |
+| `@astro-mine/ui` · `@astro-mine/view` | 0.1.1 | **Only `<=0.1.1` is history — the versions, not the name.** |
+
+The last row is the one that needs a reason. **Both names are live in this workspace**, and both will
+publish under them the day §6 of `VERSIONING.md` unblocks. Retiring the *name* would condemn a name
+still in use — so what is history is scoped to the versions the retired repositories cut.
+
+**This table is the disposition, because the registry cannot carry one.** The obvious mechanism is
+`npm deprecate`, which attaches the notice where a consumer actually meets the package. **GitHub
+Packages does not implement it**: every form of the call — a single version, a range, or `*` — is
+rejected by the registry, not the client, with `400 … unmarshalling packument failed: version.ID
+cannot be empty`. There is no flag that changes this and no partial success to fall back on.
+
+So the honest statement of the state is: **these packages carry no in-registry signal that they are
+history, and cannot be made to.** What GitHub does offer is deletion — `DELETE
+/orgs/astro-mine/packages/npm/<name>` — which is a different act with a different cost: it removes
+the evidence rather than labelling it, and it breaks any lockfile that still resolves the version.
+For six private packages inside an org with no external consumer, that cost is small and the benefit
+is real, but it is a decision to take deliberately rather than a fallback to reach for because the
+first tool failed. **Until it is taken, this document is the only place the disposition exists** —
+which is why the guide says so too, and why a reader who meets one of these packages is expected to
+have arrived from here.
 
 **Two environment notes, because both look like product defects and are not.** The browser lane needs
 one **system package** on a fresh WSL checkout — the failure is `libasound.so.2: cannot open shared
@@ -374,6 +438,12 @@ A reader who liked the previous design should be able to find out what happened 
   a guarantee became an obligation.
 - **`react-router` and Vite.** The framework routes and builds.
 - **A base URL per surface.** One API, one client, one configured endpoint.
+- **The five repositories and trees all of that lived in** (`RM-DIST-05`): `astro-mine-console` and
+  `astro-mine-view`, now **archived** — readable, unmaintained — and the `ui/` trees of
+  `astro-mine-hub`, `astro-mine-studio` and `astro-mine-bench`, deleted with their Vite and
+  Playwright configuration and their `release-ui` lanes. Their published packages are dispositioned
+  in §8.2. **Read them as history**; nothing in them is a current design, and where one disagrees
+  with this document, this document is right.
 
 ## 12. Roadmap alignment
 

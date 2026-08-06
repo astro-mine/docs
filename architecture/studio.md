@@ -1,7 +1,7 @@
 # Astro-Mine-Studio — Technology Architecture
 
 > Layer: **Design studio (offline mode)** · Phase: **1** · Extended for multi-regime missions (Phase 3)
-> Ships in: [`astro-mine-platform`](platform.md) (library, trade studies, orchestration) · [`astro-mine-api`](api.md) (the Studio API) · [`astro-mine-ui`](ui.md) (`@astro-mine/studio-ui`)
+> Ships in: [`astro-mine-platform`](platform.md) (library, trade studies, orchestration) · [`astro-mine-api`](api.md) (the Studio API) · [`astro-mine-ui`](ui.md) (the `/design` pages)
 > The design front door — goal-in, design-out: capture intent, explore the design space, author campaigns.
 > Cross-cutting standards: see [conventions.md](conventions.md).
 
@@ -117,7 +117,7 @@ astro_mine.studio
 ```
 
 The **REST/OpenAPI edge** over these modules ships in [`astro-mine-api`](api.md) and the **front
-end** as `@astro-mine/studio-ui` in [`astro-mine-ui`](ui.md) — a deployment of the library, per
+end** as the `/design` pages of [`astro-mine-ui`](ui.md) — a deployment of the library, per
 principle 8 below, not a second codebase.
 
 ### Key abstractions exposed
