@@ -341,7 +341,7 @@ libraries publish to GitHub Packages — which was the design while the `Surface
 - `@astro-mine/console` is an **application**: `private: true`, deployed, never consumed.
 - The four libraries **build and are gated; they are not published.** Their one class of external
   consumer was the per-component `<component>-ui` surface packages, and the contract that created it
-  is retired (§11); `docs#93` retires the repositories. A release train with nothing on the other end
+  is retired (§11); the repositories that held them are archived. A release train with nothing on the other end
   costs a hand-set version and a tag per cut, and npm's release-age floor blocks installs for a day
   after each publish (`VERSIONING.md` §2.3).
 - `publishConfig.registry` **stays pinned** to GitHub Packages in every manifest. That is a safety
@@ -351,6 +351,25 @@ libraries publish to GitHub Packages — which was the design while the `Surface
 
 Public npm publication is the deferred item in `VERSIONING.md` §6, gated on the public flip. It is the
 open precondition for an outside party building on the design system or the visualization library.
+
+**What became of the packages the previous front end did publish.** Six names reached GitHub
+Packages before this decision, and "publish nothing from now on" says nothing about them —
+`RM-DIST-05` closes that. **A published package that is history and does not say so is a trap**: the
+registry is the one place a consumer looks, and silence there reads as maintained.
+
+| Package | Last published | Disposition |
+|---|---|---|
+| `@astro-mine/surface` | 0.1.1 | **Deprecate the name.** The `Surface` contract is retired (§11); nothing will republish it. |
+| `@astro-mine/hub-ui` · `@astro-mine/studio-ui` | 0.2.0 | **Deprecate the name.** Their pages are routes of the application now (§5). |
+| `@astro-mine/bench-ui` | 0.1.1 | **Deprecate the name.** As above. |
+| `@astro-mine/ui` · `@astro-mine/view` | 0.1.1 | **Deprecate `<=0.1.1` — the range, not the name.** |
+
+The last row is the one that needs a reason. **Both names are live in this workspace**, and both will
+publish under them the day §6 of `VERSIONING.md` unblocks. Deprecating the *name* would mark a name
+still in use, and the mark would have to be lifted at the flip — so the deprecation is scoped to the
+versions the retired repositories cut, which are the only versions that are history. Every message
+names the replacement, because a deprecation that only says *don't* leaves a reader where it found
+them.
 
 **Two environment notes, because both look like product defects and are not.** The browser lane needs
 one **system package** on a fresh WSL checkout — the failure is `libasound.so.2: cannot open shared
@@ -406,6 +425,12 @@ A reader who liked the previous design should be able to find out what happened 
   a guarantee became an obligation.
 - **`react-router` and Vite.** The framework routes and builds.
 - **A base URL per surface.** One API, one client, one configured endpoint.
+- **The five repositories and trees all of that lived in** (`RM-DIST-05`): `astro-mine-console` and
+  `astro-mine-view`, now **archived** — readable, unmaintained — and the `ui/` trees of
+  `astro-mine-hub`, `astro-mine-studio` and `astro-mine-bench`, deleted with their Vite and
+  Playwright configuration and their `release-ui` lanes. Their published packages are dispositioned
+  in §8.2. **Read them as history**; nothing in them is a current design, and where one disagrees
+  with this document, this document is right.
 
 ## 12. Roadmap alignment
 

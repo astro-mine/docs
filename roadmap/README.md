@@ -132,7 +132,8 @@ SLSA / SBOM); a Phase-1 deliverable, additive and non-urgent, that must not gate
 Between Phase 1 and Phase 2 the platform's *packaging* was corrected: eighteen component
 repositories became four distributions, with import paths, public APIs, schemas and their `$id`s,
 entry-point groups, and configuration semantics **unchanged**. It adds no capability, which is why it
-is not a phase — but it is real work with real exit criteria, and two of its five items are not done.
+is not a phase — but it is real work with real exit criteria. One of its five items is outstanding
+(`RM-DIST-03`) and one is half done (`RM-DIST-05`, whose front-end half landed with the rebuild).
 
 See [`conventions.md`](../architecture/conventions.md) §7.1 for the rule, and
 [platform.md](../architecture/platform.md) · [cli.md](../architecture/cli.md) ·
@@ -162,12 +163,21 @@ See [`conventions.md`](../architecture/conventions.md) §7.1 for the rule, and
   ([ui.md](../architecture/ui.md) §11). **Delivered** across Waves 28–30, deployment included: the
   static bundle, its runtime configuration and the image that serves it
   ([ui.md](../architecture/ui.md) §8.1). *(trace: ui.md §3, §5, §8, §12; conventions.md §2.1)*
-- **RM-DIST-05** — **Retire the component repositories.** Once nothing references them: rehome the
-  open issues, archive or delete the eighteen repositories, and sweep the remaining links. A link to a
-  deleted repository is worse than no link. *(trace: conventions.md §13)*
+- **RM-DIST-05** — **Retire the superseded repositories.** Once nothing references them: rehome the
+  open issues, archive or delete the repository, and sweep the remaining links. A link to a deleted
+  repository is worse than no link. It has two halves, and they are independent.
+  *(trace: conventions.md §13)*
+  - **The front end** — the five package trees `RM-DIST-04` replaced: `astro-mine-console`
+    (`surface`, `ui`, `console`), `astro-mine-view`, and the `ui/` trees of Hub, Studio and Bench,
+    with their build tooling, Playwright configs and release lanes. **Delivered.** Neither
+    `astro-mine-console` nor `astro-mine-view` held an open issue or pull request at archival, so
+    nothing needed rehoming; the six packages already published to GitHub Packages were dispositioned
+    rather than left to be resolved silently ([ui.md](../architecture/ui.md) §8.2).
+  - **The components** — the eighteen `astro-mine-<component>` repositories `RM-DIST-01` and
+    `RM-DIST-02` replaced. **Not started**, and the last thing in the track.
 
 **Dependencies** — RM-DIST-01 before everything; RM-DIST-02 landed with it; RM-DIST-03 and RM-DIST-04
-are independent of each other; RM-DIST-05 last.
+are independent of each other; each half of RM-DIST-05 last after the item it retires.
 
 **Exit criteria** — four distributions build and test against the platform at `HEAD`; a user installs
 `astro-mine-cli` and holds the whole platform at one self-consistent version; the local tier still

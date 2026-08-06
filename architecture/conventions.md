@@ -687,11 +687,15 @@ Normative consequences:
     of them are gone.
     Any such name in a document, a docstring, or a blog post is historical.
 - **Front-end packages** (§2.1) are npm packages under the **`@astro-mine`** scope:
-  `@astro-mine/<name>`, lowercase and hyphenated. A per-component *surface* is named for its
-  component with a `-ui` suffix — `@astro-mine/bench-ui`, `@astro-mine/studio-ui`,
-  `@astro-mine/hub-ui` — which is also what the console's layering check keys on to tell a surface
-  from a library. The workspace root is private and unpublished; only the packages it ships
-  carry the scope.
+  `@astro-mine/<name>`, lowercase and hyphenated, named for what the package *is* rather than for a
+  component — `@astro-mine/ui`, `@astro-mine/view`, `@astro-mine/api-client`,
+  `@astro-mine/inspectors`. The workspace root is private and unpublished; only the packages it
+  ships carry the scope. **There is no per-component front-end package.** The
+  `@astro-mine/<component>-ui` *surface* naming — and the layering check that keyed on the suffix to
+  tell a surface from a library — belonged to the retired `Surface` contract; a component's pages are
+  routes of the one application now, and the layering check reads an explicit edge allowlist
+  ([ui.md](ui.md) §3, §11). Any `-ui` package name in a document or a registry is historical
+  ([ui.md](ui.md) §8.2).
 - **Artifact names (normative).** A published artifact's registry name is **bare kebab-case** —
   `^[a-z][a-z0-9]*(-[a-z0-9]+)*$`, lowercase ASCII, hyphen-separated, starting with a letter. No
   dots, no underscores, no uppercase, and **no package or component prefix**: the name is

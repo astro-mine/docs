@@ -15,8 +15,10 @@ a run). Personas: **P5** Mission Designer, **P6** Educator/Student, **P1** Bench
 > means cloning [`astro-mine-ui`](https://github.com/astro-mine/astro-mine-ui) and building it. That
 > unblocks at the public flip, and nothing on this page is waiting on anything else.
 >
-> The four repositories the front end used to live in — `astro-mine-console`, `astro-mine-view` and
-> the two `*/ui` trees — are **superseded**. If you land in one, you are reading history;
+> The five package trees the front end used to live in — `astro-mine-console`, `astro-mine-view`,
+> and the `ui/` trees of `astro-mine-hub`, `astro-mine-studio` and `astro-mine-bench` — are gone:
+> the two repositories are **archived**, the three trees **deleted**. If you land in one, or on one
+> of the `@astro-mine/*-ui` packages in the registry, you are reading history;
 > [`architecture/ui.md` §11](../architecture/ui.md) records what went and why.
 
 ## What it is
@@ -206,6 +208,14 @@ nobody is waiting on.
 Each package still pins its registry to GitHub Packages in its manifest. That is a safety control —
 the `@astro-mine` scope cannot resolve to npmjs.com even on a machine holding a public-npm token — and
 it means the destination is already right the day there is a consumer.
+
+**The previous front end did publish**, and what it left behind is marked rather than left to be
+guessed at. `@astro-mine/surface`, `@astro-mine/hub-ui`, `@astro-mine/studio-ui` and
+`@astro-mine/bench-ui` are **deprecated** — the contract that created them is retired, and nothing
+will republish those names. `@astro-mine/ui` and `@astro-mine/view` are the same names this workspace
+uses, so only the versions the old repositories cut (`<=0.1.1`) are deprecated, not the names. If
+your resolver hands you one of these, you have found history
+([architecture/ui.md §8.2](../architecture/ui.md)).
 
 | You are | Can you install it? |
 |---|---|

@@ -1,7 +1,7 @@
 # Astro-Mine-Ops — Technology Architecture
 
 > Layer: **Operations runtime (online mode)** · Phase: **2** · **Designed, not built.**
-> Ships in: [`astro-mine-platform`](platform.md), as a new subpackage (its supervisory GUI as a console surface in [`astro-mine-ui`](ui.md)) · Extended for multi-regime missions (Phase 3)
+> Ships in: [`astro-mine-platform`](platform.md), as a new subpackage (its supervisory GUI as pages of the one application in [`astro-mine-ui`](ui.md)) · Extended for multi-regime missions (Phase 3)
 > The threshold from simulation to reality — one operator supervising many robots across minutes of latency.
 > Cross-cutting standards: see [conventions.md](conventions.md).
 
