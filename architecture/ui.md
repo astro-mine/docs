@@ -247,7 +247,7 @@ that reaches past `@astro-mine/ui` is the failure mode to watch for.
 
 ## 8. Build, test & publish
 
-The build has eight gates. Each exists because something it catches is invisible to the others:
+The build has nine gates. Each exists because something it catches is invisible to the others:
 
 | Lane | Fails the build on |
 |---|---|
@@ -259,15 +259,66 @@ The build has eight gates. Each exists because something it catches is invisible
 | **Build** | a build error, or a route exceeding its bundle budget |
 | **E2E** | a broken persona journey, driven against the **built export** |
 | **Accessibility** | any axe violation, over every route, in **both** modes |
+| **Image** | an image that does not build, serve, take its endpoint at container start, or refuse a malformed one |
 
 Two assertions run on the emitted bytes rather than on exit codes, because both properties are
 invisible to a passing build: that the static export exists, and that its HTML carries the inlined
 styles that make the first paint arrive styled instead of flashing.
 
-**Publishing:** the libraries publish to a private npm registry (GitHub Packages) during incubation,
-which is why installing them needs a `read:packages` token; the application is deployed as a built
-static bundle and publishes nothing. Cesium ships binary assets the build copies rather than fetches,
-so the app has no external CDN dependency at runtime.
+### 8.1 What it deploys as (normative)
+
+**The deployable is a directory.** `pnpm build` emits `apps/console/out`, and any static host serves
+it: an object store, a CDN bucket, a static site host, a directory. No Node process, no route
+handler, no server component doing data work (§5.1). *This tier MUST always work*
+(`conventions.md` §7.2 tier 1).
+
+**The endpoint MUST NOT be baked into the bundle.** It is read at boot from `/config.json`, at the
+root of the deployment, because the person who deploys the bundle is not the person who built it — an
+endpoint compiled in would mean one build per environment, and one build per environment means the
+artifact that was tested is not the artifact that ships. A missing or unreachable `config.json` is
+**not an error**: it is the unconfigured state, rendered with a reason and a remedy on every route
+(§7 rule 3). `config.example.json` is the shape and MUST NOT be served as a fallback — an example
+endpoint answering as the real one is the stand-in that looks like the real thing.
+
+Two claims are asserted rather than declared, on the built bundle, because neither is visible to a
+passing build: **one bundle serves two deployments** — the same export driven at two endpoints in one
+run, nothing rebuilt between them — and **no runtime request leaves the origin except to the
+configured API**, swept over every route. Fonts, icons and Cesium's workers, decoders and
+WebAssembly are served by the deployment, never fetched from a CDN (CX-LOCAL). The sweep deliberately
+does not bound two addresses the **API supplies** — an episode's MCAP replay and a world's 3D Tiles
+bundle — which is also why the image ships no Content-Security-Policy: a useful `connect-src` would
+have to name an endpoint that is runtime configuration.
+
+**The image is for tier 2**, and it adds exactly one thing a bucket cannot do for itself: put
+`config.json` in place at container start, from `ASTRO_MINE_API_BASE_URL`. Two stages, both bases
+pinned by digest (`conventions.md` §7.2), a non-root runtime user, and no build secret. Three
+outcomes, and the middle one is the design: a mounted `config.json` is left alone, an unset variable
+writes nothing and serves the honest unconfigured state rather than crash-looping, and a malformed
+one fails at start — an operator who set the variable meant to configure this deployment, and a typo
+must not hide behind a page that reads like a design decision. The lane **executes** the container;
+a nginx configuration that only ever gets read is a nginx configuration that is wrong.
+
+**The API MUST send CORS headers**, or the application is inert (§5.1). A deployment requirement, not
+optional hardening.
+
+### 8.2 What is published (normative)
+
+**Nothing, during incubation.** This is a decision, and it replaces an earlier statement that the
+libraries publish to GitHub Packages — which was the design while the `Surface` contract existed.
+
+- `@astro-mine/console` is an **application**: `private: true`, deployed, never consumed.
+- The four libraries **build and are gated; they are not published.** Their one class of external
+  consumer was the per-component `<component>-ui` surface packages, and the contract that created it
+  is retired (§11); `docs#93` retires the repositories. A release train with nothing on the other end
+  costs a hand-set version and a tag per cut, and npm's release-age floor blocks installs for a day
+  after each publish (`VERSIONING.md` §2.3).
+- `publishConfig.registry` **stays pinned** to GitHub Packages in every manifest. That is a safety
+  control, not a plan: the scope cannot resolve to npmjs.com even on a machine holding a public-npm
+  token, so the destination is already right the day a consumer appears.
+- **The image is built and verified, not pushed.** Same reasoning, same day it changes.
+
+Public npm publication is the deferred item in `VERSIONING.md` §6, gated on the public flip. It is the
+open precondition for an outside party building on the design system or the visualization library.
 
 **Two environment notes, because both look like product defects and are not.** The browser lane needs
 one **system package** on a fresh WSL checkout — the failure is `libasound.so.2: cannot open shared
@@ -326,11 +377,14 @@ A reader who liked the previous design should be able to find out what happened 
 
 ## 12. Roadmap alignment
 
-`RM-DIST-04` — one front end, one workspace, one build. The workspace, the application, the package
-skeletons and the CI gates are stood up; the client, the theme, the chart layer, the shell, the
-inspector registry and the pages land across Waves 28–30, and the eighteen component repositories are
-retired last (`RM-DIST-05`). See the [roadmap](../roadmap/README.md) and, for the user-facing view,
-the [console guide](../guide/console.md).
+`RM-DIST-04` — one front end, one workspace, one build. **Delivered across Waves 28–30:** the
+workspace and the CI gates, the generated client, the theme and the honesty kit, the chart layer, the
+shell, `@astro-mine/view`, the inspector registry, every page in §5, the persona journeys against a
+real seeded API, the accessibility gate, and the deployment — the static bundle, its runtime
+configuration and the image that serves it (§8.1). What remains of the distribution track is
+retiring the eighteen component repositories, last (`RM-DIST-05`, `docs#93`). See the
+[roadmap](../roadmap/README.md) and, for the user-facing view, the
+[console guide](../guide/console.md).
 
 Operations surfaces — the full operations viewer and the Ops supervisory console — are Phase 2 and
 belong to [Ops](ops.md), not here.

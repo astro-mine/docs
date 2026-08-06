@@ -159,7 +159,9 @@ See [`conventions.md`](../architecture/conventions.md) §7.1 for the rule, and
   workspace; the front end is instead re-implemented as a multi-page Next.js application on Material
   UI, calling the REST tier through a generated client. Every capability the previous front end had
   is carried over; almost none of the code is, and the `Surface` contract is retired
-  ([ui.md](../architecture/ui.md) §11). *(trace: ui.md §3, §5, §12; conventions.md §2.1)*
+  ([ui.md](../architecture/ui.md) §11). **Delivered** across Waves 28–30, deployment included: the
+  static bundle, its runtime configuration and the image that serves it
+  ([ui.md](../architecture/ui.md) §8.1). *(trace: ui.md §3, §5, §8, §12; conventions.md §2.1)*
 - **RM-DIST-05** — **Retire the component repositories.** Once nothing references them: rehome the
   open issues, archive or delete the eighteen repositories, and sweep the remaining links. A link to a
   deleted repository is worse than no link. *(trace: conventions.md §13)*
