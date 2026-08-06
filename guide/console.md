@@ -209,13 +209,16 @@ Each package still pins its registry to GitHub Packages in its manifest. That is
 the `@astro-mine` scope cannot resolve to npmjs.com even on a machine holding a public-npm token — and
 it means the destination is already right the day there is a consumer.
 
-**The previous front end did publish**, and what it left behind is marked rather than left to be
-guessed at. `@astro-mine/surface`, `@astro-mine/hub-ui`, `@astro-mine/studio-ui` and
-`@astro-mine/bench-ui` are **deprecated** — the contract that created them is retired, and nothing
-will republish those names. `@astro-mine/ui` and `@astro-mine/view` are the same names this workspace
-uses, so only the versions the old repositories cut (`<=0.1.1`) are deprecated, not the names. If
-your resolver hands you one of these, you have found history
-([architecture/ui.md §8.2](../architecture/ui.md)).
+**The previous front end did publish**, and six packages are still in the registry.
+`@astro-mine/surface`, `@astro-mine/hub-ui`, `@astro-mine/studio-ui` and `@astro-mine/bench-ui` are
+**retired** — the contract that created them is gone, and nothing will republish those names.
+`@astro-mine/ui` and `@astro-mine/view` are the same names this workspace uses, so only the versions
+the old repositories cut (`<=0.1.1`) are history, not the names.
+
+**None of them says so in the registry**, and that is not an oversight: GitHub Packages does not
+implement `npm deprecate`, so the notice cannot be attached where you would meet it. If your
+resolver hands you one of these, you have found history — the disposition lives in
+[architecture/ui.md §8.2](../architecture/ui.md) and nowhere else.
 
 | You are | Can you install it? |
 |---|---|

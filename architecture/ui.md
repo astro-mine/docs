@@ -359,17 +359,30 @@ registry is the one place a consumer looks, and silence there reads as maintaine
 
 | Package | Last published | Disposition |
 |---|---|---|
-| `@astro-mine/surface` | 0.1.1 | **Deprecate the name.** The `Surface` contract is retired (§11); nothing will republish it. |
-| `@astro-mine/hub-ui` · `@astro-mine/studio-ui` | 0.2.0 | **Deprecate the name.** Their pages are routes of the application now (§5). |
-| `@astro-mine/bench-ui` | 0.1.1 | **Deprecate the name.** As above. |
-| `@astro-mine/ui` · `@astro-mine/view` | 0.1.1 | **Deprecate `<=0.1.1` — the range, not the name.** |
+| `@astro-mine/surface` | 0.1.1 | **Retired outright.** The `Surface` contract is gone (§11); nothing will republish the name, and there is no replacement package — a page is a route. |
+| `@astro-mine/hub-ui` · `@astro-mine/studio-ui` | 0.2.0 | **Retired outright.** Their pages are the `/registry` and `/design` routes of the application now (§5). |
+| `@astro-mine/bench-ui` | 0.1.1 | **Retired outright.** Its pages are the `/bench` routes. |
+| `@astro-mine/ui` · `@astro-mine/view` | 0.1.1 | **Only `<=0.1.1` is history — the versions, not the name.** |
 
 The last row is the one that needs a reason. **Both names are live in this workspace**, and both will
-publish under them the day §6 of `VERSIONING.md` unblocks. Deprecating the *name* would mark a name
-still in use, and the mark would have to be lifted at the flip — so the deprecation is scoped to the
-versions the retired repositories cut, which are the only versions that are history. Every message
-names the replacement, because a deprecation that only says *don't* leaves a reader where it found
-them.
+publish under them the day §6 of `VERSIONING.md` unblocks. Retiring the *name* would condemn a name
+still in use — so what is history is scoped to the versions the retired repositories cut.
+
+**This table is the disposition, because the registry cannot carry one.** The obvious mechanism is
+`npm deprecate`, which attaches the notice where a consumer actually meets the package. **GitHub
+Packages does not implement it**: every form of the call — a single version, a range, or `*` — is
+rejected by the registry, not the client, with `400 … unmarshalling packument failed: version.ID
+cannot be empty`. There is no flag that changes this and no partial success to fall back on.
+
+So the honest statement of the state is: **these packages carry no in-registry signal that they are
+history, and cannot be made to.** What GitHub does offer is deletion — `DELETE
+/orgs/astro-mine/packages/npm/<name>` — which is a different act with a different cost: it removes
+the evidence rather than labelling it, and it breaks any lockfile that still resolves the version.
+For six private packages inside an org with no external consumer, that cost is small and the benefit
+is real, but it is a decision to take deliberately rather than a fallback to reach for because the
+first tool failed. **Until it is taken, this document is the only place the disposition exists** —
+which is why the guide says so too, and why a reader who meets one of these packages is expected to
+have arrived from here.
 
 **Two environment notes, because both look like product defects and are not.** The browser lane needs
 one **system package** on a fresh WSL checkout — the failure is `libasound.so.2: cannot open shared

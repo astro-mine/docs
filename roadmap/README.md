@@ -171,8 +171,9 @@ See [`conventions.md`](../architecture/conventions.md) §7.1 for the rule, and
     (`surface`, `ui`, `console`), `astro-mine-view`, and the `ui/` trees of Hub, Studio and Bench,
     with their build tooling, Playwright configs and release lanes. **Delivered.** Neither
     `astro-mine-console` nor `astro-mine-view` held an open issue or pull request at archival, so
-    nothing needed rehoming; the six packages already published to GitHub Packages were dispositioned
-    rather than left to be resolved silently ([ui.md](../architecture/ui.md) §8.2).
+    nothing needed rehoming. The six packages already published to GitHub Packages are
+    dispositioned in [ui.md](../architecture/ui.md) §8.2 — in the document rather than in the
+    registry, because GitHub Packages does not implement `npm deprecate`.
   - **The components** — the eighteen `astro-mine-<component>` repositories `RM-DIST-01` and
     `RM-DIST-02` replaced. **Not started**, and the last thing in the track.
 
