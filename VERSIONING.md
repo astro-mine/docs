@@ -104,6 +104,17 @@ second expression:
   refused by an install for a period after publication, including under `--frozen-lockfile`. Plan a
   contract change and its consumers accordingly, or link them in-workspace and publish once.
 
+**None of them is published today, and that is a decision** (`architecture/ui.md` §8.2). All four
+libraries carry `0.0.0`, build under the CI gates, and are consumed in-workspace as `workspace:*`;
+`@astro-mine/console` is an application and was never going to be published. Their one class of
+external consumer was the retired `<component>-ui` surface packages, so the mechanics above are the
+policy for *when* a release happens rather than a description of a running release train — and every
+row of it (hand-set version, tag-and-bump in one commit, the release-age floor) is a cost with nothing
+currently on the other end. `publishConfig.registry` stays pinned to GitHub Packages in each manifest
+regardless: a safety control, so the `@astro-mine` scope cannot resolve to npmjs.com even on a machine
+holding a public-npm token. The same reasoning applies to the front end's OCI image, which is built
+and verified in CI and pushed nowhere.
+
 ## 3. When versions are assigned — integration milestones
 
 Versions are cut at the roadmap's **integration milestones** (`roadmap/`), giving stable pin targets
@@ -222,7 +233,7 @@ Phase 2):
   quotes.
 - **Publish the `@astro-mine/*` packages to public npm.** This is the open precondition for an outside
   party building on the design system or the visualization library
-  (`architecture/ui.md` §8).
+  (`architecture/ui.md` §8.2).
 - Turn on **full GitHub Releases** with signed wheel assets + SLSA provenance + SBOMs (CX-SEC) — the
   supply chain applied to the distributions that implement it.
 - Turn on **secret scanning, push protection and branch rulesets**, which are unavailable for private

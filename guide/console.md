@@ -8,22 +8,16 @@ a run). Personas: **P5** Mission Designer, **P6** Educator/Student, **P1** Bench
 
 ---
 
-> ## Status: being rebuilt — read this before anything below
+> ## Status: built, and not yet installable by an outsider
 >
-> The console is **mid-rebuild**, and this page describes the application being built rather than a
-> finished product. Concretely, today:
+> Every page below exists and calls the API. What is not yet true is that **you can get it without
+> being inside the org**: the repositories are private during incubation, so running the console
+> means cloning [`astro-mine-ui`](https://github.com/astro-mine/astro-mine-ui) and building it. That
+> unblocks at the public flip, and nothing on this page is waiting on anything else.
 >
-> - **The workspace, the application and its build ship.** `pnpm dev` runs, `pnpm build` produces a
->   static export, and CI gates it.
-> - **No page has been written yet, and nothing calls the API.** There is a placeholder home page and
->   nothing else. The registry, benchmark, design and compute pages land across Waves 29–30.
-> - **The previous console still exists**, in the `astro-mine-console` repository, and is what
->   actually renders a leaderboard or a study today. It is superseded and will be retired, but it has
->   not been yet.
->
-> Everything below marked *(not built yet)* is the design, not a description of running software.
-> Saying so is the same honesty rule the GUI itself is held to: a stand-in must never look like the
-> real thing.
+> The four repositories the front end used to live in — `astro-mine-console`, `astro-mine-view` and
+> the two `*/ui` trees — are **superseded**. If you land in one, you are reading history;
+> [`architecture/ui.md` §11](../architecture/ui.md) records what went and why.
 
 ## What it is
 
@@ -41,7 +35,7 @@ The rule underneath it is unchanged, and it is the platform's narrow waist appli
 A page renders what a component already exposes through the API. If a page needs new behaviour, the
 behaviour goes in the platform, then in the API, then on the page.
 
-## What you will find in it *(not built yet)*
+## What you will find in it
 
 ```
 Home         /            what this is, who you are, what is configured
@@ -52,32 +46,18 @@ Compute      /compute     backends, jobs, sweeps and workflows
 Help         /help        concepts, personas, and where the CLI is the answer
 ```
 
+**What bounds this is what the API serves**, and that is the right constraint. Fleet, Worlds,
+Prospect, Mind, Guard, Learn and Allocate have no REST surface, so authoring an asset, a world, a
+planner stack or a safety spec stays on the command line — exactly as
+[reference/personas.md](reference/personas.md) describes. That is a prioritization, not a permanent
+boundary: the way to change it is a platform capability, then an API route, then a page.
+
 **There is no View page.** `@astro-mine/view` is the widget library — the Cesium globe, the MCAP
 replay, the timeline — that other pages render *through*. It is not a page and has no nav entry.
 
 **Links carry their subject in the query string**, not in the path — `/registry/artifact?name=…` and
 `/bench/submission?id=…`. That is worth knowing when you share one: the whole address matters, and a
 link without its query is just the empty page.
-
-## Who can install it today
-
-**This is the honest part, and it has been decided rather than solved.**
-
-The `@astro-mine/*` libraries are published to **private GitHub Packages — never npmjs.com** — and
-they **flip public with the repositories** at the first public-benchmark milestone.
-`@astro-mine/console` is an application and is never published at all.
-
-| You are | Can you install it? | How |
-|---|---|---|
-| Another `astro-mine` repo's CI | **Yes** | Grant that repo read access under the package's **Manage Actions access** settings; `actions/setup-node` with `registry-url` + `scope` writes the auth from the job's `GITHUB_TOKEN`. |
-| A developer inside the org, locally | **Yes** | `pnpm config set "//npm.pkg.github.com/:_authToken" "$(gh auth token)"` — a **user-level** token with `read:packages`. Never in a committed project `.npmrc`: pnpm refuses to expand `${NODE_AUTH_TOKEN}` from one, because a swapped registry line there could leak the token. |
-| An unauthenticated outsider (a student, a new contributor) | **Not until the flip** | No credential grants access while the repositories are private. |
-
-That last row is the audience the commons is ultimately for, and it stays blocked until the flip.
-This is a property of the org still being private, not something any package can grant around.
-
-Note that building the console itself needs **no** credential: every `@astro-mine` dependency in the
-workspace is a local link. The token is for consuming the published libraries from outside.
 
 ## Run it
 
@@ -87,8 +67,7 @@ pnpm install
 pnpm dev            # http://localhost:3000
 ```
 
-Node **≥ 22.13** — that floor is pnpm's own, not a preference, and pnpm fails outright on Node 20.
-pnpm workspaces throughout.
+Node **24** and pnpm **11.10.0**, both pinned in the repository. pnpm workspaces throughout.
 
 To serve what actually ships rather than the dev server:
 
@@ -102,7 +81,8 @@ what it needs from the outside is one API.
 ## Configure it
 
 The endpoint is **runtime** configuration, never baked into the bundle — a static app whose backend
-URL is compiled in is deployable only by whoever built it.
+URL is compiled in is deployable only by whoever built it. Write `config.json` at the **root of the
+deployment**:
 
 ```json
 {
@@ -110,14 +90,58 @@ URL is compiled in is deployable only by whoever built it.
 }
 ```
 
+Developing locally that file is `apps/console/public/config.json`; on a deployed bundle it sits beside
+`index.html`. It is untracked in the repository on purpose, so a fresh build ships **no** endpoint and
+says so rather than pretending to be configured and failing somewhere less obvious.
+`config.example.json` is the shape, and it is never served as a fallback — an example endpoint
+answering as the real one would be exactly the stand-in this platform refuses to ship.
+
 **One endpoint, not one per surface.** The older console configured a separate base URL for each
 component's backend; there is one REST tier now ([api.md](../architecture/api.md)), so there is one
-address to set. A missing or unreachable config file is not an error — the app starts unconfigured
-and says so.
+address to set.
+
+**Changing it is a file edit, never a rebuild.** The same built bundle serves two deployments — point
+one copy at staging and another at production by writing two different `config.json` files. The
+repository asserts that rather than claiming it: `e2e/deployment.spec.ts` drives one build at two
+endpoints in a single run.
 
 Because the browser calls the API directly from a different origin, **the API must send CORS
 headers**, or the app loads and can do nothing. That is a deployment requirement, not an optional
 hardening step.
+
+## Deploy it
+
+Any static host will do — an object store, a CDN bucket, a static site host, or a directory:
+
+```bash
+pnpm build
+echo '{"apiBaseUrl":"https://api.example.org"}' > apps/console/out/config.json
+pnpm dlx serve apps/console/out          # or upload apps/console/out anywhere
+```
+
+For the hosted tier there is an image, which adds the one thing a bucket cannot do for itself: put
+`config.json` in place at container start.
+
+```bash
+docker build -t astro-mine-ui .
+docker run --rm -p 8080:8080 astro-mine-ui                                        # unconfigured
+docker run --rm -p 8080:8080 -e ASTRO_MINE_API_BASE_URL=https://api.example.org astro-mine-ui
+```
+
+- **Unset variable → nothing written.** The console serves the unconfigured state, honestly, on every
+  route. It is not an error, and the container does not refuse to start.
+- **A mounted `config.json` wins.** Mount one at `/usr/share/nginx/html/config.json` — a ConfigMap, a
+  compose volume — and the entrypoint leaves it alone.
+- **A malformed URL fails at start.** If you set the variable you meant to configure this deployment,
+  and a typo must not hide behind a page that reads like a design decision.
+
+The image runs as a non-root user on port 8080 and serves the bundle as a plain static host would — no
+rewrites, no single-page fallback. Nothing is pushed to a registry yet (see below), so building it is
+how you get it.
+
+**Nothing the console loads comes from a CDN.** Fonts, icons, and Cesium's workers, decoders and
+WebAssembly are all served by the deployment itself, so it works on a disconnected network
+(CX-LOCAL). The only host it talks to is the API you configured.
 
 ## Degraded pages
 
@@ -125,37 +149,42 @@ A page whose backend is absent or whose capability is unmet **degrades visibly a
 navigation** — it never blanks and never silently disappears. With no API configured, the nav is
 intact and each page says what is missing and what would fix it.
 
-Two flavours you will meet:
-
-- **Unconfigured backend** — the page exists, the endpoint is not set. Fix: point it at a running
-  API.
-- **Capability-gated** — the API is reachable, but does not grant the capability the page needs.
-  Publishing is gated this way: it renders as unavailable rather than offering a button that will
-  fail.
+| What you see | What it means | What fixes it |
+|---|---|---|
+| *No API is configured* | No `config.json` beside the application, or it could not be read | Write one at the deployment root, or set `ASTRO_MINE_API_BASE_URL` on the container |
+| *…is not JSON* / *…is not an absolute http(s) URL* | The file is there and is wrong | Correct it — a JSON object with an `apiBaseUrl` like `https://api.example.org` |
+| *This deployment does not offer that* | The API is reachable but does not grant the capability the page needs | Nothing on this side. Publishing is gated this way: the control is disabled with an explanation rather than offering a button that will fail |
+| Every page reports a backend it cannot reach, but the address is right | The API is not sending CORS headers for this origin | Configure the API's allowed origins |
 
 Reading a degraded page as breakage is the usual mistake. It is the honesty rule applied to the GUI —
 the same rule that makes a scorecard name its runner and a render label its proxy geometry
 ([concepts/fidelity.md](concepts/fidelity.md)).
 
-## The leaderboard (UC-G5) *(not built yet)*
+## The leaderboard (UC-G5)
 
 The **Leaderboard** page is P1's and P6's entry point, and the bar it is held to is *a student finds
-the leaderboard in one click.*
+the leaderboard in one click.* Pick a scenario and the board ranks submissions on the primary metric,
+with the other metrics beside it.
 
 Each ranking row renders **the runner that produced the entry**. That is the same required
 `Scorecard.runner` field the CLI prints — a fixture-scored entry and a Sim-scored entry are
-distinguishable on the board, not just in the artifact.
+distinguishable on the board, not just in the artifact. A metric with no cross-seed bound renders as
+an open mark, never as a zero-length error bar: the board will not assert a precision nobody measured.
 
 **Leaderboard reads are account-free.** Submitting needs a token
 ([tutorial 03](tutorials/03-train-and-publish-a-policy.md) §7); looking does not.
 
-Until this page lands, `astro-mine bench leaderboard` is the answer, and it prints the same runner
-field.
+`astro-mine bench leaderboard` prints the same rows, including the runner field, for anyone who would
+rather stay on the command line.
 
-## Inspecting a run (UC-B6) *(not built yet)*
+## Inspecting a run (UC-B6)
 
-Run inspection — MCAP replay, the timeline, the 3D scene — renders through `@astro-mine/view`'s
-widgets inside the pages that own the data. Produce a log first:
+Open a submission — `/bench/submission?id=…` — for its scores, its provenance and its replay. Run
+inspection renders through `@astro-mine/view`'s widgets inside the page that owns the data: the MCAP
+replay, the timeline scrubber and the 3D scene. The viewer is loaded on demand, so a reader who came
+for a number does not download a globe to see it.
+
+To produce a log of your own:
 
 ```bash
 astro-mine sim run lunar-polar-ice-prospecting-sprint-v1 --seed 1001 --out run.mcap
@@ -163,16 +192,42 @@ astro-mine sim run lunar-polar-ice-prospecting-sprint-v1 --seed 1001 --out run.m
 
 See [tutorial 02 §7](tutorials/02-run-it-in-the-simulator.md), including the SPICE prerequisite.
 
-## `view/lib/` is not the console
+## What is published, and what is merely built
 
-`@astro-mine/view` ships a demo harness with committed fixtures. **It is a developer component
-gallery** — a place to see each widget in isolation while working on it. It is not the console, not
-an application, and not the product.
+**Nothing is published today**, and that is a decision rather than an omission.
 
-View's README says so itself. It is worth repeating here because landing in the gallery and
-concluding *"so this is the GUI"* is exactly the failure that makes an evaluator walk away — the one
-J6 documents. If what you are looking at is a grid of isolated widgets over fixture data, you are in
-the gallery.
+`@astro-mine/console` is an application: deployed, never consumed, so it was never going to be
+published. The four libraries it is built from — `api-client`, `ui`, `view` and `inspectors` — build
+and are gated, and they are **not published either**. They had one class of external consumer, the
+per-component surface packages, and the `Surface` contract that created it is retired. A release train
+with nothing on the other end of it costs a hand-set version and a tag per cut, and buys optionality
+nobody is waiting on.
+
+Each package still pins its registry to GitHub Packages in its manifest. That is a safety control —
+the `@astro-mine` scope cannot resolve to npmjs.com even on a machine holding a public-npm token — and
+it means the destination is already right the day there is a consumer.
+
+| You are | Can you install it? |
+|---|---|
+| Inside the org, building from a clone | **Yes**, and no registry credential is needed: every `@astro-mine` dependency in the workspace is a local link |
+| Inside the org, wanting the libraries as packages | **Not yet** — nothing is published. Clone and link |
+| An unauthenticated outsider (a student, a new contributor) | **Not until the flip** — no credential grants access while the repositories are private |
+
+That last row is the audience the commons is ultimately for, and it stays blocked until the flip. It is
+a property of the org still being private, not something any package can grant around. Public npm
+publication is the deferred item in
+[`VERSIONING.md`](https://github.com/astro-mine/docs/blob/main/VERSIONING.md) §6.
+
+## `/dev/inspector` is not a product page
+
+The console carries one unlisted developer route — `/dev/inspector`, a gallery of the artifact
+inspector registry's panels over hand-written subjects. It says so in a banner, it is deliberately
+absent from the navigation, and it is not the product.
+
+Worth repeating, because the same mistake in its older form — landing in the retired View
+repository's widget gallery and concluding *"so this is the GUI"* — is the failure that makes an
+evaluator walk away, the one J6 documents. If what you are looking at is a grid of isolated widgets
+over fixture data, you are in a gallery. The console is at `/`.
 
 ---
 

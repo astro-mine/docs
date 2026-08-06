@@ -211,7 +211,7 @@ astro-mine sim run lunar-polar-ice-prospecting-sprint-v1 --seed 1001 --out ancho
 
 It prints the run's content hash and writes an [MCAP](https://mcap.dev/) log — 790 KB for the sprint
 scenario. MCAP is a standard robotics log format, so any MCAP tool reads it; the platform's own
-replay view is in the console ([console guide](../console.md), UC-B6 — not built yet).
+replay view is in the console ([console guide](../console.md), UC-B6).
 
 The completely offline alternative, needing no content at all:
 
