@@ -79,9 +79,16 @@ Three rules, and they are why this is one workspace rather than five repositorie
 2. **A package MUST NOT import the application.** The app is the sink. If the app holds something a
    package needs, the something is in the wrong place — move it down.
 3. **A package MUST NOT import a sibling**, with exactly one exception: `inspectors` may import `ui`
-   and `view`, because it renders artifacts and so needs the design system and — for a world — the
-   globe. Two packages needing the same thing means the thing belongs in `ui` or `view`; and if it is
-   *platform* behaviour, it belongs in the platform and then in the API (§10).
+   and `view`. It imports `ui` because it renders artifacts and so needs the design system. **The
+   edge to `view` is permitted and currently unused, and that is deliberate** — a panel MUST NOT
+   reach for the globe (§6). `@astro-mine/view` publishes a single entry that re-exports its Cesium
+   module, so a static import from a panel would put four megabytes into the first paint of every
+   page that renders an artifact row, and CI asserts from the other side that no prerendered route
+   preloads the Cesium chunk. The edge stays in the allowlist for View's pure `frames` subtree — CRS,
+   time and units, no Cesium — which is a legitimate consumer, and reopening an allowlist is a worse
+   moment to think about layering than now. Two packages needing the same thing means the thing
+   belongs in `ui` or `view`; and if it is *platform* behaviour, it belongs in the platform and then
+   in the API (§10).
 
 **The rules are enforced mechanically.** `scripts/check-layering.mjs` fails the build on any
 violation, checking both what a package *declares* in its manifest and what its sources actually
@@ -205,6 +212,31 @@ three keys, and a contribution that needs one is evidence the artifact's facets 
 
 **A new `PluginKind` is not an extension point here.** That is a Core change, argued from a named
 consumer. The front end must never become a back door for widening the waist.
+
+### 6.1 Heavy visuals arrive through slots (normative)
+
+Resolution says *which panel*. It does not say how a panel gets a globe — and the opening claim of
+this section, that a `world` artifact renders a globe *without the page knowing what a world is*,
+only holds because of a second rule. **A panel is handed its heavy visuals; it never summons one.**
+
+- **The composition root owns the mount.** The page rendering `InspectorSlot` passes heavy visuals
+  in as `InspectorSlots` — `globe` for a world, `geometry` for an asset. It is the only thing that
+  may own a Cesium mount: one `next/dynamic`, one `ssr: false`, one `CESIUM_BASE_URL` assignment, in
+  one file. A second owner of that mount inherits none of its care, which is why a panel MUST NOT
+  take the `inspectors → view` edge for this (§3 rule 3).
+- **A slot is an element, not a call.** The root passes a *created React element*, so creating it
+  runs no component and triggers no import; only a panel that actually renders the slot pays for it.
+  **This is what makes the rule cheap enough to be unconditional:** the page supplies the capability
+  to every subject — "terrain can be drawn here" — and stays ignorant of kinds. A page that instead
+  gated on `kind === "world_provider"` would have put the vocabulary back in the page, which is the
+  whole thing this section exists to prevent.
+- **An unfilled slot is stated, not hidden.** A panel handed nothing renders the absence in words,
+  the same discipline `AsyncState`'s empty case applies (§2). Never a hole where a globe would be.
+
+This stopped being academic once. `ui#51` was exactly this rule being unwritten: the artifact page
+resolved `WorldInspector` correctly and passed no `globe`, so every world artifact read *"no globe
+was supplied"* for two waves before `astro-mine-ui#54` closed it. Written down, the next page gets
+it right.
 
 ## 7. Conventions (normative)
 
