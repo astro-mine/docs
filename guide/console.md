@@ -218,16 +218,16 @@ a property of the org still being private, not something any package can grant a
 publication is the deferred item in
 [`VERSIONING.md`](https://github.com/astro-mine/docs/blob/main/VERSIONING.md) §6.
 
-## `/dev/inspector` is not a product page
+## A gallery is not the console
 
-The console carries one unlisted developer route — `/dev/inspector`, a gallery of the artifact
-inspector registry's panels over hand-written subjects. It says so in a banner, it is deliberately
-absent from the navigation, and it is not the product.
+**Every route in the console is in the navigation**, and there are no development pages left in it —
+the last unlisted scaffold went at the same time as this page was written.
 
-Worth repeating, because the same mistake in its older form — landing in the retired View
-repository's widget gallery and concluding *"so this is the GUI"* — is the failure that makes an
-evaluator walk away, the one J6 documents. If what you are looking at is a grid of isolated widgets
-over fixture data, you are in a gallery. The console is at `/`.
+That is worth saying because of the mistake it forecloses. The retired View repository shipped a
+widget gallery over fixture data, and landing in it and concluding *"so this is the GUI"* is the
+failure that makes an evaluator walk away — the one J6 documents. If what you are looking at is a
+grid of isolated widgets over fixture data, you are in a gallery in an old repository. The console is
+at `/`, and its sidebar lists all of it.
 
 ---
 
