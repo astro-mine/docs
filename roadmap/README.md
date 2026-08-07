@@ -132,8 +132,9 @@ SLSA / SBOM); a Phase-1 deliverable, additive and non-urgent, that must not gate
 Between Phase 1 and Phase 2 the platform's *packaging* was corrected: eighteen component
 repositories became four distributions, with import paths, public APIs, schemas and their `$id`s,
 entry-point groups, and configuration semantics **unchanged**. It adds no capability, which is why it
-is not a phase — but it is real work with real exit criteria. One of its five items is outstanding
-(`RM-DIST-03`) and one is half done (`RM-DIST-05`, whose front-end half landed with the rebuild).
+is not a phase — but it is real work with real exit criteria. Four of its five items are done; the
+fifth, `RM-DIST-05`, is half done — its front-end half landed with the rebuild, and the component
+half is the last thing in the track.
 
 See [`conventions.md`](../architecture/conventions.md) §7.1 for the rule, and
 [platform.md](../architecture/platform.md) · [cli.md](../architecture/cli.md) ·
@@ -153,7 +154,13 @@ See [`conventions.md`](../architecture/conventions.md) §7.1 for the rule, and
 - **RM-DIST-03** — **One REST tier.** Stand up `astro-mine-api` and move the Hub, Studio, Cloud and
   Bench route modules into it, over the components' unchanged public APIs. Restore the REST tests the
   consolidation had to exclude; converge the health-endpoint and error conventions; ship one image and
-  one chart. A component MUST NOT ship a FastAPI application. *(trace: api.md; conventions.md §3)*
+  one chart. A component MUST NOT ship a FastAPI application. *(trace: api.md; conventions.md §3)* —
+  **done.** The last piece was the deployment: Bench's leaderboard image and compose stack and Hub's
+  hosted-Hub stack were the hosted tier, and they are one image, one compose file and one chart now,
+  with `ASTRO_MINE_API_SURFACES` choosing what an instance mounts. Restoring the excluded tests had a
+  second half nobody had counted: three integration suites in the platform were skipping because the
+  compose file that stood up their services had stayed behind in `astro-mine-cloud`, and Hub's
+  pgvector CI lane had not been recreated at all. Both are back.
 - **RM-DIST-04** — **One front end.** Stand up `astro-mine-ui` as one pnpm workspace holding the
   application and its packages, with the layering check asserting the dependency direction. **This is
   a rebuild, not a move.** It was originally scoped as relocating five package trees into one
