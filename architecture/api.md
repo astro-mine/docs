@@ -5,10 +5,10 @@
 > Depends on [`astro-mine-platform`](platform.md). Served to [`astro-mine-ui`](ui.md).
 > Cross-cutting standards: see [conventions.md](conventions.md) §3 (where the REST layer lives).
 >
-> **Status: stood up.** The four route packages moved out of the component repositories, the
-> excluded route tests run again under the routes they exercise, and the health-endpoint and error
-> conventions §4 promised have converged. What is outstanding is `deploy/` — the container image,
-> the compose file and the chart values (§3, §6). Tracked in the [roadmap](../roadmap/README.md).
+> **Status: complete.** The four route packages moved out of the component repositories, the
+> excluded route tests run again under the routes they exercise, the health-endpoint and error
+> conventions §4 promised have converged, and `deploy/` now ships the container image, the compose
+> file and the chart (§3, §6).
 
 ## 1. Purpose
 
@@ -124,11 +124,20 @@ The build MUST run against the platform at `HEAD`, not a released pin (`conventi
 
 ## 8. Roadmap alignment
 
-Standing up this repository was the first distribution-level task after the consolidation. Four of
-the five pieces are done: the four route packages moved out of the component repositories, the
-excluded route tests were restored, the health-endpoint spelling converged on `/healthz`, and the
-error convention became one problem document with a named code. What remains is the tier's one
-image and one chart (§3, §6).
+Standing up this repository was the first distribution-level task after the consolidation, and
+`RM-DIST-03` is now met in full. The four route packages moved out of the component repositories,
+the excluded route tests were restored, the health-endpoint spelling converged on `/healthz`, the
+error convention became one problem document with a named code, and the tier ships one image and
+one chart.
+
+The last piece was the one that had to wait for somewhere to put it. Bench's leaderboard image and
+compose stack, and Hub's hosted-Hub stack, were the hosted tier — two FastAPI applications, two
+Postgres instances and two OPA sidecars for surfaces that share one edge. They are one deployment
+now, and `ASTRO_MINE_API_SURFACES` chooses what a given instance mounts, so the same image serves a
+Bench-only leaderboard and an everything-at-once cluster without a rebuild. Their Rego policy,
+scrape config and dashboard came with them out of the platform, and so did the two tests that read
+those files: an assertion that a dashboard's PromQL names series the app actually exposes only
+works where the dashboard is.
 
 The browser tier drove three further corrections here, all landed: cross-origin access, stable
 operation ids, and typed responses — without them the front end cannot call this API at all, and a
