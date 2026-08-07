@@ -712,7 +712,14 @@ Normative consequences:
   Hub keys artifacts on `name:version` alone (`kind` is *not* part of the key), so a name MUST be
   descriptive enough to stand without it — `excavation-gns` over `gns`, `relay-orbiter` over
   `orbiter`. New artifacts are born conformant, and a producer SHOULD reject a non-conforming name
-  at publish rather than admit it to the registry.
+  at publish rather than admit it to the registry — but **not before the migration below has run**.
+  A SADF asset's authored `identity.id` *is* its registry name (`publish_asset` passes it straight
+  through), and the shipped Fleet library still carries legacy ids, so a gate at publish today would
+  have `astro-mine fleet publish` refuse the platform's own documented examples. Until then the rule
+  is enforced as an exact inventory of the names that predate it
+  (`astro_mine.hub.registry.is_valid_artifact_name`, pinned by `tests/hub/test_artifact_names.py`):
+  a **new** non-conforming name fails, the recorded legacy ones do not, and the day that set empties
+  the check moves to `publish`.
 - **Artifact-name migration (normative).** The published anchor set predates the rule above and does
   not follow it. Registry names are immutable once published, so conforming is a **re-publish under
   a new name, not a rename** — it mints new digests, re-pins the scenario zoo, and MUST leave every
@@ -721,6 +728,24 @@ Normative consequences:
   sweep rather than piecemeal, so the registry never carries a half-migrated set. Until that sweep,
   the legacy names stand as published and MUST NOT be treated as errors; enforcement applies to new
   names only.
+
+  **Historical text keeps the old names.** A provenance record, a build recipe or a scorecard states
+  what was published, under the name it was published under and beside its digest. Rewriting those
+  to the new name would make the record false — the artifact behind `sha256:3b133647…` is named
+  `astro-mine.fleet.isru-plant`, and no rename changes that. The sweep therefore MUST distinguish
+  live references (authored ids, zoo pins, scenario `content_hash` entries, code) from historical
+  ones (`PROVENANCE.md`, `RECIPE.md`, published scorecards), and MUST NOT be done by a global
+  find-and-replace, which cannot tell them apart.
+
+  **`hub search` spans both names, and one case does not.** Search tokenizes on non-alphanumerics
+  (`astro_mine.hub._embed.tokenize`), so a query matches across every legacy shape: `excavator`
+  finds `astro-mine.fleet.excavator`, and `shackleton water ice` finds `shackleton_water_ice_v1`.
+  Discovery therefore survives the migration without aliases, and a user who searches for *what a
+  thing is* is unaffected in either direction. The exception is a query for a legacy name **in
+  full**: `shackleton_water_ice_v1` tokenizes to `shackleton water ice v1`, and the migrated
+  `shackleton-water-ice` has no `v1` token, so the old full name matches nothing afterwards.
+  Resolution by digest is unaffected — digests are what the scenario pins carry, and they keep
+  resolving to the artifact they always did.
 - **Shipped examples (normative).** A component that defines an authored format MUST ship at least
   one working example of it, and the example MUST be reachable **two ways**, because the two
   audiences are different: **package data** under `src/astro_mine/<component>/reference/` for a
