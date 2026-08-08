@@ -227,11 +227,22 @@ See [`conventions.md`](../architecture/conventions.md) §7.1 for the rule, and
     gets a 404, and that is the trade that was made deliberately.
 
     **The distributions were never published to an index** — no PyPI, no other registry — so
-    seventeen names were retired without a deprecation to file anywhere. What *is* published is the
-    Core schema bundle at `ghcr.io/astro-mine/astro-mine-core/schemas`, which survives archival:
-    packages are not deleted with their repository, and the workflow that publishes it moved to
-    `astro-mine-platform` keeping that target, because registry names are immutable and
-    re-targeting would orphan its consumers.
+    seventeen names were retired without a deprecation to file anywhere.
+
+    **One published artifact was lost, and it is the clearest example of what archival hid.** The
+    Core schema bundle was published to `ghcr.io/astro-mine/astro-mine-core/schemas`. When
+    `publish-schemas` was rescued from `astro-mine-core`, its target was deliberately *kept* on that
+    path, reasoning that registry names are immutable and re-targeting would orphan the package's
+    consumers. That reasoning assumed the repository would survive as an archive. **A GHCR package
+    scoped under a repository path is deleted with the repository**, so the package went, and the
+    argument for keeping the old target inverted with it: there was no longer anything to orphan.
+
+    It publishes to `astro-mine-platform/schemas` now — `${{ github.repository }}`, so the target
+    follows whatever repository builds the bundle rather than naming one that can be deleted out
+    from under it. Nothing was lost that cannot be rebuilt: the bundle is a deterministic function
+    of the schema sources (`scripts/build_schema_bundle.py`), and re-publishing it is one tag. But
+    it is the one artifact where "archived, never deleted" was doing real work, and reversing that
+    decision cost it.
 
     **Three automation lanes existed only in repositories being archived**, and archival makes a
     repository's Actions unrunnable — so they moved first: Core's `publish-schemas` (whose
