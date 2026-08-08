@@ -132,9 +132,10 @@ SLSA / SBOM); a Phase-1 deliverable, additive and non-urgent, that must not gate
 Between Phase 1 and Phase 2 the platform's *packaging* was corrected: eighteen component
 repositories became four distributions, with import paths, public APIs, schemas and their `$id`s,
 entry-point groups, and configuration semantics **unchanged**. It adds no capability, which is why it
-is not a phase — but it is real work with real exit criteria. Four of its five items are done; the
-fifth, `RM-DIST-05`, is half done — its front-end half landed with the rebuild, and the component
-half is the last thing in the track.
+is not a phase — but it is real work with real exit criteria. **All five items are done**, and the
+track is closed: one platform wheel, one CLI, one REST tier, one front end, and the eighteen
+superseded repositories archived. The org now carries four distributions, `docs`, and its two
+governance repositories; everything else is history, kept readable rather than deleted.
 
 See [`conventions.md`](../architecture/conventions.md) §7.1 for the rule, and
 [platform.md](../architecture/platform.md) · [cli.md](../architecture/cli.md) ·
@@ -181,8 +182,36 @@ See [`conventions.md`](../architecture/conventions.md) §7.1 for the rule, and
     nothing needed rehoming. The six packages already published to GitHub Packages are
     dispositioned in [ui.md](../architecture/ui.md) §8.2 — in the document rather than in the
     registry, because GitHub Packages does not implement `npm deprecate`.
-  - **The components** — the eighteen `astro-mine-<component>` repositories `RM-DIST-01` and
-    `RM-DIST-02` replaced. **Not started**, and the last thing in the track.
+  - **The components** — the seventeen `astro-mine-<component>` repositories `RM-DIST-01` and
+    `RM-DIST-02` replaced. **Delivered**, and the last thing in the track. All seventeen were at
+    zero open issues and zero open pull requests at archival: the only two that remained,
+    `astro-mine-hub#14` and `#44`, were transferred to `astro-mine-platform` beforehand, which
+    preserved their numbers, bodies and comment threads.
+
+    Each carries a **supersession notice** added before archival — an archived repository is
+    read-only, so that was the last change it could take, and it is the page a visitor arriving
+    from an old link actually lands on. The notice names the distribution that now ships the
+    component's library code, CLI verbs and routes, and leads with the part that reassures:
+    `import astro_mine.<component>` is unchanged; what moved is which wheel provides it.
+
+    **Archived, never deleted.** The issues are the record of how the platform was designed and
+    the documentation cites them throughout, so "a link to a deleted repository is worse than no
+    link" is answered by not deleting: after archival, `/issues/<n>` links still resolve (and
+    follow the two transfers), and `examples/downstream-consumer` still clones
+    `astro-mine-core.git` at `v0.1.0`, both verified.
+
+    **The distributions were never published to an index** — no PyPI, no other registry — so
+    seventeen names were retired without a deprecation to file anywhere. What *is* published is the
+    Core schema bundle at `ghcr.io/astro-mine/astro-mine-core/schemas`, which survives archival:
+    packages are not deleted with their repository, and the workflow that publishes it moved to
+    `astro-mine-platform` keeping that target, because registry names are immutable and
+    re-targeting would orphan its consumers.
+
+    **Three automation lanes existed only in repositories being archived**, and archival makes a
+    repository's Actions unrunnable — so they moved first: Core's `publish-schemas` (whose
+    `schema_digest` a Bench run pins), Cloud's `cluster-e2e`, and Allocate's `scale-bench`. The
+    platform's CI had named the latter two as opt-in lanes to "trigger manually" while their
+    workflows sat in the repositories about to be retired.
 
 **Dependencies** — RM-DIST-01 before everything; RM-DIST-02 landed with it; RM-DIST-03 and RM-DIST-04
 are independent of each other; each half of RM-DIST-05 last after the item it retires.

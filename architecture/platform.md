@@ -161,7 +161,8 @@ maintained as current documentation.
 
 ## 10. Roadmap alignment
 
-Phases 0 and 1 are built and ship here. The immediate distribution-level work is standing up
-[`astro-mine-api`](api.md) and [`astro-mine-ui`](ui.md) as their own repositories, and retiring the
-eighteen component repositories once nothing references them. Phase-2 and Phase-3 components land as
-new subpackages. See the [roadmap](../roadmap/README.md).
+Phases 0 and 1 are built and ship here, and **the distribution track is closed**:
+[`astro-mine-api`](api.md) and [`astro-mine-ui`](ui.md) stand up as their own repositories, and the
+eighteen component repositories are archived — read-only, with a supersession notice naming where
+each part went, and their issues and history still resolving (`RM-DIST-05`). Phase-2 and Phase-3
+components land as new subpackages. See the [roadmap](../roadmap/README.md).
