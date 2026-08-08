@@ -451,8 +451,8 @@ A reader who liked the previous design should be able to find out what happened 
 workspace and the CI gates, the generated client, the theme and the honesty kit, the chart layer, the
 shell, `@astro-mine/view`, the inspector registry, every page in §5, the persona journeys against a
 real seeded API, the accessibility gate, and the deployment — the static bundle, its runtime
-configuration and the image that serves it (§8.1). What remains of the distribution track is
-retiring the eighteen component repositories, last (`RM-DIST-05`, `docs#93`). See the
+configuration and the image that serves it (§8.1). The distribution track is now closed: the eighteen
+component repositories are archived (`RM-DIST-05`; `docs#93` for the front-end half). See the
 [roadmap](../roadmap/README.md) and, for the user-facing view, the
 [console guide](../guide/console.md).
 
