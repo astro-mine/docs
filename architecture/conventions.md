@@ -554,7 +554,34 @@ Normative consequences:
   (wasmtime)** is the forward-looking sandbox for safe untrusted compute.
 - **Supply chain:** signed artifacts (**Sigstore/cosign**), **SLSA** provenance, **SBOM**
   (Syft/CycloneDX). One implementation of all of it — [Seal](seal.md) — because two signers that
-  disagree fail silently. Org defaults on: Dependabot alerts and automated security fixes,
+  disagree fail silently.
+- **Trust root (normative).** *Whose* signature counts is a **set**, never a key — an
+  `astro_mine.seal.TrustRoot` of named signers, each with an optional validity window and an
+  optional artifact-kind scope. The set is the whole decision; everything else follows from it.
+  **Rotation is an overlap, not a cutover**: the successor is added, both are honoured for a window,
+  the predecessor expires. With a single key there is an instant at which every previously signed
+  artifact stops verifying, which is why key rotation was previously not a procedure anyone could
+  safely run. **Revocation is removal**, and a window lets an expiry be scheduled rather than
+  remembered.
+  - **Keyed now, keyless additive.** The shipped path is keyed ECDSA (`sigstore_cosign`), because it
+    works offline with no account and the local tier MUST always work (§7.2 tier 1). Keyless
+    Sigstore (Fulcio/Rekor, OIDC-bound) and KMS keys arrive as further `TrustedKey` variants behind
+    the same scheme — never as a parallel trust system.
+  - **Granularity.** One org identity covers every kind by default; a narrower signer names the
+    `kinds` it may sign. Per-maintainer identities are **not** adopted: they require revocation
+    infrastructure that does not exist, and a revocation that cannot be distributed is not one.
+  - **Distribution.** Precedence is explicit argument → `trusted_public_key_pem` (the one-key case)
+    → `$ASTRO_MINE_TRUST_ROOT` → the root **packaged in the wheel**. The default travels with the
+    code because a gate must decide trust on a laptop with no network; a trust root that must be
+    fetched is a trust root the offline tier does not have. The packaged root is **empty**, so it
+    can never be the reason an artifact is accepted.
+  - **An empty root and no root are different.** Empty means *trust nobody* and fails every
+    signature; absent means *do not check identity* and preserves integrity-only verification.
+    Conflating them is how a misconfiguration becomes an open door, so they are different objects.
+  - **Enforcement posture.** `require_signature=True` for the hosted tier and for Guard's
+    spec/model load gate — a safety component's inputs are part of its safety case. The local tier
+    keeps `require_signature=False`, because CX-LOCAL outranks it there and an offline researcher
+    signs nothing. Rotation and revocation procedure: `.github/SECURITY.md`. Org defaults on: Dependabot alerts and automated security fixes,
   read-only default Actions permissions. Secret scanning, push protection and branch rulesets are
   **not** available for private repositories on the current plan and are due at the public flip;
   treating them as already on is how a gap gets inherited.

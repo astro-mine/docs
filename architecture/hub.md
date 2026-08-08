@@ -376,8 +376,13 @@ want to enter and the place reproducibility lives or dies. This section is centr
   claimed by the publisher, and never inherited from publish time.
   **Shipped today:** the keyed **ECDSA (`sigstore_cosign` scheme)** path, which works offline with
   no account — the local tier's default. **Deferred:** keyless Sigstore (Fulcio/Rekor, OIDC-bound)
-  and KMS keys, additive behind the same scheme, decided with the trust-root policy
-  (an open Hub question — the production trust-root policy, Phase 2).
+  and KMS keys, additive behind the same scheme.
+  **The trust-root policy is settled** (conventions.md §9, normative): *whose* signature counts is a
+  **set** of named signers with validity windows and optional kind scopes, not a key — which is what
+  makes rotation an overlap rather than a flag day, and revocation a removal. The root is packaged
+  in the wheel and overridable by `$ASTRO_MINE_TRUST_ROOT`, because a pull must be able to decide
+  trust offline. What remains is *posture*: flipping `require_signature=True` for the hosted tier
+  (`astro-mine-platform#22`).
 - **AuthN/AuthZ.** **OIDC** (Keycloak self-host or cloud IdP); **RBAC enforced via OPA**
   (conventions.md §9). Anonymous read of public, non-gated artifacts; authenticated publish;
   namespace-scoped write; **verified-publisher** is a granted, audited role. Service-to-service
