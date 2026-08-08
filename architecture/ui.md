@@ -439,7 +439,7 @@ A reader who liked the previous design should be able to find out what happened 
 - **`react-router` and Vite.** The framework routes and builds.
 - **A base URL per surface.** One API, one client, one configured endpoint.
 - **The five repositories and trees all of that lived in** (`RM-DIST-05`): `astro-mine-console` and
-  `astro-mine-view`, now **archived** — readable, unmaintained — and the `ui/` trees of
+  `astro-mine-view`, now **deleted** — mirrored to a local backup, not readable on GitHub — and the `ui/` trees of
   `astro-mine-hub`, `astro-mine-studio` and `astro-mine-bench`, deleted with their Vite and
   Playwright configuration and their `release-ui` lanes. Their published packages are dispositioned
   in §8.2. **Read them as history**; nothing in them is a current design, and where one disagrees
@@ -452,7 +452,7 @@ workspace and the CI gates, the generated client, the theme and the honesty kit,
 shell, `@astro-mine/view`, the inspector registry, every page in §5, the persona journeys against a
 real seeded API, the accessibility gate, and the deployment — the static bundle, its runtime
 configuration and the image that serves it (§8.1). The distribution track is now closed: the eighteen
-component repositories are archived (`RM-DIST-05`; `docs#93` for the front-end half). See the
+component repositories are deleted (`RM-DIST-05`; `docs#93` for the front-end half). See the
 [roadmap](../roadmap/README.md) and, for the user-facing view, the
 [console guide](../guide/console.md).
 

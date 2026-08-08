@@ -163,6 +163,6 @@ maintained as current documentation.
 
 Phases 0 and 1 are built and ship here, and **the distribution track is closed**:
 [`astro-mine-api`](api.md) and [`astro-mine-ui`](ui.md) stand up as their own repositories, and the
-eighteen component repositories are archived — read-only, with a supersession notice naming where
-each part went, and their issues and history still resolving (`RM-DIST-05`). Phase-2 and Phase-3
+eighteen component repositories are **deleted** — after their open issues were rehomed, every link
+into them was removed, and their history and issues were mirrored to a local backup (`RM-DIST-05`). Phase-2 and Phase-3
 components land as new subpackages. See the [roadmap](../roadmap/README.md).

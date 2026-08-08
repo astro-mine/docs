@@ -172,13 +172,14 @@ See [`conventions.md`](../architecture/conventions.md) §7.1 for the rule, and
   static bundle, its runtime configuration and the image that serves it
   ([ui.md](../architecture/ui.md) §8.1). *(trace: ui.md §3, §5, §8, §12; conventions.md §2.1)*
 - **RM-DIST-05** — **Retire the superseded repositories.** Once nothing references them: rehome the
-  open issues, archive or delete the repository, and sweep the remaining links. A link to a deleted
-  repository is worse than no link. It has two halves, and they are independent.
+  open issues, sweep the remaining links, and delete the repository. "A link to a deleted repository
+  is worse than no link" is why the sweep comes *first* — it is a constraint on the order, not an
+  argument against deleting. It has two halves, and they are independent.
   *(trace: conventions.md §13)*
   - **The front end** — the five package trees `RM-DIST-04` replaced: `astro-mine-console`
     (`surface`, `ui`, `console`), `astro-mine-view`, and the `ui/` trees of Hub, Studio and Bench,
     with their build tooling, Playwright configs and release lanes. **Delivered.** Neither
-    `astro-mine-console` nor `astro-mine-view` held an open issue or pull request at archival, so
+    `astro-mine-console` nor `astro-mine-view` held an open issue or pull request when they were retired, so
     nothing needed rehoming. The six packages already published to GitHub Packages are
     dispositioned in [ui.md](../architecture/ui.md) §8.2 — in the document rather than in the
     registry, because GitHub Packages does not implement `npm deprecate`.
@@ -194,11 +195,36 @@ See [`conventions.md`](../architecture/conventions.md) §7.1 for the rule, and
     component's library code, CLI verbs and routes, and leads with the part that reassures:
     `import astro_mine.<component>` is unchanged; what moved is which wheel provides it.
 
-    **Archived, never deleted.** The issues are the record of how the platform was designed and
-    the documentation cites them throughout, so "a link to a deleted repository is worse than no
-    link" is answered by not deleting: after archival, `/issues/<n>` links still resolve (and
-    follow the two transfers), and `examples/downstream-consumer` still clones
-    `astro-mine-core.git` at `v0.1.0`, both verified.
+    **Archived first, then deleted.** Archival was the original decision, on the grounds that the
+    issues are the record of how the platform was designed and the documentation cites them
+    throughout — "a link to a deleted repository is worse than no link", answered by not deleting.
+    That was reversed: the repositories are **gone**, and the org carries only what it maintains.
+
+    Deletion is not archival with a tidier list, so what it cost is recorded rather than
+    smoothed over:
+
+    - **256 links stopped resolving**, and were removed before the deletion rather than left to
+      rot. They became the short form the platform already preferred — `astro-mine-hub#30` rather
+      than a URL — which reads identically and promises nothing. A sweep of that size found five
+      fields where the shortening would have silently broken something: an OCI `image.source`
+      label, a Cargo `repository`, a Helm `home` and its `sources`, and the reference spec a golden
+      Dockerfile is generated from. Each is defined as a *URL*, and a bare name there still parses
+      and means nothing.
+    - **`examples/downstream-consumer/` was deleted**, because its only remaining justification was
+      that it still resolved. The retired-names gate had exempted it in exactly those terms, and
+      that exemption is gone too — so `examples/` is now scanned with no holes, which is the one
+      way the deletion left the platform better than it found it.
+    - **The supersession notices are now false.** Every one of the seventeen says the repository's
+      "issues and history stay readable — that is why it is archived rather than deleted". An
+      archived repository is read-only, so that sentence could not be corrected before deletion,
+      and afterwards there is no README to correct. It is recorded here because it cannot be
+      recorded there.
+
+    **The history survives, the URLs do not.** Before deletion, every repository was `--mirror`
+    cloned and all **375 issues, 53 comments and 431 pull requests** exported with their bodies, to
+    `files/archived-repos-backup/` — a working-tree directory, not a published artifact. Anyone who
+    needs the provenance a `#30` reference points at reads it there. Anyone who follows the old URL
+    gets a 404, and that is the trade that was made deliberately.
 
     **The distributions were never published to an index** — no PyPI, no other registry — so
     seventeen names were retired without a deprecation to file anywhere. What *is* published is the
