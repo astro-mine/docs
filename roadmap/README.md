@@ -262,7 +262,9 @@ runs with no service, no account and no extra (CX-LOCAL); layering tests assert 
 (conventions.md §11); and no document or code references a retired repository.
 
 **Deferred** — a unified REST gateway (Phase 2 at the earliest, if ever); public PyPI and public npm
-publication (the public flip — VERSIONING.md §6); the artifact-name migration (also the flip).
+publication, which the public flip does *not* trigger (VERSIONING.md §6.2 — the flip is visibility
+only). The artifact-name migration was also listed here and is **done**: it ran before the flip
+rather than at it, as one sweep, with every digest unchanged.
 
 ---
 

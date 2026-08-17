@@ -50,25 +50,30 @@ than failing obscurely:
 
 ```console
 $ astro-mine studio serve
-astro-mine studio serve needs the Studio REST surface (astro_mine.studio.api), which is not
-included in astro-mine-platform.
-  The REST tier ships in astro-mine-api (docs: architecture/api.md), which is not stood up yet —
-  roadmap RM-DIST-03.
-  No released distribution provides it today, so there is nothing to install.
+astro-mine studio serve needs the Studio REST surface (astro_mine.studio.api), which is not included in astro-mine-platform.
+  It is built, and ships in astro-mine-api as astro_mine_api.studio (docs: architecture/api.md).
+  No distribution is published to a package index during incubation, so there is nothing to install.
+  Run it from a clone of astro-mine-api:
+    uv run uvicorn --factory astro_mine_api._app:make_app
+$ echo $?
+1
 ```
 
-That surface belongs to [`astro-mine-api`](../../architecture/api.md), which **is** stood up — it
-ships `astro_mine_api.studio` — so the conclusion still holds but the reason has changed: no
-distribution is published to a package index during incubation, so there is still nothing to
-`pip install`, and the message names where the surface lives instead of an install command.
+**A good message is not a success** — the status is a separate claim, and it is the one a script
+reads. `serve` is imperative, so explaining why it could not serve is the right behaviour while
+exit 0 would assert that a server is running ([cli.md](../../architecture/cli.md) §9).
 
-The quoted output above is verbatim, and its middle line is now stale: it still says the API is "not
-stood up yet". Corrected in astro-mine-cli#38; this page quotes what the command prints today rather
-than what it should print. It used to end with `pip install
-astro-mine-studio[serve]`, a distribution the consolidation retired — an install hint that resolves
-to nothing is worse than none, because pip's "no matching distribution" reads as a broken
-environment rather than a stale message. An unknown name is a plain error with the valid ones
-listed — never a traceback:
+Note what the last two lines do, because it is the rule this output exists to demonstrate: a
+degraded verb owes you **what is missing and how to get it**. Naming the distribution is not enough
+on its own. This message twice failed that test in different ways — it once ended with `pip install
+astro-mine-studio[serve]`, a distribution the consolidation retired, and an install hint that
+resolves to nothing is worse than none, because pip's "no matching distribution" reads as a broken
+environment rather than a stale message. It then said the surface did not exist yet, which stopped
+being true when `astro-mine-api` shipped while *"there is nothing to install"* stayed true for a
+different reason — nothing is published to a package index during incubation — so the false half
+rode along under a true conclusion until astro-mine-cli#38.
+
+An unknown name is a plain error with the valid ones listed — never a traceback:
 
 ```console
 $ astro-mine nosuch

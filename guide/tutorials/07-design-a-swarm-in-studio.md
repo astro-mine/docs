@@ -23,21 +23,24 @@ cd ui && pnpm install && pnpm run build:harness && cd ..
 astro-mine studio serve --registry /path/to/hub-registry
 ```
 
-> **This tutorial is blocked today, and the command says so.** Studio's REST application was
-> deliberately not migrated into the platform wheel — it belongs to
-> [`astro-mine-api`](../../architecture/api.md), which **is** stood up, but which no package index
-> carries during incubation. `astro-mine studio serve` therefore reports where the surface lives
-> <!-- status-ok: names the CLI's stale wording in order to flag it (astro-mine-cli#38) -->
-> rather than failing obscurely (its message still says "not stood up yet" — astro-mine-cli#38):
+> **This command does not start the server, and it tells you what does.** Studio's REST
+> application was deliberately not migrated into the platform wheel — it belongs to
+> [`astro-mine-api`](../../architecture/api.md), which **is** built and ships the surface as
+> `astro_mine_api.studio`. What no package index carries during incubation is the *distribution*,
+> so there is nothing to `pip install`; running it from a clone works. `astro-mine studio serve`
+> says exactly that rather than failing obscurely:
 >
 > ```
-> astro-mine studio serve needs the Studio REST surface (astro_mine.studio.api), which is not
-> included in astro-mine-platform.
+> astro-mine studio serve needs the Studio REST surface (astro_mine.studio.api), which is not included in astro-mine-platform.
+>   It is built, and ships in astro-mine-api as astro_mine_api.studio (docs: architecture/api.md).
+>   No distribution is published to a package index during incubation, so there is nothing to install.
+>   Run it from a clone of astro-mine-api:
+>     uv run uvicorn --factory astro_mine_api._app:make_app
 > ```
 >
-> Everything below describes the shipped application and is accurate about what it does; you cannot
-> currently start it from a released distribution. It comes back with `RM-DIST-03`
-> ([roadmap](../../roadmap/README.md#the-distribution-track)), which the command now names itself.
+> It exits non-zero, because nothing was served. Everything below describes the shipped application
+> and is accurate about what it does; what changed is that the surface now exists, so the last line
+> is a route in rather than a dead end.
 
 Then one command composes the whole thing: the FastAPI backend, the Hub seams wired to your local
 OCI-layout registry, the built UI mounted, and **an example study seeded** so you land on a populated
