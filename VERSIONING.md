@@ -249,25 +249,53 @@ their pinned spec).
     platform, v0.1") with notes, to make the milestone legible — rather than a ceremonial Release per
     distribution.
 
-## 6. What changes at the public flip (future)
+## 6. What changes at the public flip
 
-When the org makes repositories public and stabilizes (per current intent, no earlier than the end of
-Phase 2):
+**Two things are routinely conflated here, and the flip only does the first.** Making the source
+public does not oblige us to publish distributions, and this section used to bundle them under one
+heading — so a reader arriving the day after the flip would reasonably conclude both had happened.
 
-- **Publish the platform and the CLI wheels to a public index** via OIDC / Trusted Publishing, signed;
-  switch the CLI from a Git source to a normal version range (e.g. `astro-mine-platform>=0.2,<0.3`).
-  Publishing `astro-mine-cli` is the one that matters to a user: it is the install line every document
-  quotes.
-- **Publish the `@astro-mine/*` packages to public npm.** This is the open precondition for an outside
-  party building on the design system or the visualization library
-  (`architecture/ui.md` §8.2).
-- Turn on **full GitHub Releases** with signed wheel assets + SLSA provenance + SBOMs (CX-SEC) — the
-  supply chain applied to the distributions that implement it.
-- Turn on **secret scanning, push protection and branch rulesets**, which are unavailable for private
-  repositories on the current plan (`conventions.md` §9). Treating them as already on is how a gap gets
-  inherited.
-- Execute the **artifact-name migration** (`conventions.md` §13), which is deliberately gated here: it
-  is a re-publish under new names, and it is far cheaper while no outside consumer holds the old ones.
+### 6.1 Repository visibility — what the flip itself does
+
+The seven repositories become public. That is the whole of it, and it is enough to unlock three
+things that are unavailable while private:
+
+- **Secret scanning, push protection and branch rulesets** (`conventions.md` §9). These are not
+  deferred by choice: the API refuses them outright for a private repository on the current plan.
+  Treating them as already on is how a gap gets inherited — turn them on in the same sitting as the
+  flip.
+- **Free Actions minutes.** Public repositories are not billed, which makes the flip the cheapest
+  available answer to a blocked CI estate rather than something gated behind fixing one.
+- **The external half of Phase 1's M1.2** — an outside party publishing to a *public* Bench
+  leaderboard is unreachable while everything is private.
+
+**Timing.** This section previously read "per current intent, no earlier than the end of Phase 2".
+That is retired. The flip is not gated on a phase boundary, on Actions capacity, or on publishing
+anything: the one hard precondition is a full-history secret scan, because the flip publishes every
+commit at once and a secret found afterwards is a disclosure rather than a rotation.
+
+### 6.2 Distribution publication — what the flip does *not* do
+
+None of the following is triggered by visibility, and none is scheduled by this document. Each is a
+separate decision with its own precondition:
+
+- **Publishing the platform and CLI wheels to a public index** via OIDC / Trusted Publishing,
+  signed; and switching the CLI from a Git source to a version range (e.g.
+  `astro-mine-platform>=0.2,<0.3`). Publishing `astro-mine-cli` is the one that matters to a user —
+  it is the install line every document quotes — and until it happens, "clone and run" remains the
+  honest instruction.
+- **Publishing the `@astro-mine/*` packages to public npm.** The open precondition for an outside
+  party building on the design system or the visualization library (`architecture/ui.md` §8.2).
+- **Full GitHub Releases** with signed wheel assets, SLSA provenance and SBOMs (CX-SEC) — the supply
+  chain applied to the distributions that implement it. Tags exist today; Releases do not.
+
+### 6.3 What used to be gated here and no longer is
+
+The **artifact-name migration** (`conventions.md` §13) was listed here on the reasoning that a
+re-publish under new names is far cheaper while no outside consumer holds the old ones. That
+reasoning held, and it is why the migration **ran before the flip rather than at it** — as one
+sweep, ten artifacts, every digest unchanged. The rule is now enforced at `HubClient.publish`, so
+there is nothing left to gate.
 
 ## 7. Summary
 
@@ -282,7 +310,8 @@ Phase 2):
   "fixed" back to a rev.
 - **`astro-mine-cli` tracks the platform**, not any component; its command protocol is a
   cross-distribution surface coordinated like — but not versioned as — a Core interface (§2.2).
-- **Tags always; full GitHub Releases deferred** to the public flip.
+- **Tags always; full GitHub Releases still deferred** — and *not* to the public flip, which is
+  visibility only (§6.1). Publishing wheels, npm packages and Releases are separate decisions (§6.2).
 - With the interface version frozen, **lockfiles + content hashes + `buf breaking` + one CI run over
   every consumer** — not version negotiation — guarantee compatibility and reproducibility.
 

@@ -349,8 +349,9 @@ libraries publish to GitHub Packages — which was the design while the `Surface
   token, so the destination is already right the day a consumer appears.
 - **The image is built and verified, not pushed.** Same reasoning, same day it changes.
 
-Public npm publication is the deferred item in `VERSIONING.md` §6, gated on the public flip. It is the
-open precondition for an outside party building on the design system or the visualization library.
+Public npm publication is the deferred item in `VERSIONING.md` §6.2 — a decision of its own, **not**
+something the public flip triggers, which is visibility only (§6.1). It is the open precondition for
+an outside party building on the design system or the visualization library.
 
 **What became of the packages the previous front end did publish.** Six names reached GitHub
 Packages before this decision, and "publish nothing from now on" says nothing about them —

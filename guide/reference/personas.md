@@ -90,7 +90,7 @@ CLI-tolerant persona.
 | **Tutorials** | [07 — design a swarm in Studio](../tutorials/07-design-a-swarm-in-studio.md) · [the console guide](../console.md) |
 | **Commands** | `astro-mine studio serve` — and then nothing else; everything is in the GUI |
 | **Concepts** | [uncertainty](../concepts/uncertainty.md) — reading a Pareto front honestly |
-| **Watch out for** | The console's packages are private until the public flip. See the console guide's install section for who can run it today. |
+| **Watch out for** | The console's packages are not published, and the public flip does not publish them (`VERSIONING.md` §6.2). See the console guide's install section for who can run it today. |
 
 ## P6 — Educator / Student
 

@@ -54,8 +54,10 @@ install separately, and no version to reconcile: you get the whole platform at o
 version. See [architecture/platform.md](../architecture/platform.md).
 
 **The honest part.** During incubation the repositories are **private** and neither distribution is
-on PyPI, so that line does not work for you yet. Until the public flip you install from source, which
-needs read access to the org:
+on PyPI, so that line does not work for you yet. You install from source, which needs read access to
+the org. Note that the public flip alone will not change this: it makes the source public, and
+publishing to an index is a separate decision (`VERSIONING.md` §6.2). What the flip removes is the
+need for org access:
 
 ```bash
 git clone https://github.com/astro-mine/astro-mine-platform.git
