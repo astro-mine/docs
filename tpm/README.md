@@ -6,7 +6,7 @@ These are **point-in-time** analyses: they capture a decision or a plan as of th
 superseded by later work rather than continuously maintained.
 
 > **Read these as history, and check the spec before acting on them.** They were written against a
-> platform of eighteen component repositories governed by a formal design-proposal process. Both are
+> platform of seventeen component repositories governed by a formal design-proposal process. Both are
 > gone: the Python code ships as **four distributions**
 > ([conventions.md](../architecture/conventions.md) §7.1), and design decisions are recorded where
 > they are normative rather than in a parallel archive of proposals. Where these documents say
@@ -26,9 +26,9 @@ superseded by later work rather than continuously maintained.
 
 ## Status
 
-**Waves 28–30 — the UI rebuild — are planned and filed** (2026-07-31). See
-[ui-rebuild-plan.md](ui-rebuild-plan.md). The front end is the last distribution not stood up, and it
-is being rebuilt rather than moved.
+**Waves 28–30 — the UI rebuild — were planned and filed** (2026-07-31) and are **complete**. See
+[ui-rebuild-plan.md](ui-rebuild-plan.md). The front end was the last distribution not stood up, and
+it was rebuilt rather than moved.
 
 **Waves 21–26 are complete** (2026-07-24). Every issue carrying a `Wave 21`–`Wave 26` label — 54 in
 total, across 15 repos — is closed and Done on the

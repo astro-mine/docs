@@ -322,19 +322,26 @@ dependency nothing declared.
   astro_mine.cloud.artifacts.store import ArtifactStore` is a Core Protocol wearing a component's
   address.
 
-**Wiring happens at composition roots, and only there.** The platform uses
-[`svcs`](https://svcs.hynek.me/) — a small, explicit, typed registry, no decorators and no
-import-time magic — at the four places that compose the platform into an application:
-[`astro-mine-cli`](cli.md), [`astro-mine-api`](api.md), the Cloud in-pod worker
+**Wiring happens at composition roots, and only there.** Four places compose the platform into an
+application: [`astro-mine-cli`](cli.md), [`astro-mine-api`](api.md), the Cloud in-pod worker
 (`astro_mine.cloud.submission.harness`), and Studio's orchestration worker
-(`astro_mine.studio.orchestrate.worker`). The last two are wired; the CLI is wired in its own
-distribution; `astro-mine-api` is not built yet, and naming an unbuilt thing as unbuilt is the
-honest form.
+(`astro_mine.studio.orchestrate.worker`).
+
+The platform uses [`svcs`](https://svcs.hynek.me/) — a small, explicit, typed registry, no
+decorators and no import-time magic — at **the two roots inside the wheel**, the Cloud harness and
+the Studio worker. They are the only two places `svcs` appears, and the only reason the wheel
+depends on it. The other two roots are separate distributions and wire without it: the CLI
+constructs what a verb needs at the verb, and `astro-mine-api` uses FastAPI's own `Depends`.
+Neither imports `svcs` or declares it.
+
+**That is not an inconsistency to fix.** The rule is *where* wiring happens, not which library does
+it — a root free to use the idiom its own framework already provides is the rule working, not an
+exception to it.
 
 **A root is an application entrypoint, not a component that happens to wire things** — reached by
 `python -m` or a container `ENTRYPOINT`. It does not follow that nothing else imports it: the Cloud
 harness is imported by the cluster backend for its sentinel parser, and the Studio worker for its
-I/O constants. So a root imports `svcs` *inside* its container function rather than at module
+I/O constants. So each imports `svcs` *inside* its container function rather than at module
 scope, and the suite asserts the consequence rather than the shape — importing a component MUST NOT
 load `svcs`. A file-level allowlist alone would pass while the container sat on an ordinary
 backend's import path, which is a mistake that has already been made once and caught by that check.
@@ -358,9 +365,10 @@ Three prohibitions make that boundary real, and they matter more than the librar
 - There is **no global container**, and no module-level singleton standing in for one. A composition
   root builds its container, uses it, and drops it.
 - **The library is replaceable and the inversion is not.** Protocols plus constructor injection are
-  the architecture; `svcs` is a convenience at four call sites. If it were removed tomorrow, the
-  wiring would become four hand-written functions and nothing else would change. Any proposal that
-  makes that untrue is a proposal to be refused.
+  the architecture; `svcs` is a convenience at two call sites. If it were removed tomorrow, the
+  wiring would become two hand-written functions and nothing else would change — the CLI and the
+  API would not notice, which is the sharpest evidence the inversion is not the library. Any
+  proposal that makes that untrue is a proposal to be refused.
 
 ---
 
@@ -474,9 +482,9 @@ Astro-Mine publishes four things, and a component belongs to exactly one of them
 | **`astro-mine-ui`** | npm packages under `@astro-mine` | the console application, the generated API client, the design system, the visualization library, and the artifact inspectors | the API at runtime |
 
 > **Where this stands.** The platform, CLI and UI distributions are stood up; `astro-mine-api`'s
-> route modules have landed and its documentation sweep is outstanding. The front end is a **rebuild
-> rather than a move** ([ui.md](ui.md) §11): the workspace, the application and its gates ship, and
-> the pages land across Waves 29–30. The rules below are normative today — a new REST surface is
+> route modules and its documentation have landed. The front end is a **rebuild rather than a
+> move** ([ui.md](ui.md) §11): the workspace, the application, its gates and every page ship. The
+> rules below are normative today — a new REST surface is
 > written as a route module, not woven into a component; a new page is a route in the one
 > application, not an app of its own — and the remaining work is tracked in the
 > [roadmap](../roadmap/README.md).

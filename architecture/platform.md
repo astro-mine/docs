@@ -151,7 +151,7 @@ axis, still frozen.
 
 ## 9. Provenance of this distribution
 
-The wheel is a **consolidation, not a rewrite**: the eighteen component repositories were copied
+The wheel is a **consolidation, not a rewrite**: the seventeen component repositories were copied
 mechanically, and import paths, public APIs, schemas and their `$id`s, entry-point groups,
 configuration and environment-variable semantics, and algorithms are unchanged. Two departures were
 deliberate — the CLI moved out entirely, and the REST and TypeScript surfaces were not migrated. The
@@ -163,6 +163,7 @@ maintained as current documentation.
 
 Phases 0 and 1 are built and ship here, and **the distribution track is closed**:
 [`astro-mine-api`](api.md) and [`astro-mine-ui`](ui.md) stand up as their own repositories, and the
-eighteen component repositories are **deleted** — after their open issues were rehomed, every link
-into them was removed, and their history and issues were mirrored to a local backup (`RM-DIST-05`). Phase-2 and Phase-3
+nineteen superseded repositories — the seventeen components and the two front ends — are
+**deleted**, after their open issues were rehomed, every link into them was removed, and their
+history and issues were mirrored to a local backup (`RM-DIST-05`). Phase-2 and Phase-3
 components land as new subpackages. See the [roadmap](../roadmap/README.md).

@@ -16,9 +16,10 @@ a run). Personas: **P5** Mission Designer, **P6** Educator/Student, **P1** Bench
 > unblocks at the public flip, and nothing on this page is waiting on anything else.
 >
 > The five package trees the front end used to live in — `astro-mine-console`, `astro-mine-view`,
-> and the `ui/` trees of `astro-mine-hub`, `astro-mine-studio` and `astro-mine-bench` — are gone:
-> the two repositories are **archived**, the three trees **deleted**. If you land in one, or on one
-> of the `@astro-mine/*-ui` packages in the registry, you are reading history;
+> and the `ui/` trees of `astro-mine-hub`, `astro-mine-studio` and `astro-mine-bench` — are gone,
+> and so are all five repositories: they were **deleted**, not archived. If you follow an old link
+> you get a 404. If you land on one of the `@astro-mine/*-ui` packages in the registry, you are
+> reading history;
 > [`architecture/ui.md` §11](../architecture/ui.md) records what went and why.
 
 ## What it is

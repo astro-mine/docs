@@ -25,8 +25,10 @@ astro-mine studio serve --registry /path/to/hub-registry
 
 > **This tutorial is blocked today, and the command says so.** Studio's REST application was
 > deliberately not migrated into the platform wheel — it belongs to
-> [`astro-mine-api`](../../architecture/api.md), which is **not yet stood up**. `astro-mine studio
-> serve` therefore reports what is missing rather than failing obscurely:
+> [`astro-mine-api`](../../architecture/api.md), which **is** stood up, but which no package index
+> carries during incubation. `astro-mine studio serve` therefore reports where the surface lives
+> <!-- status-ok: names the CLI's stale wording in order to flag it (astro-mine-cli#38) -->
+> rather than failing obscurely (its message still says "not stood up yet" — astro-mine-cli#38):
 >
 > ```
 > astro-mine studio serve needs the Studio REST surface (astro_mine.studio.api), which is not

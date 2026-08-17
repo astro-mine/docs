@@ -1,0 +1,4 @@
+# The only executable thing in this repository is `scripts/`, and running it
+# leaves bytecode behind. Nothing else here is generated.
+__pycache__/
+*.py[cod]

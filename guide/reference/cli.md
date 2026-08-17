@@ -57,8 +57,14 @@ included in astro-mine-platform.
   No released distribution provides it today, so there is nothing to install.
 ```
 
-That surface belongs to [`astro-mine-api`](../../architecture/api.md), which is not yet stood up, so
-the message names the tracking item instead of an install command. It used to end with `pip install
+That surface belongs to [`astro-mine-api`](../../architecture/api.md), which **is** stood up — it
+ships `astro_mine_api.studio` — so the conclusion still holds but the reason has changed: no
+distribution is published to a package index during incubation, so there is still nothing to
+`pip install`, and the message names where the surface lives instead of an install command.
+
+The quoted output above is verbatim, and its middle line is now stale: it still says the API is "not
+stood up yet". Corrected in astro-mine-cli#38; this page quotes what the command prints today rather
+than what it should print. It used to end with `pip install
 astro-mine-studio[serve]`, a distribution the consolidation retired — an install hint that resolves
 to nothing is worse than none, because pip's "no matching distribution" reads as a broken
 environment rather than a stale message. An unknown name is a plain error with the valid ones
