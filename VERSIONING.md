@@ -56,12 +56,39 @@ Two consequences, stated plainly because both are live:
   guarantee is gone, so a release **MUST** bump the static version and cut the tag **in the same
   commit**, and CI **SHOULD** fail a tag whose name disagrees with the declared version. This is the
   weaker half of the scheme; treat it accordingly.
-- **The platform has no tags yet, and the CLI pins it by commit.** `astro-mine-cli` currently
-  resolves the platform through a `uv` Git source pinned to a **rev** — deliberately, because the two
-  repositories were one change split in half and a floating pin could resolve a platform that still
-  installs files at the CLI's import path. That pin must move to a tag as soon as the platform cuts
-  one, and the CLI's own `hatch-vcs` version and the platform's static version need to stop being two
-  different mechanisms. Until then, the rev is the honest pin and **must not float**.
+
+  That check exists now: `tests/platform/test_release_version.py`, landed with the platform's first
+  tag (astro-mine-platform#33). It is a test rather than a workflow step, so it runs on a workstation
+  — which mattered, because the org's Actions minutes were exhausted when it was written and a check
+  living only in a workflow could not have been observed working before being relied on.
+- **The CLI pins the platform at `branch = "main"`, and that is deliberate.** This paragraph used to
+  say the opposite, and the two halves of this document and `conventions.md` disagreed with each
+  other for as long as it did.
+
+  The rev pin was right when it was written: the two repositories were one change split in half, and
+  a floating pin could have resolved a platform that still installed files at the CLI's import path.
+  **That hazard ended when the platform shipped zero console scripts** — the split is complete and
+  cannot half-resolve. What remained was a pin whose reason had expired, and
+  `conventions.md` §3.1 is normative against it: the CLI, API and front-end builds **MUST** run
+  against the platform at `HEAD`, because "a downstream job that resolves its dependency from an old
+  release cannot fail for any change, which makes a green board actively misleading rather than
+  merely uninformative."
+
+  That was not theoretical. When the pin finally moved (astro-mine-cli#36) it was **twenty commits
+  stale**, and HEAD turned 576 green tests into 14 failures and 11 errors — including a scaffolder
+  that had been minting unpublishable asset ids for as long as it had existed. Every one of those
+  breaks had landed on the day its platform change did, under a green board.
+
+  **A tag is the wrong pin here, and the platform now has one.** `v0.1.0` exists; this document used
+  to instruct the CLI to move to it "as soon as the platform cuts one". That instruction is withdrawn
+  for CI: a tag *is* a released pin, which is the thing §3.1 forbids for this build. A tag remains
+  the right way for an end user to resolve a release. The floating pin is paired with a daily
+  scheduled canary, because a floating pin is not a canary unless something runs it —
+  `astro-mine-api` learned that when a platform break surfaced two days late on an unrelated pull
+  request, and the CLI adopts the same shape rather than a second one.
+
+  **Still open:** the CLI's own `hatch-vcs` version and the platform's static version are two
+  different mechanisms, and should stop being.
 
 ### 2.2 The CLI tracks the platform, not any component
 
@@ -250,8 +277,9 @@ Phase 2):
   pin matrix.
 - **Tag and bump in the same commit.** The platform's version is static under maturin, so the tag no
   longer derives it — that is a real weakening, and the discipline replaces it (§2.1).
-- **The CLI's rev pin on the platform must move to a tag** as soon as one exists, and must not float
-  until then.
+- **The CLI pins the platform at `main`, with a daily canary** — `conventions.md` §3.1 requires the
+  downstream builds to run against `HEAD`, and a tag would be a released pin (§2.1). Not to be
+  "fixed" back to a rev.
 - **`astro-mine-cli` tracks the platform**, not any component; its command protocol is a
   cross-distribution surface coordinated like — but not versioned as — a Core interface (§2.2).
 - **Tags always; full GitHub Releases deferred** to the public flip.
