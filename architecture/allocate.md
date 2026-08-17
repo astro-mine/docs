@@ -249,7 +249,8 @@ Allocate sits inside the autonomy layer and integrates entirely through Core con
   depends on the host's abstraction, not the reverse); the defect was that the abstraction lived in
   a component instead of at the waist. `TierPlugin` had two implementors ([Guard](guard.md) is the
   other), which by §3.3 made it Core's, and the allocation delegation contract was already
-  documented to migrate under RFC-0006. Both moved — to `astro_mine.core.registry.tier` and
+  documented to migrate with the Core-owned plan vocabulary ([mind.md](mind.md) §"Plan +
+  ContingentPlan"). Both moved — to `astro_mine.core.registry.tier` and
   `astro_mine.core.plan.allocation` — and the edge went with them. The adapter module still exists
   and still does the same job; it now names only Core types.
 - **Called by [Mind](mind.md):** Mind's hierarchical planner assigns roles/regions, then

@@ -341,9 +341,9 @@ libraries publish to GitHub Packages — which was the design while the `Surface
 - `@astro-mine/console` is an **application**: `private: true`, deployed, never consumed.
 - The four libraries **build and are gated; they are not published.** Their one class of external
   consumer was the per-component `<component>-ui` surface packages, and the contract that created it
-  is retired (§11); the repositories that held them are archived. A release train with nothing on the other end
-  costs a hand-set version and a tag per cut, and npm's release-age floor blocks installs for a day
-  after each publish (`VERSIONING.md` §2.3).
+  is retired (§11); the repositories that held them are deleted. A release train with nothing on
+  the other end costs a hand-set version and a tag per cut, and npm's release-age floor blocks
+  installs for a day after each publish (`VERSIONING.md` §2.3).
 - `publishConfig.registry` **stays pinned** to GitHub Packages in every manifest. That is a safety
   control, not a plan: the scope cannot resolve to npmjs.com even on a machine holding a public-npm
   token, so the destination is already right the day a consumer appears.
@@ -451,8 +451,9 @@ A reader who liked the previous design should be able to find out what happened 
 workspace and the CI gates, the generated client, the theme and the honesty kit, the chart layer, the
 shell, `@astro-mine/view`, the inspector registry, every page in §5, the persona journeys against a
 real seeded API, the accessibility gate, and the deployment — the static bundle, its runtime
-configuration and the image that serves it (§8.1). The distribution track is now closed: the eighteen
-component repositories are deleted (`RM-DIST-05`; `docs#93` for the front-end half). See the
+configuration and the image that serves it (§8.1). The distribution track is now closed: the
+nineteen superseded repositories are deleted — the seventeen components, and `astro-mine-console`
+and `astro-mine-view` (`RM-DIST-05`; `docs#93` for the front-end half). See the
 [roadmap](../roadmap/README.md) and, for the user-facing view, the
 [console guide](../guide/console.md).
 

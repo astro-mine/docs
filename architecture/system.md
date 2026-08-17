@@ -318,7 +318,7 @@ implicit Earth/WGS84 (conventions.md §5).
             Learn ──► policies (ONNX) ──► Mind ──► Allocate
                                            │          │
                                            ▼          ▼
-                                          Guard (assure) 
+                                          Guard (assure)
                                            │
         Studio orchestrates the whole loop ▼  ── scored by ──► Bench
                   │                       results                 │
@@ -507,13 +507,13 @@ Steps 1–5 run today, on one workstation, from `astro-mine-cli` and the console
 |---|---|---|---|
 | **0** | [Core](core.md) v0.1, [Spice](spice.md), [Sim](sim.md), [Worlds](worlds.md), [Fleet](fleet.md), [Bench](bench.md) (+ [Prospect](prospect.md), [Link](link.md) MVP, local [Cloud](cloud.md)) | A runnable, reproducible benchmark on the anchor scenario | **built** |
 | **1** | [Mind](mind.md), [Learn](learn.md), [Allocate](allocate.md), [Guard](guard.md), [Studio](studio.md), [Hub](hub.md), [Surrogate](surrogate.md), [Seal](seal.md), full [Link](link.md) and [Cloud](cloud.md); the [console](ui.md) and the [CLI](cli.md) | The MARL + planning commons; public leaderboards & plugins | **built** |
-| — | *(no new components)* | The four distributions: consolidate the components into one wheel, move the CLI out, then stand up [`astro-mine-api`](api.md) and [`astro-mine-ui`](ui.md) | **in progress** |
+| — | *(no new components)* | The four distributions: consolidate the components into one wheel, move the CLI out, then stand up [`astro-mine-api`](api.md) and [`astro-mine-ui`](ui.md) | **done** (closed 2026-08-08) |
 | **2** | [Ops](ops.md), [Bridge](bridge.md), the full [View](view.md) ops viewer | Cross the sim→operations threshold on Earth analogs | next |
 | **3** | [Bridge](bridge.md) flight adapters; the **mission-architecture track** ([Transit](transit.md), [Trajectory](trajectory.md), [Sizing](sizing.md), [Ledger](ledger.md)) + small-body/microgravity extensions; **NEO sample-return** then **asteroid-mining** scenarios; new bodies as plugins | Default stack — surface ISRU *and* interplanetary resource missions — as the cislunar economy matures | later |
 
 The narrow waist is what makes this sequencing safe: later phases add edges, not core
 rewrites. Success is measured by how *little* [Core](core.md) changes as the platform grows — and the
-consolidation is evidence for the claim rather than against it: eighteen repositories collapsed into
+consolidation is evidence for the claim rather than against it: nineteen repositories collapsed into
 four distributions with import paths, schemas, `$id`s, entry points and public APIs unchanged, which
 is only possible if the contracts were where the value was.
 
@@ -538,7 +538,7 @@ only Phase-1 obligation is reserving the additive Mission/Phase/Regime Core sche
    negotiation and export control, and it is checked at a boundary rather than honoured by
    convention.
 7. A component owns capability; a distribution owns release. Confusing the two is what produced
-   eighteen release processes for one platform.
+   nineteen release processes for one platform.
 
 **Cross-cutting open questions** (each elaborated in the relevant component doc):
 

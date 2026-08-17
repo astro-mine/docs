@@ -1,0 +1,31 @@
+name: External links
+
+# Scheduled, never on pull requests. A third-party outage must not fail a
+# documentation edit — that is the whole reason this is a separate workflow
+# rather than a fifth lane in `docs.yml` (docs#112).
+
+on:
+  schedule:
+    - cron: "0 7 * * 1" # Mondays, 07:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  external:
+    name: Third-party links resolve
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Links into `github.com/astro-mine` are skipped while the organization
+      # is private: anonymously they 404 whether or not the page exists. That
+      # is most of the tree's external links, so this lane is small today and
+      # becomes the real coverage at the public flip — see the script.
+      - name: Check external links
+        run: python3 scripts/check_external_links.py

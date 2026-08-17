@@ -36,8 +36,8 @@ every component belongs to at least one:
 |---|---|---|
 | **[platform.md](platform.md)** | Python wheel | `astro-mine-platform` — every component as `astro_mine.<name>`. A library; no commands, no server, no front end. |
 | **[cli.md](cli.md)** | Python wheel | `astro-mine-cli` — the one executable, `astro-mine <component> <verb>`. |
-| **[api.md](api.md)** | wheel + image | `astro-mine-api` — every REST surface as route modules over the library. *Not yet stood up.* |
-| **[ui.md](ui.md)** | npm `@astro-mine/*` | `astro-mine-ui` — the console application, the generated API client, the design system, View, and the artifact inspectors. *Stood up; the pages land across Waves 29–30.* |
+| **[api.md](api.md)** | wheel + image | `astro-mine-api` — every REST surface as route modules over the library. *Stood up.* |
+| **[ui.md](ui.md)** | npm `@astro-mine/*` | `astro-mine-ui` — the console application, the generated API client, the design system, View, and the artifact inspectors. *Stood up; every page ships.* |
 
 Read the distribution docs when the question is *how does this ship, get built, or get released*, and
 the component docs when the question is *how does this work*.

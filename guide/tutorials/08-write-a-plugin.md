@@ -67,7 +67,7 @@ name = "my-solver"
 version = "0.1.0"
 requires-python = ">=3.12"
 # Note what is NOT here: astro-mine-cli. The CLI loads this package; it is not a dependency of it.
-dependencies = ["astro-mine-allocate"]
+dependencies = ["astro-mine-platform"]
 
 [project.entry-points."astro_mine.allocate.solvers"]
 demo-solver = "my_solver:demo_solver"
@@ -79,12 +79,12 @@ Three things worth noticing:
   Which solver produced a plan is provenance, which is why your id may not shadow a built-in.
 - **You depend on the platform, not on the CLI.** `astro-mine-cli` loads your package; it is not a
   dependency of it. Reversing that would make every plugin drag a command surface in.
-- **That `astro-mine-allocate` dependency is a bug in the scaffold, and you must fix it by hand.**
-  There is no such distribution any more: every component ships in `astro-mine-platform`
-  ([conventions.md](../../architecture/conventions.md) §7.1). Change the line to
-  `dependencies = ["astro-mine-platform"]`, or the generated package will not install. Filed as
-  [astro-mine-cli#18](https://github.com/astro-mine/astro-mine-cli/issues/18) — the one place in this
-  tutorial where what ships is wrong rather than merely different.
+- **You depend on `astro-mine-platform`, the whole wheel, and there is no smaller thing to depend
+  on.** Every component ships in it ([conventions.md](../../architecture/conventions.md) §7.1), so
+  there is no `astro-mine-allocate` to name — a plugin extends a component but installs a
+  distribution. The scaffold emitted the retired per-component name until
+  [astro-mine-cli#18](https://github.com/astro-mine/astro-mine-cli/issues/18) closed on 2026-07-30;
+  this page told you to patch it by hand for longer than the defect existed.
 - **Nothing else is registered anywhere.** There is no central list to add yourself to.
 
 The generated module starts from the shipped stub, so it produces valid output from the first

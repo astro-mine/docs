@@ -1,0 +1,41 @@
+name: Docs
+
+# The spec is normative for every other tree in the organization, and it was
+# the last one with no check at all (docs#112). These lanes are deliberately
+# runnable without CI: `python3 scripts/check_docs.py` needs a bare interpreter
+# and nothing else, so the gate works on a workstation, in a pre-commit hook,
+# and here. That is not only convenience — the org has no Actions minutes until
+# 2026-09-01 (astro-mine/.github#8), so for now the workstation IS the gate.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Links, anchors, status, format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # No `pip install` step, and there should never be one. The checker is
+      # standard library only; a dependency here would make the spec harder to
+      # validate than to change.
+      - name: Check the tree
+        run: python3 scripts/check_docs.py
+
+      - name: Test the checker
+        run: python3 -m unittest discover -s scripts -t scripts -v

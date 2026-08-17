@@ -1,7 +1,7 @@
 # Astro-Mine — Detailed Roadmap
 
-> **Status:** **Phases 0 and 1 are built.** The distribution track between Phase 1 and Phase 2 is in
-> progress, and **Phase 2 is next.** This is both a planning document and a record: it
+> **Status:** **Phases 0 and 1 are built.** The distribution track between Phase 1 and Phase 2 is
+> **closed** (2026-08-08), and **Phase 2 is next.** This is both a planning document and a record: it
 > elaborates the high-level [charter §10 phased roadmap](../charter/Swarm_Exploration_ISRU_Orchestrator_OSS_Project.md)
 > and [system.md §11](../architecture/system.md) into per-phase, per-component **scope and
 > requirements** at a fidelity an implementation-planning session can turn into GitHub issues —
@@ -72,7 +72,7 @@ determinism-and-provenance discipline (conventions.md §5, §11).
 |---|---|---|---|---|---|
 | **[0](phase-0-commons-seed.md)** | ~0–12 mo | Commons seed | Core v0.1 · Spice · Sim · Worlds · Fleet · Bench (+ Prospect, Link MVP, local Cloud) | A runnable, reproducible benchmark on the lunar-polar anchor scenario — *clone, run, score in an afternoon* | **built** |
 | **[1](phase-1-autonomy-studio.md)** | ~12–30 mo | Autonomy & studio | Mind · Learn · Allocate · Guard · Studio · Hub · Surrogate · Seal · full Link · full Cloud; the console and the CLI | Become the MARL + planning commons; first public leaderboards & community plugins | **built** |
-| **[distribution](#the-distribution-track)** | — | Packaging correction | one platform wheel · one CLI · one API · one front end | Four distributions instead of eighteen repositories, with import paths, schemas and public APIs unchanged | **in progress** |
+| **[distribution](#the-distribution-track)** | — | Packaging correction | one platform wheel · one CLI · one API · one front end | Four distributions instead of nineteen repositories, with import paths, schemas and public APIs unchanged | **done** |
 | **[2](phase-2-operations-bridge.md)** | ~30–54 mo | Operations bridge | Ops · Bridge · the full View ops viewer; digital-twin shadow mode | Cross the sim→operations threshold on terrestrial analogs | next |
 | **[3](phase-3-flight-mission-architecture.md)** | 54 mo + | Flight, mission architecture & ecosystem | Bridge flight adapters; **Transit · Trajectory · Sizing · Ledger** + small-body/microgravity extensions; NEO sample-return → asteroid-mining scenarios | Become the default stack for surface ISRU *and* interplanetary resource missions | later |
 
@@ -129,13 +129,15 @@ SLSA / SBOM); a Phase-1 deliverable, additive and non-urgent, that must not gate
 
 ## The distribution track
 
-Between Phase 1 and Phase 2 the platform's *packaging* was corrected: eighteen component
-repositories became four distributions, with import paths, public APIs, schemas and their `$id`s,
-entry-point groups, and configuration semantics **unchanged**. It adds no capability, which is why it
-is not a phase — but it is real work with real exit criteria. **All five items are done**, and the
-track is closed: one platform wheel, one CLI, one REST tier, one front end, and the eighteen
-superseded repositories archived. The org now carries four distributions, `docs`, and its two
-governance repositories; everything else is history, kept readable rather than deleted.
+Between Phase 1 and Phase 2 the platform's *packaging* was corrected: nineteen repositories — the
+seventeen components and the two front ends — became four distributions, with import paths, public
+APIs, schemas and their `$id`s, entry-point groups, and configuration semantics **unchanged**. It
+adds no capability, which is why it is not a phase — but it is real work with real exit criteria.
+**All five items are done**, and the track is closed: one platform wheel, one CLI, one REST tier,
+one front end, and the nineteen superseded repositories **deleted**. The org now carries four
+distributions, `docs`, and its two governance repositories, and nothing else: archival was the
+original decision and it was reversed, on the grounds that the org carries only what it maintains.
+§RM-DIST-05 records what that cost and where the history went.
 
 See [`conventions.md`](../architecture/conventions.md) §7.1 for the rule, and
 [platform.md](../architecture/platform.md) · [cli.md](../architecture/cli.md) ·
@@ -145,7 +147,7 @@ See [`conventions.md`](../architecture/conventions.md) §7.1 for the rule, and
 
 - **RM-DIST-01** — **One platform wheel.** Consolidate every `astro_mine.<component>` package, test
   suite, schema source and example into `astro-mine-platform`; adopt maturin (Guard's Rust core MUST
-  be in the wheel); merge eighteen dependency sets into one, with heavy optional stacks behind
+  be in the wheel); merge seventeen dependency sets into one, with heavy optional stacks behind
   `<component>-<extra>` extras. Import paths, schemas, entry points and algorithms MUST be unchanged.
   *(trace: platform.md; conventions.md §7.1)* — **done**
 - **RM-DIST-02** — **One CLI.** Remove every command surface from the platform and provide it from
@@ -215,6 +217,7 @@ See [`conventions.md`](../architecture/conventions.md) §7.1 for the rule, and
       that exemption is gone too — so `examples/` is now scanned with no holes, which is the one
       way the deletion left the platform better than it found it.
     - **The supersession notices are now false.** Every one of the seventeen says the repository's
+      <!-- status-ok: quotes the false notice verbatim in order to record that it is false -->
       "issues and history stay readable — that is why it is archived rather than deleted". An
       archived repository is read-only, so that sentence could not be corrected before deletion,
       and afterwards there is no README to correct. It is recorded here because it cannot be
