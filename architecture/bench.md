@@ -316,7 +316,11 @@ REST/OpenAPI (conventions.md §3, §4).
     rather than trusting reported numbers, eliminating the largest class of fabrication.
   - **Held-out seeds** and **hidden test scenarios**: each spec carries a public seed set for
     development and an embargoed held-out set disclosed only at evaluation time, so methods are
-    scored on instances they could not have overfit.
+    scored on instances they could not have overfit. The sealed sets live in the private
+    **`astro-mine/embargo`** repository, read at evaluation time via
+    `$ASTRO_MINE_BENCH_EMBARGO_ROOT`; it is the one repository that **stays private after the
+    public flip** (`VERSIONING.md` §6.1), because disclosure is irreversible in a way rotation
+    cannot repair.
   - **Determinism enforcement**: a sampled fraction of submissions is **re-executed** from the
     provenance bundle; mismatching the recorded result flags the entry (non-determinism or
     tampering).

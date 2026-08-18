@@ -257,8 +257,19 @@ heading — so a reader arriving the day after the flip would reasonably conclud
 
 ### 6.1 Repository visibility — what the flip itself does
 
-The seven repositories become public. That is the whole of it, and it is enough to unlock three
-things that are unavailable while private:
+**Six repositories become public** — `astro-mine-platform`, `astro-mine-cli`, `astro-mine-api`,
+`astro-mine-ui`, `docs` and `.github`. Two qualifications, because "make the org public" is not the
+same act:
+
+- **`astro-mine/embargo` stays private, permanently.** It holds the sealed held-out benchmark seed
+  sets that Bench discloses only at evaluation time (§`bench.md`). Publishing it would destroy the
+  anti-gaming property the leaderboard depends on, and no amount of later rotation undoes a
+  disclosure. It is not part of the flip and never becomes part of it.
+- **`.repo-template` was deleted rather than flipped.** It existed to scaffold a per-component
+  repository, which the four-distribution model retired; publishing an empty template for a layout
+  the project no longer uses would be publishing a wrong instruction.
+
+Visibility on those six is enough to unlock three things that are unavailable while private:
 
 - **Secret scanning, push protection and branch rulesets** (`conventions.md` §9). These are not
   deferred by choice: the API refuses them outright for a private repository on the current plan.
